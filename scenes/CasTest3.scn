@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!--CasTest1
-On fixe un coté et nous tirons de façon uniforme du côté opposé-->
+On fixe un coté et nous tirons sur le côté opposé au milieu-->
 
 <Node name="root" dt="0.05" showBoundingTree="0" gravity="0 0 0">
     <RequiredPlugin name="SofaOpenglVisual"/>
@@ -34,9 +34,8 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
 		<BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />              <!--box="x1 y1 z1 x2 y2 z2"-->
 		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
-		<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -100 0" showArrowSize=".01" />
-		
+		<BoxROI template="Vec3d" name="PullMiddle" box="4.9 0.1 0.1  5.1 -0.1 -0.1" drawBoxes="1"/>
+		<ConstantForceField name="CFF" indices="@PullMiddle.indices" force="0 -100 0" showArrowSize=".01" />        
 		
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" />
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
