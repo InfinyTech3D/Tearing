@@ -10,6 +10,8 @@ On fixe un coté et nous tirons sur le côté opposé au milieu-->
 	<RequiredPlugin pluginName='SofaEngine'/>
 	<RequiredPlugin pluginName='SofaMeshCollision'/>
 	<RequiredPlugin pluginName='SofaBoundaryCondition'/>
+	
+	<RequiredPlugin name='tearing'/>
 
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
     <DefaultPipeline verbose="0" />

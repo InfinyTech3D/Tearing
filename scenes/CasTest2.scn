@@ -11,6 +11,8 @@ Nous tirons de chaque côté avec une force équivalente-->
 	<RequiredPlugin pluginName='SofaMeshCollision'/>
 	<RequiredPlugin pluginName='SofaBoundaryCondition'/>
 
+	<RequiredPlugin name='tearing'/>
+	
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
     <DefaultPipeline verbose="0" />
     <BruteForceDetection name="N2" />

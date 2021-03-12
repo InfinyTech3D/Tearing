@@ -66,7 +66,7 @@ TEARING_API
 const char* getModuleComponentList()
 {
     // string containing the names of the classes provided by the plugin
-    return "ModuleComponent1";
+    return "StressDetector";
 }   
 } // extern "C"
 

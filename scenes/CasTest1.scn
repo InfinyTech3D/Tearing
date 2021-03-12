@@ -7,16 +7,19 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
     <RequiredPlugin name='SofaMiscFem'/>
     <RequiredPlugin name='SofaGeneralDeformable'/>
     <RequiredPlugin name='SofaImplicitOdeSolver'/>
-	<RequiredPlugin pluginName='SofaEngine'/>
-	<RequiredPlugin pluginName='SofaMeshCollision'/>
-	<RequiredPlugin pluginName='SofaBoundaryCondition'/>
+	<RequiredPlugin name='SofaEngine'/>
+	<RequiredPlugin name='SofaMeshCollision'/>
+	<RequiredPlugin name='SofaBoundaryCondition'/>
+	
+	<RequiredPlugin name='tearing'/>
 
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
     <DefaultPipeline verbose="0" />
     <BruteForceDetection name="N2" />
     <DefaultContactManager response="default" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
-	
+
+		
 	
 	
     <Node name="SquareGravity">
@@ -28,6 +31,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="0.15" />
 		
+		<StressDetector name='StressDetector'/>
 		
 		<!--Modification de la fixed constraint pour y mettre une Box constraint-->
 		<!--FixedConstraint indices="0 1" /-->
@@ -41,6 +45,8 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" />
         <!-- <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" /> -->
         <TriangleCollisionModel />
+		
+
 		
 		
 		

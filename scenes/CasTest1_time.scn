@@ -10,6 +10,8 @@ On fixe un coté et nous tirons de façon uniforme de plus en plus fort du côt�
 	<RequiredPlugin pluginName='SofaEngine'/>
 	<RequiredPlugin pluginName='SofaMeshCollision'/>
 	<RequiredPlugin pluginName='SofaBoundaryCondition'/>
+	
+	<RequiredPlugin name='tearing'/>
 
     <VisualStyle displayFlags="showVisual showBehaviorModels showForceFields" />
     <DefaultPipeline verbose="0" />

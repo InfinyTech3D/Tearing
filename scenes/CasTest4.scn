@@ -11,6 +11,8 @@ On fixe un coté et nous tirons sur le côté opposé en un coin-->
 	<RequiredPlugin pluginName='SofaMeshCollision'/>
 	<RequiredPlugin pluginName='SofaBoundaryCondition'/>
 
+	<RequiredPlugin name='tearing'/>
+	
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
     <DefaultPipeline verbose="0" />
     <BruteForceDetection name="N2" />
