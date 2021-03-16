@@ -13,7 +13,7 @@ template <class DataTypes>
 class TearingEngine : public core::DataEngine
 {
 public:
-	SOFA_CLASS(SOFA - TEMPLATE(TearingEngine, DataTypes), core::DataEngine);
+	SOFA_CLASS(SOFA_TEMPLATE(TearingEngine, DataTypes), core::DataEngine);
 	typedef typename DataTypes::Real Real;
 	typedef typename DataTypes::Coord Coord;
 	typedef typename DataTypes::VecCoord VecCoord;
@@ -35,7 +35,7 @@ public:
 	//Data<bool> showOutput;
 
 	/// Link to be set to the topology container in the component graph
-	SingleLink<SmoothMeshEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
+	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
 
 protected:
 	/// Pointerto the current topology
@@ -43,7 +43,7 @@ protected:
 };
 	
 #if !defined(SOFA_COMPONENT_ENGINE_TEARINGENGINE_CPP)
-extern template class SOFA_SOFAGENERALENGINE_API TearingEngine<defaulttype::Vec3Types>;
+extern template class TEARING_API TearingEngine<defaulttype::Vec3Types>;
 #endif
 		
 }//namespace sofa::component::engine

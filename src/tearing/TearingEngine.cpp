@@ -9,6 +9,6 @@ using namespace sofa::defaulttype;
 
 int TearingEngineClass = core::RegisterObject("Tearing engine").add< TearingEngine<Vec3Types> >();
 
-template class SOFA_SOFAGENERALENGINE_API TearingEngine<Vec3Types>;
+template class TEARING_API TearingEngine<Vec3Types>;
 
 }//namespace sofa::component::engine
