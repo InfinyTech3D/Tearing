@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SofaGeneralEngine/config.h>
+#include <tearing/config.h>
 
 #include <sofa/core/DataEngine.h>
 #include <sofa/core/objectmodel/BaseObject.h>

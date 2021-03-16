@@ -5,24 +5,21 @@ project(tearing VERSION 1.0)
 find_package(SofaFramework REQUIRED) # Needed to use SofaCore, SofaHelper and SofaDefaultType
 find_package(SofaGeneral REQUIRED) # Needed to use SofaBaseTopology
 
-# Config files (tell SOFA this is a plugin)
-set(CONFIG_FILES
-    src/tearing/config.h
-    src/tearing/inittearing.cpp
-    )
 # Our nice new SOFA Components
 set(HEADER_FILES
+    src/tearing/config.h.in
     src/tearing/StressDetector.h
     src/tearing/TearingEngine.h
     src/tearing/TearingEngine.inl
     )
 set(SOURCE_FILES
+    src/tearing/inittearing.cpp
     src/tearing/StressDetector.cpp
     src/tearing/TearingEngine.cpp
     )
 
 # SOFA plugin are basically libraries
-add_library(${PROJECT_NAME} SHARED ${CONFIG_FILES} ${HEADER_FILES} ${SOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
 
 # Dependencies
 target_link_libraries(${PROJECT_NAME} PUBLIC
