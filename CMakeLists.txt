@@ -13,12 +13,12 @@ set(CONFIG_FILES
 # Our nice new SOFA Components
 set(HEADER_FILES
     src/tearing/StressDetector.h
-    #TearingEngine.h
-    #TearingEngine.inl
+    src/tearing/TearingEngine.h
+    src/tearing/TearingEngine.inl
     )
 set(SOURCE_FILES
     src/tearing/StressDetector.cpp
-    #TearingEngine.cpp
+    src/tearing/TearingEngine.cpp
     )
 
 # SOFA plugin are basically libraries
