@@ -7,8 +7,14 @@
 #include <sofa/defaulttype/VecTypes.h>
 #include <sofa/core/topology/BaseMeshTopology.h>
 
+#include <SofaBaseTopology/TopologyData.h>
+
 namespace sofa::component::engine
 {
+
+	using core::DataEngine;
+	using helper::vector;
+
 template <class DataTypes>
 class TearingEngine : public core::DataEngine
 {
@@ -18,9 +24,15 @@ public:
 	typedef typename DataTypes::Coord Coord;
 	typedef typename DataTypes::VecCoord VecCoord;
 
+	typedef sofa::core::topology::BaseMeshTopology::Index Index;
+	typedef sofa::core::topology::BaseMeshTopology::Triangle Element;
+	typedef sofa::core::topology::BaseMeshTopology::SeqTriangles VecElement;
+
+
 protected:
 	TearingEngine();
 	~TearingEngine() override {}
+	typedef defaulttype::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
 
 public:
 	void init() override;
@@ -28,17 +40,65 @@ public:
 	void doUpdate() override;
 	void draw(const core::visual::VisualParams* vparams) override;
 
-	//Data<VecCoord> input_position;
-	//Data<VecCoord> output_position;
+	//Data
+	Data<vector<Element> > d_triangles; ///< Triangle Topology
+	Data<vector<double> > d_area;
 
-	//Data<bool> showInput;
-	//Data<bool> showOutput;
+	class TriangleInformation
+	{
+	public:
+		Real area;
+		TriangleInformation() { }
+		//Transformation rotation;
+
+		/// Output stream
+		inline friend std::ostream& operator<< (std::ostream& os, const TriangleInformation& /*ti*/)
+		{
+			return os;
+		}
+
+		/// Input stream
+		inline friend std::istream& operator>> (std::istream& in, TriangleInformation& /*ti*/)
+		{
+			return in;
+		}
+	};
+
+	class VertexInformation
+	{
+	public:
+		VertexInformation()
+			:sumEigenValues(0.0), stress(0.0) {}
+
+		Coord meanStrainDirection;
+		double sumEigenValues;
+		Transformation rotation;
+
+		double stress; //average stress of triangles around (used only for drawing)
+
+		/// Output stream
+		inline friend std::ostream& operator<< (std::ostream& os, const VertexInformation& /*vi*/)
+		{
+			return os;
+		}
+		/// Input stream
+		inline friend std::istream& operator>> (std::istream& in, VertexInformation& /*vi*/)
+		{
+			return in;
+		}
+	};
+
+
+	topology::TriangleData<sofa::helper::vector<TriangleInformation> > triangleInfo;
+	topology::PointData<sofa::helper::vector<VertexInformation> > vertexInfo; ///< Internal point data
+	Data<VecCoord> input_position; ///< Input position
+	Data<bool> showChangedTriangle;
 
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
 
 protected:
-	/// Pointerto the current topology
+	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology;
 };
 	
