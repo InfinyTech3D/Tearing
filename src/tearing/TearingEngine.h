@@ -40,8 +40,9 @@ public:
 	void doUpdate() override;
 	void draw(const core::visual::VisualParams* vparams) override;
 
+	void computeArea();
+
 	//Data
-	Data<vector<Element> > d_triangles; ///< Triangle Topology
 	Data<vector<double> > d_area;
 
 	class TriangleInformation
@@ -63,34 +64,7 @@ public:
 			return in;
 		}
 	};
-
-	class VertexInformation
-	{
-	public:
-		VertexInformation()
-			:sumEigenValues(0.0), stress(0.0) {}
-
-		Coord meanStrainDirection;
-		double sumEigenValues;
-		Transformation rotation;
-
-		double stress; //average stress of triangles around (used only for drawing)
-
-		/// Output stream
-		inline friend std::ostream& operator<< (std::ostream& os, const VertexInformation& /*vi*/)
-		{
-			return os;
-		}
-		/// Input stream
-		inline friend std::istream& operator>> (std::istream& in, VertexInformation& /*vi*/)
-		{
-			return in;
-		}
-	};
-
-
-	topology::TriangleData<sofa::helper::vector<TriangleInformation> > triangleInfo;
-	topology::PointData<sofa::helper::vector<VertexInformation> > vertexInfo; ///< Internal point data
+	
 	Data<VecCoord> input_position; ///< Input position
 	Data<bool> showChangedTriangle;
 
