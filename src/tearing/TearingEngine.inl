@@ -41,36 +41,8 @@ void TearingEngine<DataTypes>::init()
         return;
     }
 
+    computeArea();
 
-    //A BOUGER
-    //créer un vecteur stockant les triangles et un autre leurs aire
-    VecElement triangleList;
-    helper::vector<double> initAreaList;
-    triangleList = m_topology->getTriangles();
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<vector<double>> > area(d_area);
-    area.resize(triangleList.size());
-    for (unsigned int i = 0; i < triangleList.size(); i++)
-    {
-        Element triangle = triangleList[i];
-        Index a = triangle[0];
-        Index b = triangle[1];
-        Index c = triangle[2];
-
-        Coord Pa = x[a];
-        Coord Pb = x[b];
-        Coord Pc = x[c];
-
-        Real determinant;
-        //sofa::helper::types::RGBAColor color(1.0f, 0.76078431372f, 0.0f, 1.0f); //dans draw
-        
-        Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
-        determinant = ab_cross_ac.norm();
-        area[i] = determinant*0.5f;
-
-
-        
-    }
     
 }
 
@@ -82,7 +54,9 @@ void TearingEngine<DataTypes>::reinit()
 
 template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
-{}
+{
+    computeArea();
+}
 
 
 template <class DataTypes>
@@ -104,5 +78,38 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 */
 }
 
+template <class DataTypes>
+void TearingEngine<DataTypes>::computeArea()
+{
+    //A BOUGER
+    //créer un vecteur stockant les triangles et un autre leurs aire
+    VecElement triangleList;
+    //helper::vector<double> initAreaList;
+    triangleList = m_topology->getTriangles();
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    helper::WriteAccessor< Data<vector<double>> > area(d_area);
+    if(area.size() != triangleList.size() )
+    {
+        area.resize(triangleList.size());
+    }
+    for (unsigned int i = 0; i < triangleList.size(); i++)
+    {
+        Element triangle = triangleList[i];
+        Index a = triangle[0];
+        Index b = triangle[1];
+        Index c = triangle[2];
+
+        Coord Pa = x[a];
+        Coord Pb = x[b];
+        Coord Pc = x[c];
+
+        Real determinant;
+        //sofa::helper::types::RGBAColor color(1.0f, 0.76078431372f, 0.0f, 1.0f); //dans draw
+
+        Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
+        determinant = ab_cross_ac.norm();
+        area[i] = determinant * 0.5f;
+    }
+}
 
 } //namespace sofa::component::engine
