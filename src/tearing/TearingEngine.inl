@@ -14,6 +14,7 @@ template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
     : input_position(initData(&input_position, "input_position", "Input position"))
     , d_area(initData(&d_area, "area","list of area"))
+    , d_initArea(initData(&d_initArea, "initArea", "list of initial area"))
 	, l_topology(initLink("topology", "link to the topology container"))
 	, m_topology(nullptr)
 
@@ -41,9 +42,8 @@ void TearingEngine<DataTypes>::init()
         return;
     }
 
+    initComputeArea();
     computeArea();
-
-    
 }
 
 template <class DataTypes>
@@ -66,34 +66,36 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     triangleList = m_topology->getTriangles();
     helper::ReadAccessor< Data<VecCoord> > x(input_position);
     helper::ReadAccessor< Data<vector<double>> > area(d_area);
+    helper::ReadAccessor< Data<vector<double>> > initArea(d_initArea);
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
-        Element triangle = triangleList[i];
-        Index a = triangle[0];
-        Index b = triangle[1];
-        Index c = triangle[2];
+        Real alpha = 1.5;
+        if ( area[i]>=alpha*initArea[i] )
+        {
+            Element triangle = triangleList[i];
+            Index a = triangle[0];
+            Index b = triangle[1];
+            Index c = triangle[2];
 
-        //area[i];
-        Coord Pa = x[a];
-        Coord Pb = x[b];
-        Coord Pc = x[c];
-        std::vector<sofa::defaulttype::Vector3> vertices;
-        vertices.push_back(Pa);
-        vertices.push_back(Pb);
-        vertices.push_back(Pc);
+            //area[i];
+            Coord Pa = x[a];
+            Coord Pb = x[b];
+            Coord Pc = x[c];
+            std::vector<sofa::defaulttype::Vector3> vertices;
+            vertices.push_back(Pa);
+            vertices.push_back(Pb);
+            vertices.push_back(Pc);
 
-        Real alpha;
-
-
-        sofa::helper::types::RGBAColor color(area[i] * 10.0f, 0.0f, 0.0f, 1.0f); //dans draw
-        vparams->drawTool()->drawTriangles(vertices, color);
+            
+            sofa::helper::types::RGBAColor color(0.0f, 1.0f, 0.0f, 1.0f); //dans draw
+            vparams->drawTool()->drawTriangles(vertices, color);
+        }
     }
 }
 
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeArea()
 {
-    //A BOUGER
     //créer un vecteur stockant les triangles et un autre leurs aire
     VecElement triangleList;
     //helper::vector<double> initAreaList;
@@ -101,6 +103,39 @@ void TearingEngine<DataTypes>::computeArea()
     helper::ReadAccessor< Data<VecCoord> > x(input_position);
     helper::WriteAccessor< Data<vector<double>> > area(d_area);
     if(area.size() != triangleList.size() )
+    {
+        area.resize(triangleList.size());
+    }
+    for (unsigned int i = 0; i < triangleList.size(); i++)
+    {
+        Element triangle = triangleList[i];
+        Index a = triangle[0];
+        Index b = triangle[1];
+        Index c = triangle[2];
+
+        Coord Pa = x[a];
+        Coord Pb = x[b];
+        Coord Pc = x[c];
+
+        Real determinant;
+        //sofa::helper::types::RGBAColor color(1.0f, 0.76078431372f, 0.0f, 1.0f); //dans draw
+
+        Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
+        determinant = ab_cross_ac.norm();
+        area[i] = determinant * 0.5f;
+    }
+}
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::initComputeArea()
+{
+    //créer un vecteur stockant les triangles et un autre leurs aire
+    VecElement triangleList;
+    //helper::vector<double> initAreaList;
+    triangleList = m_topology->getTriangles();
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    helper::WriteAccessor< Data<vector<double>> > area(d_initArea);
+    if (area.size() != triangleList.size())
     {
         area.resize(triangleList.size());
     }

@@ -40,11 +40,12 @@ public:
 	void doUpdate() override;
 	void draw(const core::visual::VisualParams* vparams) override;
 
+	void initComputeArea();
 	void computeArea();
 
 	//Data
 	Data<vector<double> > d_area;
-
+	Data<vector<double> > d_initArea;
 
 	
 	Data<VecCoord> input_position; ///< Input position
