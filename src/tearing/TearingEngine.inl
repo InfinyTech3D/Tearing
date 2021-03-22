@@ -61,21 +61,30 @@ void TearingEngine<DataTypes>::doUpdate()
 
 template <class DataTypes>
 void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
-{/*
-    if (showChangedTriangle.getValue())
+{
+    VecElement triangleList;
+    triangleList = m_topology->getTriangles();
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    helper::ReadAccessor< Data<vector<double>> > area(d_area);
+    for (unsigned int i = 0; i < triangleList.size(); i++)
     {
-        helper::vector<VertexInformation>& vertexInf = *(vertexInfo.beginEdit());
-        for (unsigned int i = 0; i < vertexInf.size(); i++)
-        {
-            const core::topology::BaseMeshTopology::TrianglesAroundVertex& triangles = m_topology->getTrianglesAroundVertex(i);
-            double ACHANGER = 0.0;
-            for (unsigned int v = 0; v < triangles.size(); v++)
-            {
-                ACHANGER += triangleInfo.getValue()[triangles[v]].area;
-            }
-        }
+        Element triangle = triangleList[i];
+        Index a = triangle[0];
+        Index b = triangle[1];
+        Index c = triangle[2];
+
+        //area[i];
+        Coord Pa = x[a];
+        Coord Pb = x[b];
+        Coord Pc = x[c];
+        std::vector<sofa::defaulttype::Vector3> vertices;
+        vertices.push_back(Pa);
+        vertices.push_back(Pb);
+        vertices.push_back(Pc);
+
+        sofa::helper::types::RGBAColor color(Pa[1] * 0.1f, 0.76078431372f, 0.0f, 1.0f); //dans draw
+        vparams->drawTool()->drawTriangles(vertices, color);
     }
-*/
 }
 
 template <class DataTypes>
