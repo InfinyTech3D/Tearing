@@ -21,6 +21,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , showChangedTriangle( initData(&showChangedTriangle,true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
 {
     addInput(&input_position);
+    addOutput(&d_area);
 }
 
 template <class DataTypes>
@@ -69,7 +70,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     helper::ReadAccessor< Data<vector<double>> > initArea(d_initArea);
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
-        Real alpha = 1.5;
+        Real alpha = 2.0;
         if ( area[i]>=alpha*initArea[i] )
         {
             Element triangle = triangleList[i];
@@ -77,7 +78,6 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             Index b = triangle[1];
             Index c = triangle[2];
 
-            //area[i];
             Coord Pa = x[a];
             Coord Pb = x[b];
             Coord Pc = x[c];
@@ -86,8 +86,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vertices.push_back(Pb);
             vertices.push_back(Pc);
 
-            
-            sofa::helper::types::RGBAColor color(0.0f, 1.0f, 0.0f, 1.0f); //dans draw
+            sofa::helper::types::RGBAColor color(0.0f, 1.0f, 0.0f, 1.0f);
             vparams->drawTool()->drawTriangles(vertices, color);
         }
     }
@@ -118,8 +117,6 @@ void TearingEngine<DataTypes>::computeArea()
         Coord Pc = x[c];
 
         Real determinant;
-        //sofa::helper::types::RGBAColor color(1.0f, 0.76078431372f, 0.0f, 1.0f); //dans draw
-
         Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
         determinant = ab_cross_ac.norm();
         area[i] = determinant * 0.5f;
@@ -151,7 +148,6 @@ void TearingEngine<DataTypes>::initComputeArea()
         Coord Pc = x[c];
 
         Real determinant;
-        //sofa::helper::types::RGBAColor color(1.0f, 0.76078431372f, 0.0f, 1.0f); //dans draw
 
         Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
         determinant = ab_cross_ac.norm();
