@@ -82,7 +82,10 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         vertices.push_back(Pb);
         vertices.push_back(Pc);
 
-        sofa::helper::types::RGBAColor color(Pa[1] * 0.1f, 0.76078431372f, 0.0f, 1.0f); //dans draw
+        Real alpha;
+
+
+        sofa::helper::types::RGBAColor color(area[i] * 10.0f, 0.0f, 0.0f, 1.0f); //dans draw
         vparams->drawTool()->drawTriangles(vertices, color);
     }
 }

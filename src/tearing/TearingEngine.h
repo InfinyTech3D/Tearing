@@ -45,25 +45,7 @@ public:
 	//Data
 	Data<vector<double> > d_area;
 
-	class TriangleInformation
-	{
-	public:
-		Real area;
-		TriangleInformation() { }
-		//Transformation rotation;
 
-		/// Output stream
-		inline friend std::ostream& operator<< (std::ostream& os, const TriangleInformation& /*ti*/)
-		{
-			return os;
-		}
-
-		/// Input stream
-		inline friend std::istream& operator>> (std::istream& in, TriangleInformation& /*ti*/)
-		{
-			return in;
-		}
-	};
 	
 	Data<VecCoord> input_position; ///< Input position
 	Data<bool> showChangedTriangle;
