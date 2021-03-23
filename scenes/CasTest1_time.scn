@@ -38,9 +38,10 @@ On fixe un coté et nous tirons de façon uniforme de plus en plus fort du côt�
 
 		<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
 		<LinearForceField points="@PulledSide.indices" forces="0 0 0  0 -10 0  0 -100 0 " times="0 1 10" arrowSizeCoef="10.0"/>
-
+		
+		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" />
-		<!--TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" /-->
+		<TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		
 		

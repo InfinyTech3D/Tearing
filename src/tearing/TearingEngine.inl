@@ -14,11 +14,16 @@ TearingEngine<DataTypes>::TearingEngine()
     : input_position(initData(&input_position, "input_position", "Input position"))
     , d_area(initData(&d_area, "area","list of area"))
     , d_initArea(initData(&d_initArea, "initArea", "list of initial area"))
+    , d_seuil(initData(&d_seuil, 1.0, "seuil", "threshold value for area"))
+    
+    , d_triangleList_TEST(initData(&d_triangleList_TEST, "triangleList_TEST", "valeur TEST a supprimer"))
+
 	, l_topology(initLink("topology", "link to the topology container"))
 	, m_topology(nullptr)
     , showChangedTriangle( initData(&showChangedTriangle,true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
 {
     addInput(&input_position);
+    addInput(&d_seuil);
     addOutput(&d_area);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
 }
@@ -44,6 +49,7 @@ void TearingEngine<DataTypes>::init()
 
     initComputeArea();
     computeArea();
+    
 }
 
 template <class DataTypes>
@@ -164,5 +170,23 @@ void TearingEngine<DataTypes>::initComputeArea()
         area[i] = determinant * 0.5f;
     }
 }
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::triangleOverThreshold(VecElement& triangleOverThresholdList)
+{
+    VecElement triangleList;
+    triangleList = m_topology->getTriangles();
+    helper::ReadAccessor< Data<vector<double>> > area(d_area);
+    helper::ReadAccessor< Data<double> > threshold(d_seuil);
+    for (unsigned int i = 0; i < triangleList.size(); i++)
+    {
+        if (area[i] >= threshold)
+            triangleOverThresholdList.push_back(triangleList[i]);
+    }
+}
+
+
+
+
 
 } //namespace sofa::component::engine

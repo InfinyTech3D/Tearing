@@ -51,10 +51,14 @@ public:
 	//Data
 	Data<vector<double> > d_area;
 	Data<vector<double> > d_initArea;
-
 	
 	Data<VecCoord> input_position; ///< Input position
 	Data<bool> showChangedTriangle;
+
+	//Looking for triangle will tear first
+	Data<double> d_seuil; ///<  threshold value for area
+	Data<VecElement> d_triangleList_TEST;
+	void triangleOverThreshold(VecElement& triangleOverThresholdList);
 
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;

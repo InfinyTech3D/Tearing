@@ -36,8 +36,9 @@ On fixe un coté et nous appliquons la gravité-->
 		<BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />              <!--box="x1 y1 z1 x2 y2 z2"-->
 		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />		
 		
+		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" />
-        <!-- <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" /> -->
+        <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		
 		

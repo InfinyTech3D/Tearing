@@ -43,7 +43,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
 		
 		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" />
-        <!-- <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" /> -->
+        <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		
 
