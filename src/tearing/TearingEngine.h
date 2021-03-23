@@ -9,6 +9,11 @@
 
 #include <SofaBaseTopology/TopologyData.h>
 
+namespace sofa::helper
+{
+	class ColorMap;
+}
+
 namespace sofa::component::engine
 {
 
@@ -57,6 +62,10 @@ public:
 protected:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology;
+
+private:
+	sofa::helper::ColorMap* p_drawColorMap;
+
 };
 	
 #if !defined(SOFA_COMPONENT_ENGINE_TEARINGENGINE_CPP)
