@@ -14,7 +14,7 @@ TearingEngine<DataTypes>::TearingEngine()
     : input_position(initData(&input_position, "input_position", "Input position"))
     , d_area(initData(&d_area, "area","list of area"))
     , d_initArea(initData(&d_initArea, "initArea", "list of initial area"))
-    , d_seuil(initData(&d_seuil, -1.0, "seuil", "threshold value for area"))
+    , d_seuil(initData(&d_seuil, 0.1, "seuil", "threshold value for area"))
     
     , d_triangleList_TEST(initData(&d_triangleList_TEST, "triangleList_TEST", "valeur TEST a supprimer"))
 
@@ -187,20 +187,19 @@ void TearingEngine<DataTypes>::triangleOverThreshold(VecElement& triangleOverThr
     helper::ReadAccessor< Data<vector<double>> > area(d_area);
     helper::ReadAccessor< Data<double> > threshold(d_seuil);
     helper::WriteAccessor< Data<VecElement> > TEST(d_triangleList_TEST);
+    TEST.clear();
+    triangleOverThresholdList.clear();  //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
+    Index max = 0;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
         if (area[i] >= threshold)
         {
             triangleOverThresholdList.push_back(triangleList[i]);
             TEST.push_back(triangleList[i]);
-        }
-            
-            
+            if (area[i] > area[max])
+                max = i;
+        }         
     }
 }
-
-
-
-
 
 } //namespace sofa::component::engine
