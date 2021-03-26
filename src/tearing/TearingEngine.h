@@ -51,7 +51,7 @@ public:
 	void computeArea();
 
 	//Data
-	Data<vector<double> > d_area;
+	//Data<vector<double> > d_area;
 	Data<vector<double> > d_initArea;
 	
 	Data<VecCoord> input_position; ///< Input position
