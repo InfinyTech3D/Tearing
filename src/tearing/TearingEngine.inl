@@ -21,10 +21,12 @@ TearingEngine<DataTypes>::TearingEngine()
 	, l_topology(initLink("topology", "link to the topology container"))
 	, m_topology(nullptr)
     , showChangedTriangle( initData(&showChangedTriangle,true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
+    , d_triangleInfo(initData(&d_triangleInfo, "triangleInfo", "Internal triangle data"))
 {
     addInput(&input_position);
     addInput(&d_seuil);
     addOutput(&d_area);
+    addOutput(&d_triangleInfo);
     addOutput(&d_triangleList_TEST);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
 }
@@ -120,35 +122,11 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     colorVector.clear();
 }
 
-template <class DataTypes>
-void TearingEngine<DataTypes>::computeArea()
-{
-    VecElement triangleList;
-    triangleList = m_topology->getTriangles();
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<vector<double>> > area(d_area);
-    if(area.size() != triangleList.size() )
-    {
-        area.resize(triangleList.size());
-    }
-    for (unsigned int i = 0; i < triangleList.size(); i++)
-    {
-        Element triangle = triangleList[i];
-        Index a = triangle[0];
-        Index b = triangle[1];
-        Index c = triangle[2];
 
-        Coord Pa = x[a];
-        Coord Pb = x[b];
-        Coord Pc = x[c];
 
-        Real determinant;
-        Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
-        determinant = ab_cross_ac.norm();
-        area[i] = determinant * 0.5f;
-    }
-}
-
+// --------------------------------------------------------------------------------------
+// --- Computation methods
+// --------------------------------------------------------------------------------------
 template <class DataTypes>
 void TearingEngine<DataTypes>::initComputeArea()
 {
@@ -156,13 +134,16 @@ void TearingEngine<DataTypes>::initComputeArea()
     triangleList = m_topology->getTriangles();
     helper::ReadAccessor< Data<VecCoord> > x(input_position);
     helper::WriteAccessor< Data<vector<double>> > area(d_initArea);
+    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfo);
     if (area.size() != triangleList.size())
     {
         area.resize(triangleList.size());
+        triangleInf.resize(triangleList.size());
     }
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
         Element triangle = triangleList[i];
+        TriangleInformation* tinfo = &triangleInf[i];
         Index a = triangle[0];
         Index b = triangle[1];
         Index c = triangle[2];
@@ -175,9 +156,47 @@ void TearingEngine<DataTypes>::initComputeArea()
 
         Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
         determinant = ab_cross_ac.norm();
-        area[i] = determinant * 0.5f;
+        //area[i] = determinant * 0.5f;
+
+        tinfo->area = determinant * 0.5f;
+        area[i] = tinfo->area;
     }
 }
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::computeArea()
+{
+    VecElement triangleList;
+    triangleList = m_topology->getTriangles();
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    helper::WriteAccessor< Data<vector<double>> > area(d_area);
+    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfo);
+    if(area.size() != triangleList.size() )
+    {
+        area.resize(triangleList.size());
+        triangleInf.resize(triangleList.size());
+    }
+    for (unsigned int i = 0; i < triangleList.size(); i++)
+    {
+        Element triangle = triangleList[i];
+        TriangleInformation* tinfo = &triangleInf[i];
+        Index a = triangle[0];
+        Index b = triangle[1];
+        Index c = triangle[2];
+
+        Coord Pa = x[a];
+        Coord Pb = x[b];
+        Coord Pc = x[c];
+
+        Real determinant;
+        Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
+        determinant = ab_cross_ac.norm();
+        //area[i] = determinant * 0.5f;
+        tinfo->area = determinant * 0.5f;
+        area[i] = tinfo->area;
+    }
+}
+
 
 template <class DataTypes>
 void TearingEngine<DataTypes>::triangleOverThreshold(VecElement& triangleOverThresholdList)

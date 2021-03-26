@@ -60,6 +60,39 @@ public:
 	Data<VecElement> d_triangleList_TEST;
 	void triangleOverThreshold(VecElement& triangleOverThresholdList);
 
+
+	class TriangleInformation
+	{
+	public :
+		Real area;
+		// stress vector
+		defaulttype::Vec<3, Real> stress;
+		Real maxStress;
+
+		TriangleInformation() { }
+
+		/// Output stream
+		inline friend std::ostream& operator<< (std::ostream& os, const TriangleInformation& /*ti*/)
+		{
+			return os;
+		}
+
+		/// Input stream
+		inline friend std::istream& operator>> (std::istream& in, TriangleInformation& /*ti*/)
+		{
+			return in;
+		}
+	};
+	Data<vector<TriangleInformation> > d_triangleInfo;
+
+
+
+
+
+
+
+
+
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
 
