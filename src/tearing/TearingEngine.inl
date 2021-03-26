@@ -81,14 +81,17 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     VecElement triangleList;
     triangleList = m_topology->getTriangles();
     helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::ReadAccessor< Data<vector<double>> > area(d_area);
+    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfo); //ne fonctionne pas en ReadAccessor
     helper::ReadAccessor< Data<vector<double>> > initArea(d_initArea);
 
     double minDeltaArea = std::numeric_limits<double>::max();
     double maxDeltaArea = 0.0;
+
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
-        Real deltaArea = abs(initArea[i] - area[i]);
+        TriangleInformation* tinfo = &triangleInf[i];
+        Real deltaArea = abs(initArea[i] - tinfo->area);
+
         if (deltaArea < minDeltaArea)
             minDeltaArea = deltaArea;
         if (deltaArea > maxDeltaArea)
@@ -102,6 +105,8 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
         Element triangle = triangleList[i];
+        TriangleInformation* tinfo = &triangleInf[i];
+
         Index a = triangle[0];
         Index b = triangle[1];
         Index c = triangle[2];
@@ -110,11 +115,11 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         Coord Pb = x[b];
         Coord Pc = x[c];
 
-        colorVector.push_back(evalColor(abs(initArea[i] - area[i])));
+        colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
         vertices.push_back(Pa);
-        colorVector.push_back(evalColor(abs(initArea[i] - area[i])));
+        colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
         vertices.push_back(Pb);
-        colorVector.push_back(evalColor(abs(initArea[i] - area[i])));
+        colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
         vertices.push_back(Pc);
     }
     vparams->drawTool()->drawTriangles(vertices, colorVector);
@@ -133,11 +138,11 @@ void TearingEngine<DataTypes>::initComputeArea()
     VecElement triangleList;
     triangleList = m_topology->getTriangles();
     helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<vector<double>> > area(d_initArea);
+    helper::WriteAccessor< Data<vector<double>> > initArea(d_initArea);
     helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfo);
-    if (area.size() != triangleList.size())
+    if (initArea.size() != triangleList.size())
     {
-        area.resize(triangleList.size());
+        initArea.resize(triangleList.size());
         triangleInf.resize(triangleList.size());
     }
     for (unsigned int i = 0; i < triangleList.size(); i++)
@@ -159,7 +164,7 @@ void TearingEngine<DataTypes>::initComputeArea()
         //area[i] = determinant * 0.5f;
 
         tinfo->area = determinant * 0.5f;
-        area[i] = tinfo->area;
+        initArea[i] = tinfo->area;
     }
 }
 
@@ -206,16 +211,18 @@ void TearingEngine<DataTypes>::triangleOverThreshold(VecElement& triangleOverThr
     helper::ReadAccessor< Data<vector<double>> > area(d_area);
     helper::ReadAccessor< Data<double> > threshold(d_seuil);
     helper::WriteAccessor< Data<VecElement> > TEST(d_triangleList_TEST);
+    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfo);
     TEST.clear();
     triangleOverThresholdList.clear();  //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
     Index max = 0;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
-        if (area[i] >= threshold)
+        TriangleInformation* tinfo = &triangleInf[i];
+        if (tinfo->area >= threshold)
         {
             triangleOverThresholdList.push_back(triangleList[i]);
             TEST.push_back(triangleList[i]);
-            if (area[i] > area[max])
+            if (tinfo->area > area[max])
                 max = i;
         }         
     }

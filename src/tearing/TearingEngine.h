@@ -38,6 +38,8 @@ protected:
 	TearingEngine();
 	~TearingEngine() override {}
 	typedef defaulttype::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
+	typedef defaulttype::Mat<6, 3, Real> StrainDisplacement;				    ///< the strain-displacement matrix
+	typedef defaulttype::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
 
 public:
 	void init() override;
@@ -65,7 +67,10 @@ public:
 	{
 	public :
 		Real area;
-		// stress vector
+
+		StrainDisplacement strainDisplacementMatrix;
+		Transformation rotation;
+		defaulttype::Vec<3, Real> strain;
 		defaulttype::Vec<3, Real> stress;
 		Real maxStress;
 
