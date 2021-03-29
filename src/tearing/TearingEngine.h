@@ -8,6 +8,9 @@
 #include <sofa/core/topology/BaseMeshTopology.h>
 
 #include <SofaBaseTopology/TopologyData.h>
+#include <SofaBaseTopology/TriangleSetTopologyContainer.h>
+#include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
+#include <SofaMiscFem/TriangularFEMForceField.h>
 
 namespace sofa::helper
 {
@@ -51,7 +54,6 @@ public:
 	void computeArea();
 
 	//Data
-	//Data<vector<double> > d_area;
 	Data<vector<double> > d_initArea;
 	
 	Data<VecCoord> input_position; ///< Input position
@@ -60,7 +62,11 @@ public:
 	//Looking for triangle will tear first
 	Data<double> d_seuil; ///<  threshold value for area
 	Data<VecElement> d_triangleList_TEST;
-	void triangleOverThreshold(VecElement& triangleOverThresholdList);
+	Data< defaulttype::Vec<3, Real> > d_barycoef1;
+	Data< defaulttype::Vec<3, Real> > d_barycoef2;
+	Data< defaulttype::Vec<3, Real> > d_barycoef3;
+
+	void triangleOverThreshold();
 
 
 	class TriangleInformation
@@ -104,6 +110,8 @@ public:
 protected:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology;
+	sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
+	sofa::component::forcefield::TriangularFEMForceField<DataTypes>* m_triangularFEM;
 
 private:
 	sofa::helper::ColorMap* p_drawColorMap;

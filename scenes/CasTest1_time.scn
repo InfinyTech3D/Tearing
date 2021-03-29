@@ -26,7 +26,10 @@ On fixe un coté et nous tirons de façon uniforme de plus en plus fort du côt�
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
         <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
 		
-        <include href="Objects/TriangleSetTopology.xml" src="@meshLoader" />
+		<TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
+		<TriangleSetTopologyModifier   name="Modifier" />
+		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
+		
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="0.15" />
 		

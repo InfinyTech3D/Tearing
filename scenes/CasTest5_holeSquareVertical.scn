@@ -28,7 +28,10 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec un tro
         <!--MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" /-->
 		<MeshObjLoader name="meshLoader" filename="mesh/square_tissue_722_hole_vertical.obj" scale="1" createSubelements="true" />
 		
-        <include href="Objects/TriangleSetTopology.xml" src="@meshLoader" />
+		<TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
+		<TriangleSetTopologyModifier   name="Modifier" />
+		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
+		
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="0.15" />
 		

@@ -6,6 +6,8 @@
 #include <sofa/helper/ColorMap.h>
 #include <SofaBaseTopology/TopologyData.inl>
 
+//#include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
+
 
 namespace sofa::component::engine
 {
@@ -19,8 +21,14 @@ TearingEngine<DataTypes>::TearingEngine()
 
 	, l_topology(initLink("topology", "link to the topology container"))
 	, m_topology(nullptr)
+    , m_triangleGeo(nullptr)
+    , m_triangularFEM(nullptr)
     , showChangedTriangle( initData(&showChangedTriangle,true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
     , d_triangleInfo(initData(&d_triangleInfo, "triangleInfo", "Internal triangle data"))
+
+    , d_barycoef1(initData(&d_barycoef1, "barycoef1","braycoef1"))
+    , d_barycoef2(initData(&d_barycoef2, "barycoef2", "braycoef2"))
+    , d_barycoef3(initData(&d_barycoef3, "barycoef3", "braycoef3"))
 {
     addInput(&input_position);
     addInput(&d_seuil);
@@ -48,12 +56,29 @@ void TearingEngine<DataTypes>::init()
         return;
     }
 
+    m_topology->getContext()->get(m_triangleGeo);
+    if (!m_triangleGeo)
+    {
+        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+        return;
+    }
+
+    m_topology->getContext()->get(m_triangularFEM);
+    if (!m_triangularFEM)
+    {
+        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+        return;
+    }
+
     initComputeArea();
     computeArea();
     
     
-    VecElement TESTouille;
-    triangleOverThreshold(TESTouille);
+    triangleOverThreshold();
+
+ //   const sofa::helper::vector<TriangleInformation>& data = m_triangularFEM->triangleInfo.getValue();
 
 }
 
@@ -68,8 +93,7 @@ void TearingEngine<DataTypes>::doUpdate()
 {
     computeArea();
 
-    VecElement TESTouille;
-    triangleOverThreshold(TESTouille);
+    triangleOverThreshold();
 }
 
 
@@ -197,7 +221,7 @@ void TearingEngine<DataTypes>::computeArea()
 
 
 template <class DataTypes>
-void TearingEngine<DataTypes>::triangleOverThreshold(VecElement& triangleOverThresholdList)
+void TearingEngine<DataTypes>::triangleOverThreshold()
 {
     VecElement triangleList;
     triangleList = m_topology->getTriangles();
@@ -205,14 +229,13 @@ void TearingEngine<DataTypes>::triangleOverThreshold(VecElement& triangleOverThr
     helper::WriteAccessor< Data<VecElement> > TEST(d_triangleList_TEST);
     helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfo);
     TEST.clear();
-    triangleOverThresholdList.clear();  //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
+    //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
     Index max = 0;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
         TriangleInformation* tinfo = &triangleInf[i];
         if (tinfo->area >= threshold)
         {
-            triangleOverThresholdList.push_back(triangleList[i]);
             TEST.push_back(triangleList[i]);
             if (tinfo->area > triangleInf[max].area)
                 max = i;
