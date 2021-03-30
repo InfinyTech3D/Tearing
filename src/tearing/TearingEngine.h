@@ -36,6 +36,8 @@ public:
 	typedef sofa::core::topology::BaseMeshTopology::Triangle Element;
 	typedef sofa::core::topology::BaseMeshTopology::SeqTriangles VecElement;
 
+	typedef typename sofa::component::forcefield::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
+	typedef sofa::helper::vector<TriangleFEMInformation> VecTriangleFEMInformation;
 
 protected:
 	TearingEngine();
@@ -68,15 +70,15 @@ public:
 
 	void triangleOverThreshold();
 
-
+	
 	class TriangleInformation
 	{
-	public :
+	public:
 		Real area;
 
-		StrainDisplacement strainDisplacementMatrix;
-		Transformation rotation;
-		defaulttype::Vec<3, Real> strain;
+		//StrainDisplacement strainDisplacementMatrix;
+		//Transformation rotation;
+		//defaulttype::Vec<3, Real> strain;
 		defaulttype::Vec<3, Real> stress;
 		Real maxStress;
 
@@ -94,13 +96,10 @@ public:
 			return in;
 		}
 	};
-	Data<vector<TriangleInformation> > d_triangleInfo;
+	Data<vector<TriangleInformation> > d_triangleInfoTearing;
+	Data<VecTriangleFEMInformation> d_triangleFEMInfo;
 
-
-
-
-
-
+	void updateTriangleInformation();
 
 
 
