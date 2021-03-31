@@ -24,6 +24,11 @@ TearingEngine<DataTypes>::TearingEngine()
     , showChangedTriangle( initData(&showChangedTriangle,true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
     , d_triangleFEMInfo(initData(&d_triangleFEMInfo, "triangleFEMInfo", "Internal triangle data"))
+
+    , d_barycoef1(initData(&d_barycoef1, "barycoef1", "braycoef1"))
+    , d_barycoef2(initData(&d_barycoef2, "barycoef2", "braycoef2"))
+    , d_barycoef3(initData(&d_barycoef3, "barycoef3", "braycoef3"))
+
 {
     addInput(&input_position);
     addInput(&d_seuil);
@@ -70,10 +75,10 @@ void TearingEngine<DataTypes>::init()
 
     initComputeArea();
     computeArea();
-    
-    
-    triangleOverThreshold();
     updateTriangleInformation();
+    triangleOverThreshold();
+
+
 }
 
 template <class DataTypes>
@@ -88,6 +93,24 @@ void TearingEngine<DataTypes>::doUpdate()
     computeArea();
     updateTriangleInformation();
     triangleOverThreshold(); 
+    //test computeRestTriangleArea
+    VecElement triangleList;
+    triangleList = m_topology->getTriangles();
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    helper::WriteAccessor< Data<defaulttype::Vec<3, Real>> > barycoef1(d_barycoef1);
+    helper::WriteAccessor< Data<defaulttype::Vec<3, Real>> > barycoef2(d_barycoef2);
+    helper::WriteAccessor< Data<defaulttype::Vec<3, Real>> > barycoef3(d_barycoef3);
+    sofa::helper::vector< double > point1, point2, point3;
+    Element triangle = triangleList[0];
+    point1 = m_triangleGeo->computeTriangleBarycoefs(0, x[triangle[0]]);
+    point2 = m_triangleGeo->computeTriangleBarycoefs(0, x[triangle[1]]);
+    point3 = m_triangleGeo->computeTriangleBarycoefs(0, (x[triangle[0]]+ x[triangle[1]]+ x[triangle[2]])/3);
+    for (unsigned int i = 0; i < 3; i++)
+    {
+        barycoef1[i] = point1[i];
+        barycoef2[i] = point2[i];
+        barycoef3[i] = point3[i];
+    }
 }
 
 
