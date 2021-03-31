@@ -45,7 +45,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -100 0" showArrowSize=".01" />
 		
 		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
-		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" />
+		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		

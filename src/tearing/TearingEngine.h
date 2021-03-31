@@ -62,14 +62,13 @@ public:
 	Data<bool> showChangedTriangle;
 
 	//Looking for triangle will tear first
-	Data<double> d_seuil; ///<  threshold value for area
-	Data<VecElement> d_triangleList_TEST;
-	Data< defaulttype::Vec<3, Real> > d_barycoef1;
-	Data< defaulttype::Vec<3, Real> > d_barycoef2;
-	Data< defaulttype::Vec<3, Real> > d_barycoef3;
+	Data<double> d_seuilArea; ///<  threshold value for area
+	Data<double> d_seuilPrincipalStress; ///< threshold value for principal stress
+	Data<VecElement> d_triangleOverThresholdList;
+	Data<vector<double>> d_maxStress;
 
-	void triangleOverThreshold();
-
+	void triangleOverThresholdArea();
+	void triangleOverThresholdPrincipalStress();
 	
 	class TriangleInformation
 	{

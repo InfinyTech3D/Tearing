@@ -15,8 +15,9 @@ template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
     : input_position(initData(&input_position, "input_position", "Input position"))
     , d_initArea(initData(&d_initArea, "initArea", "list of initial area"))
-    , d_seuil(initData(&d_seuil, 0.1, "seuil", "threshold value for area"))
-    , d_triangleList_TEST(initData(&d_triangleList_TEST, "triangleList_TEST", "valeur TEST a supprimer"))
+    , d_seuilArea(initData(&d_seuilArea, 0.1, "seuilArea", "threshold value for area"))
+    , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 50.0, "seuilStress", "threshold value for stress"))
+    , d_triangleOverThresholdList(initData(&d_triangleOverThresholdList, "triangleOverThresholdList", "triangles with maxStress over threshold value"))
 	, l_topology(initLink("topology", "link to the topology container"))
 	, m_topology(nullptr)
     , m_triangleGeo(nullptr)
@@ -24,17 +25,15 @@ TearingEngine<DataTypes>::TearingEngine()
     , showChangedTriangle( initData(&showChangedTriangle,true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
     , d_triangleFEMInfo(initData(&d_triangleFEMInfo, "triangleFEMInfo", "Internal triangle data"))
-
-    , d_barycoef1(initData(&d_barycoef1, "barycoef1", "braycoef1"))
-    , d_barycoef2(initData(&d_barycoef2, "barycoef2", "braycoef2"))
-    , d_barycoef3(initData(&d_barycoef3, "barycoef3", "braycoef3"))
-
+    , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
 {
     addInput(&input_position);
-    addInput(&d_seuil);
+    addInput(&d_seuilArea);
+    addInput(&d_seuilPrincipalStress);
     addOutput(&d_triangleInfoTearing);
     addOutput(&d_triangleFEMInfo);
-    addOutput(&d_triangleList_TEST);
+    addOutput(&d_triangleOverThresholdList);
+    addOutput(&d_maxStress);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
 }
 
@@ -76,7 +75,8 @@ void TearingEngine<DataTypes>::init()
     initComputeArea();
     computeArea();
     updateTriangleInformation();
-    triangleOverThreshold();
+    //triangleOverThresholdArea();
+    triangleOverThresholdPrincipalStress();
 
 
 }
@@ -92,25 +92,8 @@ void TearingEngine<DataTypes>::doUpdate()
 {
     computeArea();
     updateTriangleInformation();
-    triangleOverThreshold(); 
-    //test computeRestTriangleArea
-    VecElement triangleList;
-    triangleList = m_topology->getTriangles();
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<defaulttype::Vec<3, Real>> > barycoef1(d_barycoef1);
-    helper::WriteAccessor< Data<defaulttype::Vec<3, Real>> > barycoef2(d_barycoef2);
-    helper::WriteAccessor< Data<defaulttype::Vec<3, Real>> > barycoef3(d_barycoef3);
-    sofa::helper::vector< double > point1, point2, point3;
-    Element triangle = triangleList[0];
-    point1 = m_triangleGeo->computeTriangleBarycoefs(0, x[triangle[0]]);
-    point2 = m_triangleGeo->computeTriangleBarycoefs(0, x[triangle[1]]);
-    point3 = m_triangleGeo->computeTriangleBarycoefs(0, (x[triangle[0]]+ x[triangle[1]]+ x[triangle[2]])/3);
-    for (unsigned int i = 0; i < 3; i++)
-    {
-        barycoef1[i] = point1[i];
-        barycoef2[i] = point2[i];
-        barycoef3[i] = point3[i];
-    }
+    //triangleOverThresholdArea(); 
+    triangleOverThresholdPrincipalStress();
 }
 
 
@@ -238,12 +221,12 @@ void TearingEngine<DataTypes>::computeArea()
 
 
 template <class DataTypes>
-void TearingEngine<DataTypes>::triangleOverThreshold()
+void TearingEngine<DataTypes>::triangleOverThresholdArea()
 {
     VecElement triangleList;
     triangleList = m_topology->getTriangles();
-    helper::ReadAccessor< Data<double> > threshold(d_seuil);
-    helper::WriteAccessor< Data<VecElement> > TEST(d_triangleList_TEST);
+    helper::ReadAccessor< Data<double> > threshold(d_seuilArea);
+    helper::WriteAccessor< Data<VecElement> > TEST(d_triangleOverThresholdList);
     helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
     TEST.clear();
     //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
@@ -257,6 +240,34 @@ void TearingEngine<DataTypes>::triangleOverThreshold()
             if (tinfo->area > triangleInf[max].area)
                 max = i;
         }         
+    }
+}
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
+{
+    VecElement triangleList;
+    triangleList = m_topology->getTriangles();
+    helper::ReadAccessor< Data<double> > threshold(d_seuilPrincipalStress);
+    helper::WriteAccessor< Data<VecElement> > candidate(d_triangleOverThresholdList);
+    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
+    helper::WriteAccessor< Data<vector<Real>> > maxStress(d_maxStress);
+    candidate.clear();
+    //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
+    Index nbTriangleMaxStress = 0;
+    for (unsigned int i = 0; i < triangleList.size(); i++)
+    {
+        TriangleInformation* tinfo = &triangleInf[i];
+        if (tinfo->maxStress >= threshold)
+        {
+            candidate.push_back(triangleList[i]);
+            if (tinfo->maxStress > triangleInf[nbTriangleMaxStress].maxStress)
+            {
+                nbTriangleMaxStress = i;
+                maxStress.clear();
+                maxStress.push_back(tinfo->maxStress); //ne fonctione pas avec un maxStress en double
+            }
+        }
     }
 }
 
@@ -286,6 +297,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
 
         //tinfo->area =  tFEMinfo.area;;
         tinfo->stress = tFEMinfo.stress;
+        tinfo->maxStress = tFEMinfo.maxStress;
     }
 }
 
