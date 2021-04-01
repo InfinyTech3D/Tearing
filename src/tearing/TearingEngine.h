@@ -64,8 +64,9 @@ public:
 	//Looking for triangle will tear first
 	Data<double> d_seuilArea; ///<  threshold value for area
 	Data<double> d_seuilPrincipalStress; ///< threshold value for principal stress
-	Data<VecElement> d_triangleOverThresholdList;
+	Data<vector<Index>> d_triangleOverThresholdList;
 	Data<vector<double>> d_maxStress;
+	Data<bool> showTearableTriangle;
 
 	void triangleOverThresholdArea();
 	void triangleOverThresholdPrincipalStress();

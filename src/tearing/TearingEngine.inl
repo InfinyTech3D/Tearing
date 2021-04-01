@@ -16,13 +16,14 @@ TearingEngine<DataTypes>::TearingEngine()
     : input_position(initData(&input_position, "input_position", "Input position"))
     , d_initArea(initData(&d_initArea, "initArea", "list of initial area"))
     , d_seuilArea(initData(&d_seuilArea, 0.1, "seuilArea", "threshold value for area"))
-    , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 50.0, "seuilStress", "threshold value for stress"))
+    , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 55.0, "seuilStress", "threshold value for stress"))
     , d_triangleOverThresholdList(initData(&d_triangleOverThresholdList, "triangleOverThresholdList", "triangles with maxStress over threshold value"))
 	, l_topology(initLink("topology", "link to the topology container"))
 	, m_topology(nullptr)
     , m_triangleGeo(nullptr)
     , m_triangularFEM(nullptr)
-    , showChangedTriangle( initData(&showChangedTriangle,true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
+    , showChangedTriangle(initData(&showChangedTriangle, true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
+    , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
     , d_triangleFEMInfo(initData(&d_triangleFEMInfo, "triangleFEMInfo", "Internal triangle data"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
@@ -100,53 +101,75 @@ void TearingEngine<DataTypes>::doUpdate()
 template <class DataTypes>
 void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 {
-    VecElement triangleList;
-    triangleList = m_topology->getTriangles();
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing); //ne fonctionne pas en ReadAccessor
-    helper::ReadAccessor< Data<vector<double>> > initArea(d_initArea);
-
-    double minDeltaArea = std::numeric_limits<double>::max();
-    double maxDeltaArea = 0.0;
-
-    for (unsigned int i = 0; i < triangleList.size(); i++)
+    if (showChangedTriangle.getValue())
     {
-        TriangleInformation* tinfo = &triangleInf[i];
-        Real deltaArea = abs(initArea[i] - tinfo->area);
+        VecElement triangleList;
+        triangleList = m_topology->getTriangles();
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing); //ne fonctionne pas en ReadAccessor
+        helper::ReadAccessor< Data<vector<double>> > initArea(d_initArea);
 
-        if (deltaArea < minDeltaArea)
-            minDeltaArea = deltaArea;
-        if (deltaArea > maxDeltaArea)
-            maxDeltaArea = deltaArea;
+        double minDeltaArea = std::numeric_limits<double>::max();
+        double maxDeltaArea = 0.0;
+
+        for (unsigned int i = 0; i < triangleList.size(); i++)
+        {
+            TriangleInformation* tinfo = &triangleInf[i];
+            Real deltaArea = abs(initArea[i] - tinfo->area);
+
+            if (deltaArea < minDeltaArea)
+                minDeltaArea = deltaArea;
+            if (deltaArea > maxDeltaArea)
+                maxDeltaArea = deltaArea;
+        }
+
+        std::vector<sofa::defaulttype::Vector3> vertices;
+        std::vector<sofa::helper::types::RGBAColor> colorVector;
+        helper::ColorMap::evaluator<double> evalColor = p_drawColorMap->getEvaluator(0.0, maxDeltaArea);
+
+        for (unsigned int i = 0; i < triangleList.size(); i++)
+        {
+            Element triangle = triangleList[i];
+            TriangleInformation* tinfo = &triangleInf[i];
+
+            Index a = triangle[0];
+            Index b = triangle[1];
+            Index c = triangle[2];
+
+            Coord Pa = x[a];
+            Coord Pb = x[b];
+            Coord Pc = x[c];
+
+            colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
+            vertices.push_back(Pa);
+            colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
+            vertices.push_back(Pb);
+            colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
+            vertices.push_back(Pc);
+        }
+        vparams->drawTool()->drawTriangles(vertices, colorVector);
+        vertices.clear();
+        colorVector.clear();
     }
-
-    std::vector<sofa::defaulttype::Vector3> vertices;
-    std::vector<sofa::helper::types::RGBAColor> colorVector;
-    helper::ColorMap::evaluator<double> evalColor = p_drawColorMap->getEvaluator(0.0, maxDeltaArea);
-
-    for (unsigned int i = 0; i < triangleList.size(); i++)
+    
+    if (showTearableTriangle.getValue())
     {
-        Element triangle = triangleList[i];
-        TriangleInformation* tinfo = &triangleInf[i];
-
-        Index a = triangle[0];
-        Index b = triangle[1];
-        Index c = triangle[2];
-
-        Coord Pa = x[a];
-        Coord Pb = x[b];
-        Coord Pc = x[c];
-
-        colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
-        vertices.push_back(Pa);
-        colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
-        vertices.push_back(Pb);
-        colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
-        vertices.push_back(Pc);
+        VecElement triangleList = m_topology->getTriangles();
+        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        std::vector<sofa::defaulttype::Vector3> vertices;
+        sofa::helper::types::RGBAColor color(0.0f, 1.0f, 0.0f, 1.0f);
+        for (unsigned int i = 0; i < candidate.size(); i++)
+        {
+            Coord Pa = x[triangleList[candidate[i]][0]];
+            Coord Pb = x[triangleList[candidate[i]][1]];
+            Coord Pc = x[triangleList[candidate[i]][2]];
+            vertices.push_back(Pa);
+            vertices.push_back(Pb);
+            vertices.push_back(Pc);
+        }
+        vparams->drawTool()->drawTriangles(vertices, color);
     }
-    vparams->drawTool()->drawTriangles(vertices, colorVector);
-    vertices.clear();
-    colorVector.clear();
 }
 
 
@@ -226,7 +249,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdArea()
     VecElement triangleList;
     triangleList = m_topology->getTriangles();
     helper::ReadAccessor< Data<double> > threshold(d_seuilArea);
-    helper::WriteAccessor< Data<VecElement> > TEST(d_triangleOverThresholdList);
+    helper::WriteAccessor< Data<vector<Index>> > TEST(d_triangleOverThresholdList);
     helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
     TEST.clear();
     //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
@@ -236,7 +259,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdArea()
         TriangleInformation* tinfo = &triangleInf[i];
         if (tinfo->area >= threshold)
         {
-            TEST.push_back(triangleList[i]);
+            TEST.push_back(i);
             if (tinfo->area > triangleInf[max].area)
                 max = i;
         }         
@@ -249,10 +272,11 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     VecElement triangleList;
     triangleList = m_topology->getTriangles();
     helper::ReadAccessor< Data<double> > threshold(d_seuilPrincipalStress);
-    helper::WriteAccessor< Data<VecElement> > candidate(d_triangleOverThresholdList);
+    helper::WriteAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
     helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
     helper::WriteAccessor< Data<vector<Real>> > maxStress(d_maxStress);
     candidate.clear();
+    maxStress.clear();
     //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
     Index nbTriangleMaxStress = 0;
     for (unsigned int i = 0; i < triangleList.size(); i++)
@@ -260,7 +284,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
         TriangleInformation* tinfo = &triangleInf[i];
         if (tinfo->maxStress >= threshold)
         {
-            candidate.push_back(triangleList[i]);
+            candidate.push_back(i);
             if (tinfo->maxStress > triangleInf[nbTriangleMaxStress].maxStress)
             {
                 nbTriangleMaxStress = i;
