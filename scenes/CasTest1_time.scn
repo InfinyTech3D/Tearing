@@ -43,7 +43,7 @@ On fixe un coté et nous tirons de façon uniforme de plus en plus fort du côt�
 		<LinearForceField points="@PulledSide.indices" forces="0 0 0  0 -10 0  0 -100 0 " times="0 1 10" arrowSizeCoef="10.0"/>
 		
 		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
-		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" />
+		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
 		<TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		

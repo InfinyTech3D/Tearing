@@ -23,7 +23,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , m_triangleGeo(nullptr)
     , m_triangularFEM(nullptr)
     , showChangedTriangle(initData(&showChangedTriangle, true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
-    , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
+    , showTearableTriangle(initData(&showTearableTriangle, false, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
     , d_triangleFEMInfo(initData(&d_triangleFEMInfo, "triangleFEMInfo", "Internal triangle data"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
@@ -158,7 +158,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         std::vector<sofa::defaulttype::Vector3> vertices;
-        sofa::helper::types::RGBAColor color(0.0f, 1.0f, 0.0f, 1.0f);
+        sofa::helper::types::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
         for (unsigned int i = 0; i < candidate.size(); i++)
         {
             Coord Pa = x[triangleList[candidate[i]][0]];
