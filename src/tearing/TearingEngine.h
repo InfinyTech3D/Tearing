@@ -65,7 +65,9 @@ public:
 	Data<double> d_seuilArea; ///<  threshold value for area
 	Data<double> d_seuilPrincipalStress; ///< threshold value for principal stress
 	Data<vector<Index>> d_triangleOverThresholdList;
-	Data<vector<double>> d_maxStress;
+	Data<double> d_maxStress;
+	Data<Index> d_indexTriangleMaxStress;
+	Data<Index> d_indexVertexMaxStress;
 	Data<bool> showTearableTriangle;
 
 	void triangleOverThresholdArea();

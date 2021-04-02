@@ -27,6 +27,9 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
     , d_triangleFEMInfo(initData(&d_triangleFEMInfo, "triangleFEMInfo", "Internal triangle data"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
+    , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
+    , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
+
 {
     addInput(&input_position);
     addInput(&d_seuilArea);
@@ -35,6 +38,7 @@ TearingEngine<DataTypes>::TearingEngine()
     addOutput(&d_triangleFEMInfo);
     addOutput(&d_triangleOverThresholdList);
     addOutput(&d_maxStress);
+    addOutput(&d_indexVertexMaxStress);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
 }
 
@@ -159,16 +163,26 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         std::vector<sofa::defaulttype::Vector3> vertices;
         sofa::helper::types::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
-        for (unsigned int i = 0; i < candidate.size(); i++)
+        if (candidate.size())
         {
-            Coord Pa = x[triangleList[candidate[i]][0]];
-            Coord Pb = x[triangleList[candidate[i]][1]];
-            Coord Pc = x[triangleList[candidate[i]][2]];
-            vertices.push_back(Pa);
-            vertices.push_back(Pb);
-            vertices.push_back(Pc);
+            for (unsigned int i = 0; i < candidate.size(); i++)
+            {
+                Coord Pa = x[triangleList[candidate[i]][0]];
+                Coord Pb = x[triangleList[candidate[i]][1]];
+                Coord Pc = x[triangleList[candidate[i]][2]];
+                vertices.push_back(Pa);
+                vertices.push_back(Pb);
+                vertices.push_back(Pc);
+            }
+            vparams->drawTool()->drawTriangles(vertices, color);
+
+            std::vector<sofa::defaulttype::Vector3> vecteur;
+            Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+            Coord Pa = x[d_indexVertexMaxStress.getValue()];
+            vecteur.push_back(Pa);
+            vecteur.push_back(Pa + principalStressDirection);
+            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(0, 1, 0, 1));
         }
-        vparams->drawTool()->drawTriangles(vertices, color);
     }
 }
 
@@ -274,25 +288,34 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     helper::ReadAccessor< Data<double> > threshold(d_seuilPrincipalStress);
     helper::WriteAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
     helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
-    helper::WriteAccessor< Data<vector<Real>> > maxStress(d_maxStress);
+    Real& maxStress = *(d_maxStress.beginEdit());
+    Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
     candidate.clear();
-    maxStress.clear();
-    //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
-    Index nbTriangleMaxStress = 0;
+    maxStress = 0;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
         TriangleInformation* tinfo = &triangleInf[i];
         if (tinfo->maxStress >= threshold)
         {
             candidate.push_back(i);
-            if (tinfo->maxStress > triangleInf[nbTriangleMaxStress].maxStress)
+            if (tinfo->maxStress > maxStress)
             {
-                nbTriangleMaxStress = i;
-                maxStress.clear();
-                maxStress.push_back(tinfo->maxStress); //ne fonctione pas avec un maxStress en double
+                indexTriangleMaxStress = i;
+                maxStress = tinfo->maxStress;
             }
         }
     }
+    if (candidate.size())
+    {
+        Index& indexVertexMaxStress = *(d_indexVertexMaxStress.beginEdit());
+        TriangleInformation* tinfo = &triangleInf[indexTriangleMaxStress];
+        Index k = (tinfo->stress[0] > tinfo->stress[1]) ? 0 : 1;
+        k = (tinfo->stress[k] > tinfo->stress[2]) ? k : 2;
+        indexVertexMaxStress = triangleList[indexTriangleMaxStress][k];      
+        d_indexVertexMaxStress.endEdit();
+    }
+    d_maxStress.endEdit();
+    d_indexTriangleMaxStress.endEdit();
 }
 
 template <class DataTypes>
