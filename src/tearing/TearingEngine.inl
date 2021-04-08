@@ -22,14 +22,19 @@ TearingEngine<DataTypes>::TearingEngine()
 	, m_topology(nullptr)
     , m_triangleGeo(nullptr)
     , m_triangularFEM(nullptr)
-    , showChangedTriangle(initData(&showChangedTriangle, true,"showChangedTriangle", "Flag activating rendering of changed triangle"))
-    , showTearableTriangle(initData(&showTearableTriangle, false, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
+    , showChangedTriangle(initData(&showChangedTriangle, false,"showChangedTriangle", "Flag activating rendering of changed triangle"))
+    , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
     , d_triangleFEMInfo(initData(&d_triangleFEMInfo, "triangleFEMInfo", "Internal triangle data"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
     , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
+    , stepByStep(initData(&stepByStep, false, "stepByStep", "Flag activating step by step option for tearing"))
+    , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
 
+    , d_fractureIndices(initData(&d_fractureIndices, "fractureIndices", "TEST fracture indices"))
+    , d_fractureBaryCoef(initData(&d_fractureBaryCoef, "fractureBaryCoef", "TEST fracture BaryCoef"))
+    , d_fractureCoord_kmin(initData(&d_fractureCoord_kmin, "fractureCoord_kmin", "TEST fracture Coord_kmin"))
 {
     addInput(&input_position);
     addInput(&d_seuilArea);
@@ -76,13 +81,13 @@ void TearingEngine<DataTypes>::init()
         sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         return;
     }
-
+   
     initComputeArea();
     computeArea();
     updateTriangleInformation();
     //triangleOverThresholdArea();
     triangleOverThresholdPrincipalStress();
-
+    d_counter.setValue(0);
 
 }
 
@@ -95,10 +100,12 @@ void TearingEngine<DataTypes>::reinit()
 template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
 {
+    d_counter.setValue(d_counter.getValue() + 1);
     computeArea();
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
+    if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue()) doFracture();
 }
 
 
@@ -179,9 +186,18 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             std::vector<sofa::defaulttype::Vector3> vecteur;
             Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
             Coord Pa = x[d_indexVertexMaxStress.getValue()];
+            
             vecteur.push_back(Pa);
             vecteur.push_back(Pa + principalStressDirection);
             vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+            vecteur.clear();
+            Coord fractureDirection;
+            fractureDirection[0] = -principalStressDirection[1];
+            fractureDirection[1] = principalStressDirection[0];
+            vecteur.push_back(Pa);
+            vecteur.push_back(Pa + fractureDirection);
+            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.65, 0, 1));
+            vecteur.clear();
         }
     }
 }
@@ -347,6 +363,38 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
         tinfo->maxStress = tFEMinfo.maxStress;
     }
 }
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::doFracture()
+{
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+
+    Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+    Coord Pa = x[d_indexVertexMaxStress.getValue()];
+    Coord fractureDirection;
+    fractureDirection[0] = -principalStressDirection[1];
+    fractureDirection[1] = principalStressDirection[0];
+
+    sofa::helper::vector<Index> indices;
+    double baryCoef;
+    double coord_kmin;
+    m_triangleGeo->computeSegmentTriangleIntersection(true, Pa, Pa + fractureDirection, d_indexTriangleMaxStress.getValue(), indices, baryCoef, coord_kmin);
+
+    helper::WriteAccessor< Data<vector<Index>> > fractureIndices(d_fractureIndices);
+    Real& fractureBaryCoef = *(d_fractureBaryCoef.beginEdit());
+    Real& fractureCoord_kmin = *(d_fractureCoord_kmin.beginEdit());
+
+    fractureIndices.clear();
+    for (unsigned int i = 0; i < indices.size(); i++)
+        fractureIndices.push_back(indices[i]);
+    fractureBaryCoef = baryCoef;
+    fractureCoord_kmin = coord_kmin;
+
+    d_fractureBaryCoef.endEdit();
+    d_fractureCoord_kmin.endEdit();
+}
+
+
 
 } //namespace sofa::component::engine
 

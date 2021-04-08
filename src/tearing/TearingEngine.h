@@ -69,6 +69,8 @@ public:
 	Data<Index> d_indexTriangleMaxStress;
 	Data<Index> d_indexVertexMaxStress;
 	Data<bool> showTearableTriangle;
+	Data<bool> stepByStep;
+	Data<int> d_counter;
 
 	void triangleOverThresholdArea();
 	void triangleOverThresholdPrincipalStress();
@@ -103,7 +105,10 @@ public:
 
 	void updateTriangleInformation();
 
-
+	void doFracture();
+	Data<vector<Index> > d_fractureIndices;
+	Data<double> d_fractureBaryCoef;
+	Data<double> d_fractureCoord_kmin;
 
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
