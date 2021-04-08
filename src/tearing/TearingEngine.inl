@@ -35,6 +35,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_fractureIndices(initData(&d_fractureIndices, "fractureIndices", "TEST fracture indices"))
     , d_fractureBaryCoef(initData(&d_fractureBaryCoef, "fractureBaryCoef", "TEST fracture BaryCoef"))
     , d_fractureCoord_kmin(initData(&d_fractureCoord_kmin, "fractureCoord_kmin", "TEST fracture Coord_kmin"))
+    , d_fractureBool(initData(&d_fractureBool, "fractureBool", "TEST fracture Bool"))
 {
     addInput(&input_position);
     addInput(&d_seuilArea);
@@ -197,6 +198,14 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vecteur.push_back(Pa);
             vecteur.push_back(Pa + fractureDirection);
             vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.65, 0, 1));
+            vecteur.clear();
+
+            helper::WriteAccessor< Data<vector<Index>> > fractureIndices(d_fractureIndices);
+            
+            Coord fractureCompute = d_fractureBaryCoef.getValue() * x[fractureIndices[1]] + (1 - d_fractureBaryCoef.getValue()) * x[fractureIndices[0]];
+            vecteur.push_back(Pa);
+            vecteur.push_back(fractureCompute);
+            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.1, 0, 1));
             vecteur.clear();
         }
     }
@@ -376,13 +385,18 @@ void TearingEngine<DataTypes>::doFracture()
     fractureDirection[1] = principalStressDirection[0];
 
     sofa::helper::vector<Index> indices;
+    indices.push_back(48);
+    indices.push_back(642);
     double baryCoef;
     double coord_kmin;
-    m_triangleGeo->computeSegmentTriangleIntersection(true, Pa, Pa + fractureDirection, d_indexTriangleMaxStress.getValue(), indices, baryCoef, coord_kmin);
+    
+    bool& fractureBool = *(d_fractureBool.beginEdit());
+    fractureBool=m_triangleGeo->computeSegmentTriangleIntersection(true, Pa, Pa + fractureDirection, d_indexTriangleMaxStress.getValue(), indices, baryCoef, coord_kmin);
 
     helper::WriteAccessor< Data<vector<Index>> > fractureIndices(d_fractureIndices);
     Real& fractureBaryCoef = *(d_fractureBaryCoef.beginEdit());
     Real& fractureCoord_kmin = *(d_fractureCoord_kmin.beginEdit());
+    
 
     fractureIndices.clear();
     for (unsigned int i = 0; i < indices.size(); i++)
@@ -392,6 +406,7 @@ void TearingEngine<DataTypes>::doFracture()
 
     d_fractureBaryCoef.endEdit();
     d_fractureCoord_kmin.endEdit();
+    d_fractureBool.endEdit();
 }
 
 
