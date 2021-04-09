@@ -31,11 +31,15 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
     , stepByStep(initData(&stepByStep, false, "stepByStep", "Flag activating step by step option for tearing"))
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
+    , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
 
     , d_fractureIndices(initData(&d_fractureIndices, "fractureIndices", "TEST fracture indices"))
     , d_fractureBaryCoef(initData(&d_fractureBaryCoef, "fractureBaryCoef", "TEST fracture BaryCoef"))
     , d_fractureCoord_kmin(initData(&d_fractureCoord_kmin, "fractureCoord_kmin", "TEST fracture Coord_kmin"))
     , d_fractureBool(initData(&d_fractureBool, "fractureBool", "TEST fracture Bool"))
+
+    , d_intersectionFractureEdgeBool(initData(&d_intersectionFractureEdgeBool, "intersectionFractureEdgeBool", "TEST intersection FractureEdge Bool"))
+    , d_intersectionFractureEdgeBaryCoef(initData(&d_intersectionFractureEdgeBaryCoef, "intersectionFractureEdgeBaryCoef", "TEST intersection FractureEdge BaryCoef"))
 {
     addInput(&input_position);
     addInput(&d_seuilArea);
@@ -106,7 +110,11 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue()) doFracture();
+    if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue())
+    {
+        doFracture();
+        intersectionFractureEdge();
+    }
 }
 
 
@@ -207,6 +215,15 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vecteur.push_back(fractureCompute);
             vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.1, 0, 1));
             vecteur.clear();
+
+            vector<Coord> points;
+            Real norm_fractureDirection = fractureDirection.norm();
+            Coord testB = Pa + d_fractureMaxLength.getValue()/norm_fractureDirection*fractureDirection ;
+            Coord testC = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            points.push_back(testB);
+            points.push_back(testC);
+            vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
+
         }
     }
 }
@@ -383,6 +400,11 @@ void TearingEngine<DataTypes>::doFracture()
     Coord fractureDirection;
     fractureDirection[0] = -principalStressDirection[1];
     fractureDirection[1] = principalStressDirection[0];
+    Real norm_fractureDirection=fractureDirection.norm();
+    Coord Pb = Pa - d_fractureMaxLength.getValue()/ norm_fractureDirection *fractureDirection;
+    Coord Pc = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection *fractureDirection;
+
+
 
     sofa::helper::vector<Index> indices;
     indices.push_back(48);
@@ -409,7 +431,28 @@ void TearingEngine<DataTypes>::doFracture()
     d_fractureBool.endEdit();
 }
 
+template <class DataTypes>
+void TearingEngine<DataTypes>::intersectionFractureEdge()
+{
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
 
+    Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+    Coord Pa = x[d_indexVertexMaxStress.getValue()];
+    Coord fractureDirection;
+    fractureDirection[0] = -principalStressDirection[1];
+    fractureDirection[1] = principalStressDirection[0];
+    Real norm_fractureDirection = fractureDirection.norm();
+    Coord Pb = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+    Coord Pc = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+
+    bool& intersectionFractureEdgeBool = *(d_intersectionFractureEdgeBool.beginEdit());
+    double intersectionFractureEdgeBaryCoef = *(d_intersectionFractureEdgeBaryCoef.beginEdit());
+
+    intersectionFractureEdgeBool = m_triangleGeo->computeEdgeSegmentIntersection(45, Pc, Pb, intersectionFractureEdgeBaryCoef);
+   
+    d_intersectionFractureEdgeBool.endEdit();
+    d_intersectionFractureEdgeBaryCoef.endEdit();
+}
 
 } //namespace sofa::component::engine
 
