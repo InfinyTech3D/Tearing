@@ -32,6 +32,8 @@ public:
 	typedef typename DataTypes::Coord Coord;
 	typedef typename DataTypes::VecCoord VecCoord;
 
+	typedef sofa::core::topology::BaseMeshTopology::Edge Edge;
+
 	typedef sofa::core::topology::BaseMeshTopology::Index Index;
 	typedef sofa::core::topology::BaseMeshTopology::Triangle Element;
 	typedef sofa::core::topology::BaseMeshTopology::SeqTriangles VecElement;
