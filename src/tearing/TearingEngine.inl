@@ -215,7 +215,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
                 Coord fractureCompute = d_fractureBaryCoef.getValue() * x[fractureIndices[1]] + (1 - d_fractureBaryCoef.getValue()) * x[fractureIndices[0]];
                 vecteur.push_back(Pa);
                 vecteur.push_back(fractureCompute);
-                //vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.1, 0, 1));
+                vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.1, 0, 1));
                 vecteur.clear();
 
                 vector<Coord> points;
@@ -227,11 +227,12 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
                 vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
                 points.clear();
                 //----------------------------------------
-                const Edge edge = m_topology->getEdge(45);
+                const Edge edge = m_topology->getEdge(125);
                 Coord intersection = x[edge[0]] + d_intersectionFractureEdgeBaryCoef.getValue() * (x[edge[1]] - x[edge[0]]);
+                //Coord intersection = Pa + d_intersectionFractureEdgeBaryCoef.getValue() * (testB - Pa);
                 //Coord intersection = x[edge[1]];
                 points.push_back(intersection);
-                vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0, 0, 1));
+                vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
 
             }
 
@@ -453,20 +454,19 @@ void TearingEngine<DataTypes>::intersectionFractureEdge()
     fractureDirection[0] = -principalStressDirection[1];
     fractureDirection[1] = principalStressDirection[0];
     Real norm_fractureDirection = fractureDirection.norm();
-    Coord Pb = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-    Coord Pc = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+    Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+    Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 
     bool& intersectionFractureEdgeBool = *(d_intersectionFractureEdgeBool.beginEdit());
     double& intersectionFractureEdgeBaryCoef = *(d_intersectionFractureEdgeBaryCoef.beginEdit());
 
-    intersectionFractureEdgeBool = m_triangleGeo->computeEdgeSegmentIntersection(45, Pc, Pb, intersectionFractureEdgeBaryCoef);
+    //intersectionFractureEdgeBool = m_triangleGeo->computeEdgeSegmentIntersection(45, Pb, Pc, intersectionFractureEdgeBaryCoef);
+    sofa::helper::vector<Index> indices;
+    double coord_kmin;
+    intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersection(true, Pc, Pb, 13, indices, intersectionFractureEdgeBaryCoef, coord_kmin);
 
     d_intersectionFractureEdgeBool.endEdit();
     d_intersectionFractureEdgeBaryCoef.endEdit();
 }
 
 } //namespace sofa::component::engine
-
-
-
-
