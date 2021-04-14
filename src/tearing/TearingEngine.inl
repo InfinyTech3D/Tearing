@@ -463,8 +463,12 @@ void TearingEngine<DataTypes>::intersectionFractureEdge()
     //intersectionFractureEdgeBool = m_triangleGeo->computeEdgeSegmentIntersection(45, Pb, Pc, intersectionFractureEdgeBaryCoef);
     sofa::helper::vector<Index> indices;
     double coord_kmin;
-    intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersection(true, Pc, Pb, 13, indices, intersectionFractureEdgeBaryCoef, coord_kmin);
-
+    intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersection(false, Pc, Pb, 13, indices, intersectionFractureEdgeBaryCoef, coord_kmin);
+    sofa::helper::vector<Index> indices2;
+    sofa::helper::vector<double> vecBaryCoef;
+    intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersections(false, Pc, Pb, 13, indices2, vecBaryCoef);
+    std::cout << "main indice= " << indices2 << std::endl;
+    std::cout << "main vecBaryCoef= " << vecBaryCoef << std::endl;
     d_intersectionFractureEdgeBool.endEdit();
     d_intersectionFractureEdgeBaryCoef.endEdit();
 }
