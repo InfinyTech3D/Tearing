@@ -106,14 +106,18 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
 {
     d_counter.setValue(d_counter.getValue() + 1);
+    std::cout << "counter=" << d_counter.getValue() << std::endl;
     computeArea();
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue())
+    if ((d_counter.getValue() % 10) == 0 && d_counter.getValue()>=10 || !stepByStep.getValue())
     {
+        std::cout << "  enter fracture" << std::endl;
         doFracture();
         intersectionFractureEdge();
+        if(d_counter.getValue()>10)
+            algoFracturePath();
     }
 }
 
@@ -466,11 +470,74 @@ void TearingEngine<DataTypes>::intersectionFractureEdge()
     intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersection(false, Pc, Pb, 13, indices, intersectionFractureEdgeBaryCoef, coord_kmin);
     sofa::helper::vector<Index> indices2;
     sofa::helper::vector<double> vecBaryCoef;
-    intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersections(false, Pc, Pb, 13, indices2, vecBaryCoef);
-    std::cout << "main indice= " << indices2 << std::endl;
-    std::cout << "main vecBaryCoef= " << vecBaryCoef << std::endl;
+    //intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersections(false, Pa, Pb, 73, indices2, vecBaryCoef);
+    //std::cout << "main indice= " << indices2 << std::endl;
+    //std::cout << "main vecBaryCoef= " << vecBaryCoef << std::endl;
     d_intersectionFractureEdgeBool.endEdit();
     d_intersectionFractureEdgeBaryCoef.endEdit();
+}
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::algoFracturePath()
+{
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    sofa::helper::vector<Coord> path;
+    
+
+    //On cherche le point de départ
+    Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+    Coord Pa= x[d_indexVertexMaxStress.getValue()];
+    
+    //On détermine les B et C, extrémités de la fracture
+    Coord fractureDirection;
+    fractureDirection[0] = -principalStressDirection[1];
+    fractureDirection[1] = principalStressDirection[0];
+    Real norm_fractureDirection = fractureDirection.norm();
+    Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+    Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+
+    /*
+    //Côté B
+    Coord current_point = Pa;
+    Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pb - current_point);
+    std::cout << "      current_triangle= " << current_triangle << std::endl;
+    sofa::helper::vector<Index> candidateIndice;
+    sofa::helper::vector<double> candidateBarycoef;
+    m_triangleGeo->computeSegmentTriangleIntersections(false, Pa-, Pb, current_triangle, candidateIndice, candidateBarycoef);
+    std::cout << "      candidateIndice= " << candidateIndice << std::endl;
+    std::cout << "      candidateBarycoef= " << candidateBarycoef << std::endl;
+    //si on a deux candidats il ne faut pas reprendre le même
+    */
+
+
+    //Côté C
+    Coord current_point = Pa;
+    Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - current_point);
+    std::cout << "      current_triangle= " << current_triangle << std::endl;
+    sofa::helper::vector<Index> candidateIndice;
+    sofa::helper::vector<double> candidateBarycoef;
+    m_triangleGeo->computeSegmentTriangleIntersections(false, current_point, Pc, current_triangle, candidateIndice, candidateBarycoef);
+    std::cout << "      candidateIndice= " << candidateIndice << std::endl;
+    std::cout << "      candidateBarycoef= " << candidateBarycoef << std::endl;
+   
+    Coord next_point = x[candidateIndice[0]] + candidateBarycoef[0] * (x[candidateIndice[1]] - x[candidateIndice[0]]);
+    Index next_point_edgeId = m_topology->getEdgeIndex(candidateIndice[0], candidateIndice[1]);
+    std::cout << "      next_point_edgeId= " << next_point_edgeId << std::endl;
+
+    sofa::helper::vector<Index>next_triangle_candidate = m_topology->getTrianglesAroundEdge(next_point_edgeId);
+    std::cout << "      next_triangle_candidate= " << next_triangle_candidate << std::endl;
+    Index next_triangle=-1;
+    if (next_triangle_candidate.size() == 1)
+    {
+        //maybe créer un bool is_resuming et le passer à false ici, condition d'arrêt : pas de prochain triangle
+    }
+    else
+    {
+        
+        next_triangle = (current_triangle == next_triangle_candidate[0]) ? next_triangle_candidate[1] : next_triangle_candidate[0];
+    }
+    std::cout << "      next_triangle= " << next_triangle << std::endl;
+
 }
 
 } //namespace sofa::component::engine
