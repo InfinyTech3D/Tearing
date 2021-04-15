@@ -121,6 +121,7 @@ public:
 
 	/// Test algoFracturePath
 	void algoFracturePath();
+	Data<vector<Coord>> d_fracturePath;
 
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;

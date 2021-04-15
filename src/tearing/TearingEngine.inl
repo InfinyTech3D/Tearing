@@ -40,6 +40,7 @@ TearingEngine<DataTypes>::TearingEngine()
 
     , d_intersectionFractureEdgeBool(initData(&d_intersectionFractureEdgeBool, "intersectionFractureEdgeBool", "TEST intersection FractureEdge Bool"))
     , d_intersectionFractureEdgeBaryCoef(initData(&d_intersectionFractureEdgeBaryCoef,2.0, "intersectionFractureEdgeBaryCoef", "TEST intersection FractureEdge BaryCoef"))
+    , d_fracturePath(initData(&d_fracturePath,"d_fracturePath","path created by algoFracturePath"))
 {
     addInput(&input_position);
     addInput(&d_seuilArea);
@@ -93,7 +94,7 @@ void TearingEngine<DataTypes>::init()
     //triangleOverThresholdArea();
     triangleOverThresholdPrincipalStress();
     d_counter.setValue(0);
-
+    
 }
 
 template <class DataTypes>
@@ -236,12 +237,13 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
                 //Coord intersection = Pa + d_intersectionFractureEdgeBaryCoef.getValue() * (testB - Pa);
                 //Coord intersection = x[edge[1]];
                 points.push_back(intersection);
-                vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                //vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
 
             }
 
         }
     }
+    vparams->drawTool()->drawPoints(d_fracturePath.getValue(), 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
 }
 
 
@@ -481,12 +483,15 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
     helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    sofa::helper::vector<Coord> path;
+    helper::WriteAccessor< Data<vector<Coord>> > path(d_fracturePath);
+    path.clear();
     double EPS = 1e-8;
+
 
     //On cherche le point de départ
     Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
     Coord Pa= x[d_indexVertexMaxStress.getValue()];
+    path.push_back(Pa);
     
     //On détermine les B et C, extrémités de la fracture
     Coord fractureDirection;
@@ -496,31 +501,18 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
     Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 
-    /*
-    //Côté B
-    Coord current_point = Pa;
-    Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pb - current_point);
-    std::cout << "      current_triangle= " << current_triangle << std::endl;
-    sofa::helper::vector<Index> candidateIndice;
-    sofa::helper::vector<double> candidateBarycoef;
-    m_triangleGeo->computeSegmentTriangleIntersections(false, Pa-, Pb, current_triangle, candidateIndice, candidateBarycoef);
-    std::cout << "      candidateIndice= " << candidateIndice << std::endl;
-    std::cout << "      candidateBarycoef= " << candidateBarycoef << std::endl;
-    //si on a deux candidats il ne faut pas reprendre le même
-    */
-
-
     //Côté C
     Coord current_point = Pa;
     Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - current_point);
 
     //début de la boucle
-    for (unsigned int k = 0; k < 7; k++)
+    while(true)
     {
         std::cout << "      current_triangle= " << current_triangle << std::endl;
         sofa::helper::vector<Index> candidateIndice;
         sofa::helper::vector<double> candidateBarycoef;
-        bool intersection_exist = m_triangleGeo->computeSegmentTriangleIntersections(false, current_point, Pc, current_triangle, candidateIndice, candidateBarycoef);
+        sofa::helper::vector<double> candidateCoordKmin;
+        bool intersection_exist = m_triangleGeo->computeSegmentTriangleIntersections(false, current_point, Pc, current_triangle, candidateIndice, candidateBarycoef, candidateCoordKmin);
         if (intersection_exist == false)
             break;
         std::cout << "      candidateIndice= " << candidateIndice << std::endl;
@@ -548,11 +540,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
         std::cout << "                  Indice= " << candidateIndice[2 * j]<< " "<<candidateIndice[2 * j+1] << std::endl;
         std::cout << "                  Barycoef= " << candidateBarycoef[j] << std::endl;
+        //on vérifie que nous n'avons pas dépassé l'extrémité
+        if (candidateCoordKmin[j] >= 1)
+            break;
         Coord next_point = x[candidateIndice[2 * j]] + candidateBarycoef[j] * (x[candidateIndice[2 * j + 1]] - x[candidateIndice[2 * j]]);
+        path.push_back(next_point);
 
-        //Regarder si le next_point est sur un sommet ou une arrête
-            //hyp1: en regardant le barycoef si il est proche de 0 ou de 1
-            //hyp2: en utilisant les coordonnées de plucker pour déterminer le type d'intersection entre un triangle et une droite
         Index next_triangle = -1;
         if (candidateBarycoef[j] < EPS || abs(candidateBarycoef[j] - 1) < EPS)
         {
@@ -577,11 +570,10 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
         }
 
-
-
-        //std::cout << "      next_point_edgeId= " << next_point_edgeId << std::endl;
-        //std::cout << "      next_triangle_candidate= " << next_triangle_candidate << std::endl;
         std::cout << "      next_triangle= " << next_triangle << std::endl;
+        //si on est au bord, il n'y a pas de next_triangle
+        if (next_triangle == -1)
+            break;
 
 
         //MAJ
@@ -589,11 +581,92 @@ void TearingEngine<DataTypes>::algoFracturePath()
         current_point = next_point;
         candidateIndice.clear();
         candidateBarycoef.clear();
-        //m_triangleGeo->computeSegmentTriangleIntersections(false, next_point, Pc, next_triangle, candidateIndice, candidateBarycoef);
-        //std::cout << "          testcandidateIndice= " << candidateIndice << std::endl;
-        //std::cout << "          testcandidateBarycoef= " << candidateBarycoef << std::endl;
     }
+    path.push_back(Pc);
 
+
+    //Côté B
+    current_point = Pa;
+    current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pb - current_point);
+
+    //début de la boucle
+    while(true)
+    {
+        std::cout << "      current_triangle= " << current_triangle << std::endl;
+        sofa::helper::vector<Index> candidateIndice;
+        sofa::helper::vector<double> candidateBarycoef;
+        sofa::helper::vector<double> candidateCoordKmin;
+        bool intersection_exist = m_triangleGeo->computeSegmentTriangleIntersections(false, current_point, Pb, current_triangle, candidateIndice, candidateBarycoef, candidateCoordKmin);
+        if (intersection_exist == false)
+            break;
+        std::cout << "      candidateIndice= " << candidateIndice << std::endl;
+        std::cout << "      candidateBarycoef= " << candidateBarycoef << std::endl;
+
+
+        //choisir parmis les candidats
+        int j = -1;
+        if (candidateBarycoef.size() > 1)
+        {
+            for (unsigned int i = 0; i < candidateBarycoef.size(); i++)
+            {
+                Coord next_point_candidat = x[candidateIndice[2 * i]] + candidateBarycoef[i] * (x[candidateIndice[2 * i + 1]] - x[candidateIndice[2 * i]]);
+                if ((current_point - next_point_candidat) * (current_point - next_point_candidat) > EPS)
+                {
+                    j = i;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            j = 0;
+        }
+
+        std::cout << "                  Indice= " << candidateIndice[2 * j] << " " << candidateIndice[2 * j + 1] << std::endl;
+        std::cout << "                  Barycoef= " << candidateBarycoef[j] << std::endl;
+        //on vérifie que nous n'avons pas dépassé l'extrémité
+        if (candidateCoordKmin[j] >= 1)
+            break;
+        Coord next_point = x[candidateIndice[2 * j]] + candidateBarycoef[j] * (x[candidateIndice[2 * j + 1]] - x[candidateIndice[2 * j]]);
+        path.push_back(next_point);
+
+        Index next_triangle = -1;
+        if (candidateBarycoef[j] < EPS || abs(candidateBarycoef[j] - 1) < EPS)
+        {
+            //next_point est sur un sommet
+            if (candidateBarycoef[j] < EPS)
+            {
+                next_triangle = m_triangleGeo->getTriangleInDirection(candidateIndice[2 * j], Pc - x[candidateIndice[2 * j]]);
+            }
+            else
+            {
+                next_triangle = m_triangleGeo->getTriangleInDirection(candidateIndice[2 * j + 1], Pc - x[candidateIndice[2 * j + 1]]);
+            }
+        }
+        else
+        {
+            //next_point est sur un edge
+            Index next_point_edgeId = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
+            sofa::helper::vector<Index>next_triangle_candidate = m_topology->getTrianglesAroundEdge(next_point_edgeId);
+
+            if (next_triangle_candidate.size() > 1)
+                next_triangle = (current_triangle == next_triangle_candidate[0]) ? next_triangle_candidate[1] : next_triangle_candidate[0];
+
+        }
+
+        std::cout << "      next_triangle= " << next_triangle << std::endl;
+        //si on est au bord, il n'y a pas de next_triangle
+        if (next_triangle == -1)
+            break;
+
+
+        //MAJ
+        current_triangle = next_triangle;
+        current_point = next_point;
+        candidateIndice.clear();
+        candidateBarycoef.clear();
+    }
+    path.push_back(Pb);
 }
 
 } //namespace sofa::component::engine
