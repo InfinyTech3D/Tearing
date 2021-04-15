@@ -111,7 +111,7 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    if ((d_counter.getValue() % 10) == 0 && d_counter.getValue()>=10 || !stepByStep.getValue())
+    if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue())
     {
         std::cout << "  enter fracture" << std::endl;
         doFracture();
@@ -482,7 +482,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
 {
     helper::ReadAccessor< Data<VecCoord> > x(input_position);
     sofa::helper::vector<Coord> path;
-    
+    double EPS = 1e-8;
 
     //On cherche le point de départ
     Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
@@ -513,30 +513,86 @@ void TearingEngine<DataTypes>::algoFracturePath()
     //Côté C
     Coord current_point = Pa;
     Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - current_point);
-    std::cout << "      current_triangle= " << current_triangle << std::endl;
-    sofa::helper::vector<Index> candidateIndice;
-    sofa::helper::vector<double> candidateBarycoef;
-    m_triangleGeo->computeSegmentTriangleIntersections(false, current_point, Pc, current_triangle, candidateIndice, candidateBarycoef);
-    std::cout << "      candidateIndice= " << candidateIndice << std::endl;
-    std::cout << "      candidateBarycoef= " << candidateBarycoef << std::endl;
-   
-    Coord next_point = x[candidateIndice[0]] + candidateBarycoef[0] * (x[candidateIndice[1]] - x[candidateIndice[0]]);
-    Index next_point_edgeId = m_topology->getEdgeIndex(candidateIndice[0], candidateIndice[1]);
-    std::cout << "      next_point_edgeId= " << next_point_edgeId << std::endl;
 
-    sofa::helper::vector<Index>next_triangle_candidate = m_topology->getTrianglesAroundEdge(next_point_edgeId);
-    std::cout << "      next_triangle_candidate= " << next_triangle_candidate << std::endl;
-    Index next_triangle=-1;
-    if (next_triangle_candidate.size() == 1)
+    //début de la boucle
+    for (unsigned int k = 0; k < 7; k++)
     {
-        //maybe créer un bool is_resuming et le passer à false ici, condition d'arrêt : pas de prochain triangle
+        std::cout << "      current_triangle= " << current_triangle << std::endl;
+        sofa::helper::vector<Index> candidateIndice;
+        sofa::helper::vector<double> candidateBarycoef;
+        bool intersection_exist = m_triangleGeo->computeSegmentTriangleIntersections(false, current_point, Pc, current_triangle, candidateIndice, candidateBarycoef);
+        if (intersection_exist == false)
+            break;
+        std::cout << "      candidateIndice= " << candidateIndice << std::endl;
+        std::cout << "      candidateBarycoef= " << candidateBarycoef << std::endl;
+
+
+        //choisir parmis les candidats
+        int j = -1;
+        if (candidateBarycoef.size() > 1)
+        {
+            for (unsigned int i = 0; i < candidateBarycoef.size(); i++)
+            {
+                Coord next_point_candidat = x[candidateIndice[2 * i]] + candidateBarycoef[i] * (x[candidateIndice[2 * i + 1]] - x[candidateIndice[2 * i]]);
+                if ((current_point - next_point_candidat) * (current_point - next_point_candidat) > EPS)
+                {
+                    j = i;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            j = 0;
+        }
+
+        std::cout << "                  Indice= " << candidateIndice[2 * j]<< " "<<candidateIndice[2 * j+1] << std::endl;
+        std::cout << "                  Barycoef= " << candidateBarycoef[j] << std::endl;
+        Coord next_point = x[candidateIndice[2 * j]] + candidateBarycoef[j] * (x[candidateIndice[2 * j + 1]] - x[candidateIndice[2 * j]]);
+
+        //Regarder si le next_point est sur un sommet ou une arrête
+            //hyp1: en regardant le barycoef si il est proche de 0 ou de 1
+            //hyp2: en utilisant les coordonnées de plucker pour déterminer le type d'intersection entre un triangle et une droite
+        Index next_triangle = -1;
+        if (candidateBarycoef[j] < EPS || abs(candidateBarycoef[j] - 1) < EPS)
+        {
+            //next_point est sur un sommet
+            if (candidateBarycoef[j] < EPS)
+            {
+                next_triangle = m_triangleGeo->getTriangleInDirection(candidateIndice[2 * j], Pc - x[candidateIndice[2 * j]]);
+            }
+            else
+            {
+                next_triangle = m_triangleGeo->getTriangleInDirection(candidateIndice[2 * j + 1], Pc - x[candidateIndice[2 * j + 1]]);
+            }
+        }
+        else
+        {
+            //next_point est sur un edge
+            Index next_point_edgeId = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
+            sofa::helper::vector<Index>next_triangle_candidate = m_topology->getTrianglesAroundEdge(next_point_edgeId);
+
+            if (next_triangle_candidate.size() > 1)
+                next_triangle = (current_triangle == next_triangle_candidate[0]) ? next_triangle_candidate[1] : next_triangle_candidate[0];
+
+        }
+
+
+
+        //std::cout << "      next_point_edgeId= " << next_point_edgeId << std::endl;
+        //std::cout << "      next_triangle_candidate= " << next_triangle_candidate << std::endl;
+        std::cout << "      next_triangle= " << next_triangle << std::endl;
+
+
+        //MAJ
+        current_triangle = next_triangle;
+        current_point = next_point;
+        candidateIndice.clear();
+        candidateBarycoef.clear();
+        //m_triangleGeo->computeSegmentTriangleIntersections(false, next_point, Pc, next_triangle, candidateIndice, candidateBarycoef);
+        //std::cout << "          testcandidateIndice= " << candidateIndice << std::endl;
+        //std::cout << "          testcandidateBarycoef= " << candidateBarycoef << std::endl;
     }
-    else
-    {
-        
-        next_triangle = (current_triangle == next_triangle_candidate[0]) ? next_triangle_candidate[1] : next_triangle_candidate[0];
-    }
-    std::cout << "      next_triangle= " << next_triangle << std::endl;
 
 }
 
