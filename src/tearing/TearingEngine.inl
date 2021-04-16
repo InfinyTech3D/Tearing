@@ -31,15 +31,9 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
+
+    , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
-
-    , d_fractureIndices(initData(&d_fractureIndices, "fractureIndices", "TEST fracture indices"))
-    , d_fractureBaryCoef(initData(&d_fractureBaryCoef, "fractureBaryCoef", "TEST fracture BaryCoef"))
-    , d_fractureCoord_kmin(initData(&d_fractureCoord_kmin, "fractureCoord_kmin", "TEST fracture Coord_kmin"))
-    , d_fractureBool(initData(&d_fractureBool, "fractureBool", "TEST fracture Bool"))
-
-    , d_intersectionFractureEdgeBool(initData(&d_intersectionFractureEdgeBool, "intersectionFractureEdgeBool", "TEST intersection FractureEdge Bool"))
-    , d_intersectionFractureEdgeBaryCoef(initData(&d_intersectionFractureEdgeBaryCoef,2.0, "intersectionFractureEdgeBaryCoef", "TEST intersection FractureEdge BaryCoef"))
     , d_fracturePath(initData(&d_fracturePath,"d_fracturePath","path created by algoFracturePath"))
 {
     addInput(&input_position);
@@ -112,14 +106,12 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue())
-    {
-        std::cout << "  enter fracture" << std::endl;
-        doFracture();
-        intersectionFractureEdge();
-        if(d_counter.getValue()>10)
+    //if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue())
+    //{
+    //    std::cout << "  enter fracture" << std::endl;
+    //    if(d_counter.getValue()>10)
             algoFracturePath();
-    }
+    //}
 }
 
 
@@ -176,7 +168,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         vertices.clear();
         colorVector.clear();
     }
-    
+
     if (showTearableTriangle.getValue())
     {
         VecElement triangleList = m_topology->getTriangles();
@@ -212,42 +204,32 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vecteur.push_back(Pa + fractureDirection);
             vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.65, 0, 1));
             vecteur.clear();
-
-            helper::WriteAccessor< Data<vector<Index>> > fractureIndices(d_fractureIndices);
-            if (fractureIndices.size())
-            {
-
-                Coord fractureCompute = d_fractureBaryCoef.getValue() * x[fractureIndices[1]] + (1 - d_fractureBaryCoef.getValue()) * x[fractureIndices[0]];
-                vecteur.push_back(Pa);
-                vecteur.push_back(fractureCompute);
-                vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.1, 0, 1));
-                vecteur.clear();
-
-                vector<Coord> points;
-                Real norm_fractureDirection = fractureDirection.norm();
-                Coord testB = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-                Coord testC = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-                points.push_back(testB);
-                points.push_back(testC);
-                vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
-                points.clear();
-                //----------------------------------------
-                const Edge edge = m_topology->getEdge(125);
-                Coord intersection = x[edge[0]] + d_intersectionFractureEdgeBaryCoef.getValue() * (x[edge[1]] - x[edge[0]]);
-                //Coord intersection = Pa + d_intersectionFractureEdgeBaryCoef.getValue() * (testB - Pa);
-                //Coord intersection = x[edge[1]];
-                points.push_back(intersection);
-                //vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
-
-            }
-
         }
     }
-    helper::ReadAccessor< Data<vector<Coord>> > path(d_fracturePath);
-    if (path.size())
-        vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
-}
+    if (showFracturePath.getValue())
+    {
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+        Coord Pa = x[d_indexVertexMaxStress.getValue()];
+        Coord fractureDirection;
+        fractureDirection[0] = -principalStressDirection[1];
+        fractureDirection[1] = principalStressDirection[0];
 
+        vector<Coord> points;
+        Real norm_fractureDirection = fractureDirection.norm();
+        Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+        Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+        points.push_back(Pb);
+        points.push_back(Pc);
+        vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
+        vparams->drawTool()->drawLines(points, 1, sofa::helper::types::RGBAColor(1, 0.5, 0, 1));
+        points.clear();
+
+        helper::ReadAccessor< Data<vector<Coord>> > path(d_fracturePath);
+        if (path.size())
+            vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+    }
+}
 
 
 // --------------------------------------------------------------------------------------
@@ -411,77 +393,6 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
 }
 
 template <class DataTypes>
-void TearingEngine<DataTypes>::doFracture()
-{
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-
-    Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-    Coord Pa = x[d_indexVertexMaxStress.getValue()];
-    Coord fractureDirection;
-    fractureDirection[0] = -principalStressDirection[1];
-    fractureDirection[1] = principalStressDirection[0];
-    Real norm_fractureDirection=fractureDirection.norm();
-    Coord Pb = Pa - d_fractureMaxLength.getValue()/ norm_fractureDirection *fractureDirection;
-    Coord Pc = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection *fractureDirection;
-
-
-
-    sofa::helper::vector<Index> indices;
-    indices.push_back(48);
-    indices.push_back(642);
-    double baryCoef;
-    double coord_kmin;
-    
-    bool& fractureBool = *(d_fractureBool.beginEdit());
-    fractureBool=m_triangleGeo->computeSegmentTriangleIntersection(true, Pa, Pa + fractureDirection, d_indexTriangleMaxStress.getValue(), indices, baryCoef, coord_kmin);
-
-    helper::WriteAccessor< Data<vector<Index>> > fractureIndices(d_fractureIndices);
-    Real& fractureBaryCoef = *(d_fractureBaryCoef.beginEdit());
-    Real& fractureCoord_kmin = *(d_fractureCoord_kmin.beginEdit());
-    
-
-    fractureIndices.clear();
-    for (unsigned int i = 0; i < indices.size(); i++)
-        fractureIndices.push_back(indices[i]);
-    fractureBaryCoef = baryCoef;
-    fractureCoord_kmin = coord_kmin;
-
-    d_fractureBaryCoef.endEdit();
-    d_fractureCoord_kmin.endEdit();
-    d_fractureBool.endEdit();
-}
-
-template <class DataTypes>
-void TearingEngine<DataTypes>::intersectionFractureEdge()
-{
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-
-    Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-    Coord Pa = x[d_indexVertexMaxStress.getValue()];
-    Coord fractureDirection;
-    fractureDirection[0] = -principalStressDirection[1];
-    fractureDirection[1] = principalStressDirection[0];
-    Real norm_fractureDirection = fractureDirection.norm();
-    Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-    Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-
-    bool& intersectionFractureEdgeBool = *(d_intersectionFractureEdgeBool.beginEdit());
-    double& intersectionFractureEdgeBaryCoef = *(d_intersectionFractureEdgeBaryCoef.beginEdit());
-
-    //intersectionFractureEdgeBool = m_triangleGeo->computeEdgeSegmentIntersection(45, Pb, Pc, intersectionFractureEdgeBaryCoef);
-    sofa::helper::vector<Index> indices;
-    double coord_kmin;
-    intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersection(false, Pc, Pb, 13, indices, intersectionFractureEdgeBaryCoef, coord_kmin);
-    sofa::helper::vector<Index> indices2;
-    sofa::helper::vector<double> vecBaryCoef;
-    //intersectionFractureEdgeBool = m_triangleGeo->computeSegmentTriangleIntersections(false, Pa, Pb, 73, indices2, vecBaryCoef);
-    //std::cout << "main indice= " << indices2 << std::endl;
-    //std::cout << "main vecBaryCoef= " << vecBaryCoef << std::endl;
-    d_intersectionFractureEdgeBool.endEdit();
-    d_intersectionFractureEdgeBaryCoef.endEdit();
-}
-
-template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
     helper::ReadAccessor< Data<VecCoord> > x(input_position);
@@ -513,7 +424,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
     //début de la boucle
     while(sideC_resumed)
     {
-        std::cout << "      current_triangle= " << current_triangle << std::endl;
         sofa::helper::vector<Index> candidateIndice;
         sofa::helper::vector<double> candidateBarycoef;
         sofa::helper::vector<double> candidateCoordKmin;
@@ -523,8 +433,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             sideC_resumed = false;
             break;
         }
-        std::cout << "      candidateIndice= " << candidateIndice << std::endl;
-        std::cout << "      candidateBarycoef= " << candidateBarycoef << std::endl;
 
 
         //choisir parmis les candidats
@@ -546,8 +454,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             j = 0;
         }
 
-        std::cout << "                  Indice= " << candidateIndice[2 * j]<< " "<<candidateIndice[2 * j+1] << std::endl;
-        std::cout << "                  Barycoef= " << candidateBarycoef[j] << std::endl;
         //on vérifie que nous n'avons pas dépassé l'extrémité
         if (candidateCoordKmin[j] >= 1)
         {
@@ -581,7 +487,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
         }
 
-        std::cout << "      next_triangle= " << next_triangle << std::endl;
         //si on est au bord, il n'y a pas de next_triangle
         if (next_triangle > m_topology->getNbTriangles() - 1)
         {
@@ -608,7 +513,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
     //début de la boucle
     while(sideB_resumed)
     {
-        std::cout << "      current_triangle= " << current_triangle << std::endl;
         sofa::helper::vector<Index> candidateIndice;
         sofa::helper::vector<double> candidateBarycoef;
         sofa::helper::vector<double> candidateCoordKmin;
@@ -618,9 +522,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             sideB_resumed = false;
             break;
         }
-        std::cout << "      candidateIndice= " << candidateIndice << std::endl;
-        std::cout << "      candidateBarycoef= " << candidateBarycoef << std::endl;
-
 
         //choisir parmis les candidats
         int j = -1;
@@ -641,8 +542,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             j = 0;
         }
 
-        std::cout << "                  Indice= " << candidateIndice[2 * j] << " " << candidateIndice[2 * j + 1] << std::endl;
-        std::cout << "                  Barycoef= " << candidateBarycoef[j] << std::endl;
         //on vérifie que nous n'avons pas dépassé l'extrémité
         if (candidateCoordKmin[j] >= 1)
         {
@@ -676,7 +575,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
         }
 
-        std::cout << "      next_triangle= " << next_triangle << std::endl;
         //si on est au bord, il n'y a pas de next_triangle
         if (next_triangle > m_topology->getNbTriangles() - 1)
         {
@@ -685,7 +583,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
         }
 
         //MAJ
-        std::cout << "MAJ MAJ MAJ MAJ"<< std::endl;
         current_triangle = next_triangle;
         current_point = next_point;
         candidateIndice.clear();
