@@ -106,12 +106,12 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    //if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue())
-    //{
-    //    std::cout << "  enter fracture" << std::endl;
-    //    if(d_counter.getValue()>10)
+    if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue())
+    {
+        std::cout << "  enter fracture" << std::endl;
+        if(d_counter.getValue()>10)
             algoFracturePath();
-    //}
+    }
 }
 
 
@@ -202,7 +202,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             fractureDirection[1] = principalStressDirection[0];
             vecteur.push_back(Pa);
             vecteur.push_back(Pa + fractureDirection);
-            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1, 0.65, 0, 1));
+            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1.0, 0.65, 0.0, 1.0));
             vecteur.clear();
         }
     }
@@ -400,12 +400,11 @@ void TearingEngine<DataTypes>::algoFracturePath()
     path.clear();
     double EPS = 1e-8;
 
-
     //On cherche le point de départ
     Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-    Coord Pa= x[d_indexVertexMaxStress.getValue()];
+    Coord Pa = x[d_indexVertexMaxStress.getValue()];
     path.push_back(Pa);
-    
+
     //On détermine les B et C, extrémités de la fracture
     Coord fractureDirection;
     fractureDirection[0] = -principalStressDirection[1];
@@ -413,6 +412,8 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Real norm_fractureDirection = fractureDirection.norm();
     Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
     Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+    bool pointB_inTriangle=false;
+    bool pointC_inTriangle=false;
 
     //Côté C
     bool sideC_resumed = true;
@@ -420,9 +421,13 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - current_point);
     if (current_triangle > m_topology->getNbTriangles() - 1)
         sideC_resumed = false;
+    sofa::helper::vector<Index> triangles_listC;
+    Index ind_edgeC;
+    sofa::helper::vector<Index> edges_listC;
+    sofa::helper::vector< double > coordsEdge_listC;
 
     //début de la boucle
-    while(sideC_resumed)
+    while (sideC_resumed)
     {
         sofa::helper::vector<Index> candidateIndice;
         sofa::helper::vector<double> candidateBarycoef;
@@ -457,6 +462,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         //on vérifie que nous n'avons pas dépassé l'extrémité
         if (candidateCoordKmin[j] >= 1)
         {
+            pointC_inTriangle = true;
             sideC_resumed = false;
             break;
         }
@@ -490,6 +496,11 @@ void TearingEngine<DataTypes>::algoFracturePath()
         //si on est au bord, il n'y a pas de next_triangle
         if (next_triangle > m_topology->getNbTriangles() - 1)
         {
+            triangles_listC.push_back(current_triangle);
+            ind_edgeC = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
+            edges_listC.push_back(ind_edgeC);
+            coordsEdge_listC.push_back(candidateBarycoef[j]);
+
             sideC_resumed = false;
             break;
         }
@@ -497,6 +508,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
         //MAJ
         current_triangle = next_triangle;
         current_point = next_point;
+
+        triangles_listC.push_back(current_triangle);
+        ind_edgeC = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
+        edges_listC.push_back(ind_edgeC);
+        coordsEdge_listC.push_back(candidateBarycoef[j]);
+
         candidateIndice.clear();
         candidateBarycoef.clear();
     }
@@ -509,9 +526,13 @@ void TearingEngine<DataTypes>::algoFracturePath()
     current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pb - current_point);
     if (current_triangle > m_topology->getNbTriangles() - 1)
         sideB_resumed = false;
+    sofa::helper::vector<Index> triangles_listB;
+    Index ind_edgeB;
+    sofa::helper::vector<Index> edges_listB;
+    sofa::helper::vector< double > coordsEdge_listB;
 
     //début de la boucle
-    while(sideB_resumed)
+    while (sideB_resumed)
     {
         sofa::helper::vector<Index> candidateIndice;
         sofa::helper::vector<double> candidateBarycoef;
@@ -545,6 +566,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         //on vérifie que nous n'avons pas dépassé l'extrémité
         if (candidateCoordKmin[j] >= 1)
         {
+            pointB_inTriangle = true;
             sideB_resumed = false;
             break;
         }
@@ -578,6 +600,11 @@ void TearingEngine<DataTypes>::algoFracturePath()
         //si on est au bord, il n'y a pas de next_triangle
         if (next_triangle > m_topology->getNbTriangles() - 1)
         {
+            triangles_listB.push_back(current_triangle);
+            ind_edgeB = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
+            edges_listB.push_back(ind_edgeB);
+            coordsEdge_listB.push_back(candidateBarycoef[j]);
+
             sideB_resumed = false;
             break;
         }
@@ -585,10 +612,57 @@ void TearingEngine<DataTypes>::algoFracturePath()
         //MAJ
         current_triangle = next_triangle;
         current_point = next_point;
+
+        triangles_listB.push_back(current_triangle);
+        ind_edgeB = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
+        edges_listB.push_back(ind_edgeB);
+        coordsEdge_listB.push_back(candidateBarycoef[j]);
+
         candidateIndice.clear();
         candidateBarycoef.clear();
     }
     path.push_back(Pb);
+
+
+    //equivalent STEP 4
+    sofa::helper::vector<Index> triangles_list;
+    sofa::helper::vector<Index> edges_list;
+    sofa::helper::vector< double > coordsEdge_list;
+    int sizeB = triangles_listB.size();
+    int sizeC = triangles_listC.size();
+    std::cout << "    sizeB=" << sizeB << std::endl;
+    std::cout << "    sizeC=" << sizeC << std::endl;
+    std::cout << "      pointB_inTriangle=" << pointB_inTriangle << std::endl;
+    std::cout << "      pointC_inTriangle=" << pointC_inTriangle << std::endl;
+
+    if (sizeB > 0)
+    {
+        for (unsigned int i = 0; i < sizeB; i++)
+        {
+            triangles_list.push_back(triangles_listB[sizeB - 1 - i]);
+            edges_list.push_back(edges_listB[sizeB - 1 - i]);
+            coordsEdge_list.push_back(coordsEdge_listB[sizeB - 1 - i]);
+        }
+    }
+
+    current_point = Pa;
+    current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - current_point);
+    if (!(current_triangle > m_topology->getNbTriangles() - 1))
+    {
+        triangles_list.push_back(current_triangle);
+        //edges_list[sizeB] = edges_listB[sizeB - 1 - i];
+        //coordsEdge_list[sizeB] = coordsEdge_listB[sizeB - 1 - i];
+    }
+
+    triangles_listB.clear();
+    edges_listB.clear();
+    coordsEdge_listB.clear();
+    triangles_listC.clear();
+    edges_listC.clear();
+    coordsEdge_listC.clear();
+    triangles_list.clear();
+    edges_list.clear();
+    coordsEdge_list.clear();
 }
 
 } //namespace sofa::component::engine
