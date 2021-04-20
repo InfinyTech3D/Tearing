@@ -106,10 +106,11 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    if ((d_counter.getValue() % 10) == 0 || !stepByStep.getValue())
+    int step = 50;
+    if ((d_counter.getValue() % step) == 0 || !stepByStep.getValue())
     {
         std::cout << "  enter fracture" << std::endl;
-        if(d_counter.getValue()>10)
+        if(d_counter.getValue()>step)
             algoFracturePath();
     }
 }
@@ -754,15 +755,43 @@ void TearingEngine<DataTypes>::algoFracturePath()
     } //pointC_inTriangle
 
     std::cout << "          indices_list=" << indices_list << std::endl;
-
-
-
     triangles_listB.clear();
     edges_listB.clear();
     coordsEdge_listB.clear();
     triangles_listC.clear();
     edges_listC.clear();
     coordsEdge_listC.clear();
+
+    //STEP 5: Splitting elements along path (incision path is stored inside "new_edges")
+
+    int snapingValue = 1;
+    int snapingBorderValue = 1;
+    // Snaping value: input are percentages, we need to transform it as real epsilon value;
+    double epsilonSnap = (double)snapingValue / 200;
+    double epsilonBorderSnap = (double)snapingBorderValue / 210; // magic number (0.5 is max value and must not be reached, as threshold is compared to barycoord value)
+    sofa::helper::vector< Index > new_edges;
+    int result = m_triangleGeo->SplitAlongPath(core::topology::BaseMeshTopology::InvalidID, Pb, core::topology::BaseMeshTopology::InvalidID, Pc, topoPath_list, indices_list, coords_list, new_edges, epsilonSnap, epsilonBorderSnap);
+    std::cout << "              results SplitAlongPath=" << result << std::endl;
+    if (result == -1)
+    {
+        // incision.indexPoint = last_indexPoint;
+        return;
+    }
+
+    std::cout << "          STEP5 DONE" << std::endl;
+
+
+
+    //STEP 6: Incise along new_edges path (i.e duplicating edges to create an incision)
+    sofa::helper::vector<Index> new_points;
+    sofa::helper::vector<Index> end_points;
+    bool reachBorder = false;
+    bool incision_ok = m_triangleGeo->InciseAlongEdgeList(new_edges, new_points, end_points, reachBorder);
+    if (!incision_ok)
+    {
+        dmsg_error("TopologicalChangeManager") << " in InciseAlongEdgeList";
+        return;
+    }
 }
 
 } //namespace sofa::component::engine
