@@ -412,8 +412,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Real norm_fractureDirection = fractureDirection.norm();
     Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
     Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-    bool pointB_inTriangle=false;
-    bool pointC_inTriangle=false;
+    
 
     //Côté C
     bool sideC_resumed = true;
@@ -425,6 +424,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Index ind_edgeC;
     sofa::helper::vector<Index> edges_listC;
     sofa::helper::vector< double > coordsEdge_listC;
+
+    bool pointC_inTriangle = false;
+    Index triangleC = -1;
 
     //début de la boucle
     while (sideC_resumed)
@@ -463,6 +465,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         if (candidateCoordKmin[j] >= 1)
         {
             pointC_inTriangle = true;
+            triangleC = current_triangle;
             sideC_resumed = false;
             break;
         }
@@ -531,6 +534,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
     sofa::helper::vector<Index> edges_listB;
     sofa::helper::vector< double > coordsEdge_listB;
 
+    bool pointB_inTriangle = false;
+    Index triangleB = -1;
+
     //début de la boucle
     while (sideB_resumed)
     {
@@ -567,6 +573,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         if (candidateCoordKmin[j] >= 1)
         {
             pointB_inTriangle = true;
+            triangleB = current_triangle;
             sideB_resumed = false;
             break;
         }
@@ -625,9 +632,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
 
     //equivalent STEP 4
-    sofa::helper::vector<Index> triangles_list;
-    sofa::helper::vector<Index> edges_list;
-    sofa::helper::vector< double > coordsEdge_list;
     int sizeB = triangles_listB.size();
     int sizeC = triangles_listC.size();
     std::cout << "    sizeB=" << sizeB << std::endl;
@@ -635,24 +639,123 @@ void TearingEngine<DataTypes>::algoFracturePath()
     std::cout << "      pointB_inTriangle=" << pointB_inTriangle << std::endl;
     std::cout << "      pointC_inTriangle=" << pointC_inTriangle << std::endl;
 
+    //output de STEP 4
+    sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
+    sofa::helper::vector<Index> indices_list;
+    sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list;
+    sofa::defaulttype::Vec<3, double> baryCoords;
+
+    //début de l'adaptation
+    //doit on mettre le point B ?
+    if (pointB_inTriangle)
+    {
+        //calcul des coo barycentric du point B dans le triangle B
+        sofa::helper::vector< double > coefs_b = m_triangleGeo->computeTriangleBarycoefs(triangleB, Pb);
+
+        //le point est-il sur un sommet
+        bool B_isOnVertex = false;
+        Index indexPointB = -1;
+        for (unsigned int i = 0; i < coefs_b.size(); i++)
+        {
+            if (abs(coefs_b[i] - 1.0) < EPS)
+            {
+                indexPointB = m_topology->getTriangle(triangleB)[i];
+                B_isOnVertex = true;
+                break;
+            }
+        }
+
+        if (B_isOnVertex) //le point B est sur un sommet
+        {
+            topoPath_list.push_back(core::topology::TopologyElementType::POINT);
+            indices_list.push_back(indexPointB);
+            coords_list.push_back(Pb);
+        }
+        else//le point B est dans le triangle
+        {
+            topoPath_list.push_back(core::topology::TopologyElementType::TRIANGLE);
+            indices_list.push_back(triangleB);
+            for (unsigned int i = 0; i < 3; i++)
+                baryCoords[i] = coefs_b[i];
+            coords_list.push_back(baryCoords);
+        }
+    } //pointB_inTriangle
+
+    //point d'intersection entre B et A
     if (sizeB > 0)
     {
         for (unsigned int i = 0; i < sizeB; i++)
         {
-            triangles_list.push_back(triangles_listB[sizeB - 1 - i]);
-            edges_list.push_back(edges_listB[sizeB - 1 - i]);
-            coordsEdge_list.push_back(coordsEdge_listB[sizeB - 1 - i]);
+            topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
+            indices_list.push_back(edges_listB[sizeB - 1 - i]);
+            baryCoords[0] = coordsEdge_listB[sizeB - 1 - i];
+            baryCoords[1] = 0.0;
+            baryCoords[2] = 0.0;
+            coords_list.push_back(baryCoords);
         }
     }
 
-    current_point = Pa;
-    current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - current_point);
-    if (!(current_triangle > m_topology->getNbTriangles() - 1))
+    Index triangleA;
+    triangleA = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - Pa);
+    if (!(triangleA > m_topology->getNbTriangles() - 1))
     {
-        triangles_list.push_back(current_triangle);
-        //edges_list[sizeB] = edges_listB[sizeB - 1 - i];
-        //coordsEdge_list[sizeB] = coordsEdge_listB[sizeB - 1 - i];
+        topoPath_list.push_back(core::topology::TopologyElementType::POINT);
+        indices_list.push_back(d_indexVertexMaxStress.getValue());
+        coords_list.push_back(Pa);
     }
+
+    //point d'intersection entre A et C
+    if (sizeC > 0)
+    {
+        for (unsigned int i = 0; i < sizeC; i++)
+        {
+            topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
+            indices_list.push_back(edges_listC[i]);
+            baryCoords[0] = coordsEdge_listC[i];
+            baryCoords[1] = 0.0;
+            baryCoords[2] = 0.0;
+            coords_list.push_back(baryCoords);
+        }
+    }
+
+    //doit on mettre le point C ?
+    if (pointC_inTriangle)
+    {
+        //calcul des coo barycentric du point C dans le triangle C
+        sofa::helper::vector< double > coefs_c = m_triangleGeo->computeTriangleBarycoefs(triangleC, Pc);
+
+        //le point est-il sur un sommet
+        bool C_isOnVertex = false;
+        Index indexPointC = -1;
+        for (unsigned int i = 0; i < coefs_c.size(); i++)
+        {
+            if (abs(coefs_c[i] - 1.0) < EPS)
+            {
+                indexPointC = m_topology->getTriangle(triangleC)[i];
+                C_isOnVertex = true;
+                break;
+            }
+        }
+
+        if (C_isOnVertex) //le point C est sur un sommet
+        {
+            topoPath_list.push_back(core::topology::TopologyElementType::POINT);
+            indices_list.push_back(indexPointC);
+            coords_list.push_back(Pc);
+        }
+        else//le point C est dans le triangle
+        {
+            topoPath_list.push_back(core::topology::TopologyElementType::TRIANGLE);
+            indices_list.push_back(triangleC);
+            for (unsigned int i = 0; i < 3; i++)
+                baryCoords[i] = coefs_c[i];
+            coords_list.push_back(baryCoords);
+        }
+    } //pointC_inTriangle
+
+    std::cout << "          indices_list=" << indices_list << std::endl;
+
+
 
     triangles_listB.clear();
     edges_listB.clear();
@@ -660,9 +763,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
     triangles_listC.clear();
     edges_listC.clear();
     coordsEdge_listC.clear();
-    triangles_list.clear();
-    edges_list.clear();
-    coordsEdge_list.clear();
 }
 
 } //namespace sofa::component::engine
