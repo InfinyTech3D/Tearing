@@ -11,6 +11,7 @@
 #include <SofaBaseTopology/TriangleSetTopologyContainer.h>
 #include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
 #include <SofaMiscFem/TriangularFEMForceField.h>
+#include <SofaBaseTopology/TriangleSetTopologyModifier.h>
 
 namespace sofa::helper
 {

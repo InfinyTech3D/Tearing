@@ -33,7 +33,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
 
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
-    , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
+    , d_fractureMaxLength(initData(&d_fractureMaxLength, 0.5, "fractureMaxLength", "fracture max length by time step"))
     , d_fracturePath(initData(&d_fracturePath,"d_fracturePath","path created by algoFracturePath"))
 {
     addInput(&input_position);
@@ -106,7 +106,7 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    int step = 50;
+    int step = 100;
     if ((d_counter.getValue() % step) == 0 || !stepByStep.getValue())
     {
         std::cout << "  enter fracture" << std::endl;
@@ -632,13 +632,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
     path.push_back(Pb);
 
 
+
     //equivalent STEP 4
     int sizeB = triangles_listB.size();
     int sizeC = triangles_listC.size();
     std::cout << "    sizeB=" << sizeB << std::endl;
     std::cout << "    sizeC=" << sizeC << std::endl;
-    std::cout << "      pointB_inTriangle=" << pointB_inTriangle << std::endl;
-    std::cout << "      pointC_inTriangle=" << pointC_inTriangle << std::endl;
 
     //output de STEP 4
     sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
@@ -696,14 +695,66 @@ void TearingEngine<DataTypes>::algoFracturePath()
         }
     }
 
+    //ajout du point A
     Index triangleA;
     triangleA = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - Pa);
     if (!(triangleA > m_topology->getNbTriangles() - 1))
     {
-        topoPath_list.push_back(core::topology::TopologyElementType::POINT);
-        indices_list.push_back(d_indexVertexMaxStress.getValue());
-        coords_list.push_back(Pa);
+        //topoPath_list.push_back(core::topology::TopologyElementType::POINT);
+        //indices_list.push_back(d_indexVertexMaxStress.getValue());
+        //coords_list.push_back(Pa);
     }
+    //-----------------------------------------------------
+    //ajout de A mais comme un point sur un edge
+    triangleA = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - Pa);
+    //calcul des coo barycentric du point A dans le triangle A
+    sofa::helper::vector< double > coefs_a = m_triangleGeo->computeTriangleBarycoefs(triangleA, Pa);
+    //on trouve le sommet ou est A
+    Index ind_edgeA=-1;
+    for (unsigned int i = 0; i < coefs_a.size(); i++)
+    {
+        if (abs(coefs_a[i] - 1.0) < EPS)
+        {
+            Element t = m_topology->getTriangle(triangleA);
+            ind_edgeA = m_topology->getEdgeIndex(t[i], t[(3 + (i - 1)) % 3]);
+        }
+    }
+
+    //on cherche le triangle de passage qui partage le même arrête que  ind_edgeA
+    Index triangle_passage = -1;
+    sofa::helper::vector<Index> triangle_passage_candidat = m_topology->getTrianglesAroundEdge(ind_edgeA);
+    if (triangle_passage_candidat.size() > 1)
+    {
+        triangle_passage = (triangleA == triangle_passage_candidat[0]) ? triangle_passage_candidat[1] : triangle_passage_candidat[0];
+
+        //calcul des coo barycentric du point A dans le triangle_passage
+        sofa::helper::vector< double > coefs_a_passage = m_triangleGeo->computeTriangleBarycoefs(triangle_passage, Pa);
+        //on trouve le sommet ou est A
+        Index ind_edgeA_passage = -1;
+        for (unsigned int i = 0; i < coefs_a_passage.size(); i++)
+        {
+            if (abs(coefs_a_passage[i] - 1.0) < EPS)
+            {
+                Element t = m_topology->getTriangle(triangle_passage);
+                ind_edgeA_passage = m_topology->getEdgeIndex(t[i], t[(3 + (i - 1)) % 3]);
+            }
+        }
+        std::cout << "          ind_edgeA_passage=" << ind_edgeA_passage << std::endl;
+        topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
+        indices_list.push_back(ind_edgeA_passage);
+        baryCoords[0] = 1.0-EPS;
+        baryCoords[1] = 0.0;
+        baryCoords[2] = 0.0;
+        coords_list.push_back(baryCoords);
+    }
+    topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
+    indices_list.push_back(ind_edgeA);
+    baryCoords[0] = 1.0-EPS;
+    baryCoords[1] = 0.0;
+    baryCoords[2] = 0.0;
+    coords_list.push_back(baryCoords);
+    //-----------------------------------------------------
+
 
     //point d'intersection entre A et C
     if (sizeC > 0)
@@ -762,36 +813,46 @@ void TearingEngine<DataTypes>::algoFracturePath()
     edges_listC.clear();
     coordsEdge_listC.clear();
 
-    //STEP 5: Splitting elements along path (incision path is stored inside "new_edges")
 
-    int snapingValue = 1;
-    int snapingBorderValue = 1;
-    // Snaping value: input are percentages, we need to transform it as real epsilon value;
-    double epsilonSnap = (double)snapingValue / 200;
-    double epsilonBorderSnap = (double)snapingBorderValue / 210; // magic number (0.5 is max value and must not be reached, as threshold is compared to barycoord value)
-    sofa::helper::vector< Index > new_edges;
-    int result = m_triangleGeo->SplitAlongPath(core::topology::BaseMeshTopology::InvalidID, Pb, core::topology::BaseMeshTopology::InvalidID, Pc, topoPath_list, indices_list, coords_list, new_edges, epsilonSnap, epsilonBorderSnap);
-    std::cout << "              results SplitAlongPath=" << result << std::endl;
-    if (result == -1)
+    if (topoPath_list.size() > 1)
     {
-        // incision.indexPoint = last_indexPoint;
-        return;
+        //STEP 5: Splitting elements along path (incision path is stored inside "new_edges")
+
+        int snapingValue = 100;
+        int snapingBorderValue = 0;
+        // Snaping value: input are percentages, we need to transform it as real epsilon value;
+        double epsilonSnap = (double)snapingValue / 200;
+        double epsilonBorderSnap = (double)snapingBorderValue / 210; // magic number (0.5 is max value and must not be reached, as threshold is compared to barycoord value)
+        sofa::helper::vector< Index > new_edges;
+        int result = m_triangleGeo->SplitAlongPath(core::topology::BaseMeshTopology::InvalidID, Pb, core::topology::BaseMeshTopology::InvalidID, Pc, topoPath_list, indices_list, coords_list, new_edges, epsilonSnap, epsilonBorderSnap);
+        std::cout << "              results SplitAlongPath=" << result << std::endl;
+        if (result == -1)
+        {
+            // incision.indexPoint = last_indexPoint;
+            return;
+        }
+
+        std::cout << "          STEP5 DONE" << std::endl;
+
+
+
+        //STEP 6: Incise along new_edges path (i.e duplicating edges to create an incision)
+        sofa::helper::vector<Index> new_points;
+        sofa::helper::vector<Index> end_points;
+        bool reachBorder = false;
+        bool incision_ok = m_triangleGeo->InciseAlongEdgeList(new_edges, new_points, end_points, reachBorder);
+        if (!incision_ok)
+        {
+            dmsg_error("TopologicalChangeManager") << " in InciseAlongEdgeList";
+            return;
+        }
+        std::cout << "          STEP6 DONE" << std::endl;
     }
 
-    std::cout << "          STEP5 DONE" << std::endl;
 
-
-
-    //STEP 6: Incise along new_edges path (i.e duplicating edges to create an incision)
-    sofa::helper::vector<Index> new_points;
-    sofa::helper::vector<Index> end_points;
-    bool reachBorder = false;
-    bool incision_ok = m_triangleGeo->InciseAlongEdgeList(new_edges, new_points, end_points, reachBorder);
-    if (!incision_ok)
-    {
-        dmsg_error("TopologicalChangeManager") << " in InciseAlongEdgeList";
-        return;
-    }
+    topoPath_list.clear();
+    indices_list.clear();
+    coords_list.clear();
 }
 
 } //namespace sofa::component::engine
