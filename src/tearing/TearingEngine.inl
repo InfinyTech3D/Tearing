@@ -33,7 +33,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
 
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
-    , d_fractureMaxLength(initData(&d_fractureMaxLength, 0.5, "fractureMaxLength", "fracture max length by time step"))
+    , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
     , d_fracturePath(initData(&d_fracturePath,"d_fracturePath","path created by algoFracturePath"))
 {
     addInput(&input_position);
@@ -106,7 +106,7 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    int step = 100;
+    int step = 10;
     if ((d_counter.getValue() % step) == 0 || !stepByStep.getValue())
     {
         std::cout << "  enter fracture" << std::endl;
@@ -503,8 +503,15 @@ void TearingEngine<DataTypes>::algoFracturePath()
             triangles_listC.push_back(current_triangle);
             ind_edgeC = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
             edges_listC.push_back(ind_edgeC);
-            coordsEdge_listC.push_back(candidateBarycoef[j]);
-
+            Edge e = m_topology->getEdge(ind_edgeC);
+            if (e[0] == candidateIndice[2 * j])
+            {
+                coordsEdge_listC.push_back(candidateBarycoef[j]);
+            }
+            else
+            {
+                coordsEdge_listC.push_back(1-candidateBarycoef[j]);
+            }
             sideC_resumed = false;
             break;
         }
@@ -516,7 +523,15 @@ void TearingEngine<DataTypes>::algoFracturePath()
         triangles_listC.push_back(current_triangle);
         ind_edgeC = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
         edges_listC.push_back(ind_edgeC);
-        coordsEdge_listC.push_back(candidateBarycoef[j]);
+        Edge e = m_topology->getEdge(ind_edgeC);
+        if (e[0] == candidateIndice[2 * j])
+        {
+            coordsEdge_listC.push_back(candidateBarycoef[j]);
+        }
+        else
+        {
+            coordsEdge_listC.push_back(1-candidateBarycoef[j]);
+        }
 
         candidateIndice.clear();
         candidateBarycoef.clear();
@@ -611,7 +626,15 @@ void TearingEngine<DataTypes>::algoFracturePath()
             triangles_listB.push_back(current_triangle);
             ind_edgeB = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
             edges_listB.push_back(ind_edgeB);
-            coordsEdge_listB.push_back(candidateBarycoef[j]);
+            Edge e = m_topology->getEdge(ind_edgeB);
+            if (e[0] == candidateIndice[2 * j])
+            {
+                coordsEdge_listB.push_back(candidateBarycoef[j]);
+            }
+            else
+            {
+                coordsEdge_listB.push_back(1-candidateBarycoef[j]);
+            }
 
             sideB_resumed = false;
             break;
@@ -624,7 +647,15 @@ void TearingEngine<DataTypes>::algoFracturePath()
         triangles_listB.push_back(current_triangle);
         ind_edgeB = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
         edges_listB.push_back(ind_edgeB);
-        coordsEdge_listB.push_back(candidateBarycoef[j]);
+        Edge e = m_topology->getEdge(ind_edgeB);
+        if (e[0] == candidateIndice[2 * j])
+        {
+            coordsEdge_listB.push_back(candidateBarycoef[j]);
+        }
+        else
+        {
+            coordsEdge_listB.push_back(1-candidateBarycoef[j]);
+        }
 
         candidateIndice.clear();
         candidateBarycoef.clear();
@@ -700,9 +731,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
     triangleA = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - Pa);
     if (!(triangleA > m_topology->getNbTriangles() - 1))
     {
-        //topoPath_list.push_back(core::topology::TopologyElementType::POINT);
-        //indices_list.push_back(d_indexVertexMaxStress.getValue());
-        //coords_list.push_back(Pa);
+        topoPath_list.push_back(core::topology::TopologyElementType::POINT);
+        indices_list.push_back(d_indexVertexMaxStress.getValue());
+        coords_list.push_back(Pa);
     }
     //-----------------------------------------------------
     //ajout de A mais comme un point sur un edge
@@ -740,19 +771,19 @@ void TearingEngine<DataTypes>::algoFracturePath()
             }
         }
         std::cout << "          ind_edgeA_passage=" << ind_edgeA_passage << std::endl;
-        topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
-        indices_list.push_back(ind_edgeA_passage);
+        //topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
+        //indices_list.push_back(ind_edgeA_passage);
         baryCoords[0] = 1.0-EPS;
         baryCoords[1] = 0.0;
         baryCoords[2] = 0.0;
-        coords_list.push_back(baryCoords);
+        //coords_list.push_back(baryCoords);
     }
-    topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
-    indices_list.push_back(ind_edgeA);
+    //topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
+    //indices_list.push_back(ind_edgeA);
     baryCoords[0] = 1.0-EPS;
     baryCoords[1] = 0.0;
     baryCoords[2] = 0.0;
-    coords_list.push_back(baryCoords);
+    //coords_list.push_back(baryCoords);
     //-----------------------------------------------------
 
 
@@ -763,6 +794,11 @@ void TearingEngine<DataTypes>::algoFracturePath()
         {
             topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
             indices_list.push_back(edges_listC[i]);
+            Edge e = m_topology->getEdge(edges_listC[i]);
+            std::cout << "    edge liste=" << edges_listC[i] << std::endl;
+            std::cout << "    edge vérificatiion_0=" << e[0] << std::endl;
+            std::cout << "    edge vérificatiion_1=" << e[1] << std::endl;
+            std::cout << "    barycoef=" << coordsEdge_listC[i] << std::endl;
             baryCoords[0] = coordsEdge_listC[i];
             baryCoords[1] = 0.0;
             baryCoords[2] = 0.0;
@@ -817,8 +853,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
     if (topoPath_list.size() > 1)
     {
         //STEP 5: Splitting elements along path (incision path is stored inside "new_edges")
-
-        int snapingValue = 100;
+        int snapingValue = 20;
         int snapingBorderValue = 0;
         // Snaping value: input are percentages, we need to transform it as real epsilon value;
         double epsilonSnap = (double)snapingValue / 200;
