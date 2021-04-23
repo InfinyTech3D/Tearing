@@ -113,7 +113,11 @@ public:
 	void algoFracturePath();
 	Data<vector<Coord>> d_fracturePath;
 	Data<bool> showFracturePath;
+	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	bool computeSegmentMeshIntersection(Coord Pa, Coord endPoint, bool& endPoint_inTriangle, Index& endPointTriangle, sofa::helper::vector<Index>& edges_list, sofa::helper::vector<double>& coordsEdge_listC);
 
+
+	
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
 
