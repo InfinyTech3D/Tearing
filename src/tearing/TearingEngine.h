@@ -114,9 +114,23 @@ public:
 	Data<vector<Coord>> d_fracturePath;
 	Data<bool> showFracturePath;
 	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
-	bool computeSegmentMeshIntersection(Coord Pa, Coord endPoint, bool& endPoint_inTriangle, Index& endPointTriangle, sofa::helper::vector<Index>& edges_list, sofa::helper::vector<double>& coordsEdge_listC);
-
-
+	bool computeSegmentMeshIntersection(Coord Pa, Coord endPoint, bool& endPoint_inTriangle, Index& endPointTriangle, sofa::helper::vector<Index>& edges_list, sofa::helper::vector<double>& coordsEdge_list);
+	void pathAdaptationObject(
+		double EPS,
+		bool pointB_inTriangle, Index triangleB, Coord Pb, sofa::helper::vector<Index> edges_listB, sofa::helper::vector<double> coordsEdge_listB, int& sizeB,
+		Coord Pa, Index indexA,
+		bool pointC_inTriangle, Index triangleC, Coord Pc, sofa::helper::vector<Index> edges_listC, sofa::helper::vector<double> coordsEdge_listC, int& sizeC,
+		sofa::helper::vector< sofa::core::topology::TopologyElementType>& topoPath_list,
+		sofa::helper::vector<Index>& indices_list,
+		sofa::helper::vector< sofa::defaulttype::Vec<3, double> >& coords_list);
+	int splitting(
+		int snapingValue, int snapingBorderValue,
+		Coord Pa, Coord Pb, Coord Pc,
+		int sizeB, int sizeC,
+		sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list,
+		sofa::helper::vector<Index> indices_list,
+		sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list,
+		sofa::helper::vector< Index >& new_edges);
 	
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
