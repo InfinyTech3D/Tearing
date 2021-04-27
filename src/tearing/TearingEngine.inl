@@ -5,6 +5,7 @@
 #include <sofa/helper/types/RGBAColor.h>
 #include <sofa/helper/ColorMap.h>
 #include <SofaBaseTopology/TopologyData.inl>
+#include <sofa/simulation/Simulation.h>
 
 //#include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
 
@@ -30,7 +31,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
-    , d_step(initData(&d_step, 20, "step", "step size"))
+    , d_step(initData(&d_step, 100, "step", "step size"))
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
 
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
@@ -52,6 +53,7 @@ TearingEngine<DataTypes>::TearingEngine()
 template <class DataTypes>
 void TearingEngine<DataTypes>::init()
 {
+    this->f_listening.setValue(true);
     if (l_topology.empty())
     {
         msg_info() << "link to Topology container should be set to ensure right behavior. First Topology found in current context will be used.";
@@ -108,12 +110,6 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    if ((d_counter.getValue() % d_step.getValue()) == 0 || !stepByStep.getValue())
-    {
-        std::cout << "  enter fracture" << std::endl;
-        if(d_counter.getValue()>d_step.getValue())
-            algoFracturePath();
-    }
 }
 
 
@@ -238,9 +234,24 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     }
 }
 
+template <class DataTypes>
+void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
+{
+    if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateBeginEvent::checkEventType(event))
+    {
+        if ((d_counter.getValue() % d_step.getValue()) == 0 || !stepByStep.getValue())
+        {
+            std::cout << "  enter fracture" << std::endl;
+            if(d_counter.getValue()>d_step.getValue())
+                algoFracturePath();
+        }
+    }
+}
+
+
 
 // --------------------------------------------------------------------------------------
-// --- Computation methods
+// --- Computation methodsB
 // --------------------------------------------------------------------------------------
 template <class DataTypes>
 void TearingEngine<DataTypes>::initComputeArea()

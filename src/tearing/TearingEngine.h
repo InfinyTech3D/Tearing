@@ -12,6 +12,8 @@
 #include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
 #include <SofaMiscFem/TriangularFEMForceField.h>
 #include <SofaBaseTopology/TriangleSetTopologyModifier.h>
+#include <sofa/simulation/AnimateBeginEvent.h>
+#include <sofa/simulation/AnimateEndEvent.h>
 
 namespace sofa::helper
 {
@@ -144,6 +146,10 @@ protected:
 
 private:
 	sofa::helper::ColorMap* p_drawColorMap;
+
+
+public:
+	void handleEvent(sofa::core::objectmodel::Event* event) override;
 
 };
 	
