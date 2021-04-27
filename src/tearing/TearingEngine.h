@@ -73,6 +73,7 @@ public:
 	Data<Index> d_indexVertexMaxStress;
 	Data<bool> showTearableTriangle;
 	Data<bool> stepByStep;
+	Data<int> d_step;
 	Data<int> d_counter;
 	Data<double> d_fractureMaxLength;
 

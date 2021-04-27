@@ -30,6 +30,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
+    , d_step(initData(&d_step, 20, "step", "step size"))
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
 
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
@@ -39,6 +40,7 @@ TearingEngine<DataTypes>::TearingEngine()
     addInput(&input_position);
     addInput(&d_seuilArea);
     addInput(&d_seuilPrincipalStress);
+    addInput(&d_step);
     addOutput(&d_triangleInfoTearing);
     addOutput(&d_triangleFEMInfo);
     addOutput(&d_triangleOverThresholdList);
@@ -106,11 +108,10 @@ void TearingEngine<DataTypes>::doUpdate()
     updateTriangleInformation();
     //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
-    int step = 100;
-    if ((d_counter.getValue() % step) == 0 || !stepByStep.getValue())
+    if ((d_counter.getValue() % d_step.getValue()) == 0 || !stepByStep.getValue())
     {
         std::cout << "  enter fracture" << std::endl;
-        if(d_counter.getValue()>step)
+        if(d_counter.getValue()>d_step.getValue())
             algoFracturePath();
     }
 }
@@ -207,28 +208,33 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vecteur.clear();
         }
     }
+
     if (showFracturePath.getValue())
     {
-        helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-        Coord Pa = x[d_indexVertexMaxStress.getValue()];
-        Coord fractureDirection;
-        fractureDirection[0] = -principalStressDirection[1];
-        fractureDirection[1] = principalStressDirection[0];
+        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
+        if (candidate.size() > 0)
+        {
+            helper::ReadAccessor< Data<VecCoord> > x(input_position);
+            Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+            Coord Pa = x[d_indexVertexMaxStress.getValue()];
+            Coord fractureDirection;
+            fractureDirection[0] = -principalStressDirection[1];
+            fractureDirection[1] = principalStressDirection[0];
 
-        vector<Coord> points;
-        Real norm_fractureDirection = fractureDirection.norm();
-        Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-        Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-        points.push_back(Pb);
-        points.push_back(Pc);
-        vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
-        vparams->drawTool()->drawLines(points, 1, sofa::helper::types::RGBAColor(1, 0.5, 0, 1));
-        points.clear();
+            vector<Coord> points;
+            Real norm_fractureDirection = fractureDirection.norm();
+            Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            points.push_back(Pb);
+            points.push_back(Pc);
+            vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::helper::types::RGBAColor(1, 0.5, 0, 1));
+            points.clear();
 
-        helper::ReadAccessor< Data<vector<Coord>> > path(d_fracturePath);
-        if (path.size())
-            vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+            helper::ReadAccessor< Data<vector<Coord>> > path(d_fracturePath);
+            if (path.size())
+                vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+        }
     }
 }
 
@@ -523,10 +529,12 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
     helper::WriteAccessor< Data<vector<Coord>> > path(d_fracturePath);
     bool PATH_IS_OK = false;
     double EPS = 1e-8;
+    sofa::helper::vector<Index> triangle_list;
 
     bool resume = true;
     Coord current_point = Pa;
     Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), endPoint - current_point);
+    triangle_list.push_back(current_triangle);
     //if (current_triangle > m_topology->getNbTriangles() - 1)
     //    resume = false;
     Index ind_edge;
@@ -574,6 +582,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
             return PATH_IS_OK;
         }
         Coord next_point = x[candidateIndice[2 * j]] + candidateBarycoef[j] * (x[candidateIndice[2 * j + 1]] - x[candidateIndice[2 * j]]);
+        std::cout << "                      next point=" << next_point << std::endl;
         path.push_back(next_point);
 
         Index next_triangle = -1;
@@ -619,9 +628,21 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
             return PATH_IS_OK;
         }
 
+        //check if we are not all ready pass in this triangle
+        for (unsigned int i = 0; i < triangle_list.size(); i++)
+        {
+            if (next_triangle == triangle_list[i])
+                return PATH_IS_OK;
+        }
+
+
+
+        std::cout << "                      next triangle=" << next_triangle<< std::endl;
+
         //MAJ
         current_triangle = next_triangle;
         current_point = next_point;
+        triangle_list.push_back(current_triangle);
 
         ind_edge = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
         edges_list.push_back(ind_edge);
