@@ -546,8 +546,8 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
     Coord current_point = Pa;
     Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), endPoint - current_point);
     triangle_list.push_back(current_triangle);
-    //if (current_triangle > m_topology->getNbTriangles() - 1)
-    //    resume = false;
+    if (current_triangle > m_topology->getNbTriangles() - 1)
+        resume = false;
     Index ind_edge;
 
     //début de la boucle
