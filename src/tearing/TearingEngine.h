@@ -117,7 +117,7 @@ public:
 	Data<vector<Coord>> d_fracturePath;
 	Data<bool> showFracturePath;
 	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
-	bool computeSegmentMeshIntersection(Coord Pa, Coord endPoint, bool& endPoint_inTriangle, Index& endPointTriangle, sofa::helper::vector<Index>& edges_list, sofa::helper::vector<double>& coordsEdge_list);
+	bool computeSegmentMeshIntersection(Coord Pa,Index indexA, Coord endPoint, bool& endPoint_inTriangle, Index& endPointTriangle, sofa::helper::vector<Index>& edges_list, sofa::helper::vector<double>& coordsEdge_list);
 	void pathAdaptationObject(
 		double EPS,
 		bool pointB_inTriangle, Index triangleB, Coord Pb, sofa::helper::vector<Index> edges_listB, sofa::helper::vector<double> coordsEdge_listB, int& sizeB,

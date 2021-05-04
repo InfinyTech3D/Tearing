@@ -413,103 +413,173 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
 template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<vector<Coord>> > path(d_fracturePath);
-    path.clear();
-    double EPS = 1e-8;
-    bool PATH_IS_OK = false;
-
-    //On cherche le point de départ
-    Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-    Coord Pa = x[d_indexVertexMaxStress.getValue()];
-    int indexA = d_indexVertexMaxStress.getValue();
-    path.push_back(Pa);
-
-    //On détermine les B et C, extrémités de la fracture
-    Coord Pb;
-    Coord Pc;
-    computeEndPoints(Pa, principalStressDirection, Pb, Pc);
-
-    //Côté C
-    bool sideC_resumed = true;
-    Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pc - Pa);
-    if (current_triangle > m_topology->getNbTriangles() - 1)
-        sideC_resumed = false;
-
-    bool pointC_inTriangle = false;
-    Index triangleC = -1;
-    sofa::helper::vector<Index> edges_listC;
-    sofa::helper::vector< double > coordsEdge_listC;
-
-    bool PATH_C_IS_OK = false;
-    if (sideC_resumed)
-        PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC);
-    path.push_back(Pc);
-
-    //Côté B
-    bool sideB_resumed = true;
-    current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), Pb - Pa);
-    if (current_triangle > m_topology->getNbTriangles() - 1)
-        sideB_resumed = false;
-
-    bool pointB_inTriangle = false;
-    Index triangleB = -1;
-    sofa::helper::vector<Index> edges_listB;
-    sofa::helper::vector< double > coordsEdge_listB;
-
-    bool PATH_B_IS_OK = false;
-    if (sideB_resumed)
-        PATH_B_IS_OK = computeSegmentMeshIntersection(Pa, Pb, pointB_inTriangle, triangleB, edges_listB, coordsEdge_listB);
-    path.push_back(Pb);
-
-
-    if (PATH_C_IS_OK || PATH_B_IS_OK)
+    helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
+    if (candidate.size())
     {
-        //output de STEP 4
-        sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
-        sofa::helper::vector<Index> indices_list;
-        sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list;
-        int sizeB, sizeC;
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        helper::WriteAccessor< Data<vector<Coord>> > path(d_fracturePath);
+        path.clear();
+        double EPS = 1e-8;
+        bool PATH_IS_OK = false;
 
-        std::cout << "DEBUT STEP 4-------------------------------------" << std::endl;
-        pathAdaptationObject(
-            EPS,
-            pointB_inTriangle, triangleB, Pb, edges_listB, coordsEdge_listB, sizeB,
-            Pa, indexA,
-            pointC_inTriangle, triangleC, Pc, edges_listC, coordsEdge_listC, sizeC,
-            topoPath_list, indices_list, coords_list);
-        std::cout << "FIN STEP 4-------------------------------------" << std::endl;
+        //On cherche le point de départ
+        Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+        int indexA = d_indexVertexMaxStress.getValue();
+        Coord Pa = x[indexA];
+        path.push_back(Pa);
 
-        if (topoPath_list.size() > 1)
+        //----------------choix du point de depart, A FAIRE QUE LE PREMIER TOUR
+        //indexA = 523;
+        //Pa = x[523];
+        //Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
+        //indexTriangleMaxStress = 947;
+        //d_indexTriangleMaxStress.endEdit();
+        //principalStressDirection = d_triangleFEMInfo.getValue()[947].principalStressDirection;
+        //---------------------------------------
+
+        //On détermine les B et C, extrémités de la fracture
+        Coord Pb;
+        Coord Pc;
+        computeEndPoints(Pa, principalStressDirection, Pb, Pc);
+
+        //Côté C
+        bool sideC_resumed = true;
+        Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
+        bool triangleInDirectionC = true;
+        if (current_triangle > m_topology->getNbTriangles() - 1)
         {
-            //STEP 5: Splitting elements along path (incision path is stored inside "new_edges")
-            int snapingValue = 20;
-            int snapingBorderValue = 0;
-            sofa::helper::vector< Index > new_edges;
-            int result;
-            result = splitting(snapingValue, snapingBorderValue, Pa, Pb, Pc, sizeB, sizeC, topoPath_list, indices_list, coords_list, new_edges);
-            
-            if (result > 0)
-            {
-                //STEP 6: Incise along new_edges path (i.e duplicating edges to create an incision)
-                std::cout << "DEBUT STEP 6-------------------------------------" << std::endl;
-                sofa::helper::vector<Index> new_points;
-                sofa::helper::vector<Index> end_points;
-                bool reachBorder = false;
-                bool incision_ok = m_triangleGeo->InciseAlongEdgeList(new_edges, new_points, end_points, reachBorder);
-                if (!incision_ok)
-                {
-                    dmsg_error("TopologicalChangeManager") << " in InciseAlongEdgeList";
-                    return;
-                }
-                std::cout << "FIN STEP 6-------------------------------------" << std::endl;
-            }
+            sideC_resumed = false;
+            triangleInDirectionC = false;
+        }
+        bool pointC_inTriangle = false;
+        Index triangleC = -1;
+        sofa::helper::vector<Index> edges_listC;
+        sofa::helper::vector< double > coordsEdge_listC;
+
+        bool PATH_C_IS_OK = false;
+        if (sideC_resumed)
+            PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC);
+        path.push_back(Pc);
+
+        //Côté B
+        bool sideB_resumed = true;
+        current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pb - Pa);
+        bool triangleInDirectionB = true;
+        if (current_triangle > m_topology->getNbTriangles() - 1)
+        {
+            sideB_resumed = false;
+            triangleInDirectionB = false;
         }
 
+        bool pointB_inTriangle = false;
+        Index triangleB = -1;
+        sofa::helper::vector<Index> edges_listB;
+        sofa::helper::vector< double > coordsEdge_listB;
 
-        topoPath_list.clear();
-        indices_list.clear();
-        coords_list.clear();
+        bool PATH_B_IS_OK = false;
+        if (sideB_resumed)
+            PATH_B_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pb, pointB_inTriangle, triangleB, edges_listB, coordsEdge_listB);
+        path.push_back(Pb);
+
+
+        if (PATH_C_IS_OK || PATH_B_IS_OK)
+        {
+            //output de STEP 4
+            sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
+            sofa::helper::vector<Index> indices_list;
+            sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list;
+            int sizeB, sizeC;
+
+            std::cout << "DEBUT STEP 4-------------------------------------" << std::endl;
+            pathAdaptationObject(
+                EPS,
+                pointB_inTriangle, triangleB, Pb, edges_listB, coordsEdge_listB, sizeB,
+                Pa, indexA,
+                pointC_inTriangle, triangleC, Pc, edges_listC, coordsEdge_listC, sizeC,
+                topoPath_list, indices_list, coords_list);
+            std::cout << "FIN STEP 4-------------------------------------" << std::endl;
+
+            if (topoPath_list.size() > 1)
+            {
+                //STEP 5: Splitting elements along path (incision path is stored inside "new_edges")
+                int snapingValue = 20;
+                int snapingBorderValue = 0;
+                sofa::helper::vector< Index > new_edges;
+                int result;
+                result = splitting(snapingValue, snapingBorderValue, Pa, Pb, Pc, sizeB, sizeC, topoPath_list, indices_list, coords_list, new_edges);
+
+                if (result > 0)
+                {
+                    //STEP 6: Incise along new_edges path (i.e duplicating edges to create an incision)
+                    std::cout << "DEBUT STEP 6-------------------------------------" << std::endl;
+                    sofa::helper::vector<Index> new_points;
+                    sofa::helper::vector<Index> end_points;
+                    bool reachBorder = false;
+                    bool incision_ok = m_triangleGeo->InciseAlongEdgeList(new_edges, new_points, end_points, reachBorder);
+                    if (!incision_ok)
+                    {
+                        dmsg_error("TopologicalChangeManager") << " in InciseAlongEdgeList";
+                        return;
+                    }
+                    std::cout << "FIN STEP 6-------------------------------------" << std::endl;
+                }
+            }
+
+
+            topoPath_list.clear();
+            indices_list.clear();
+            coords_list.clear();
+        }
+        else if (!triangleInDirectionB && !triangleInDirectionC && m_topology->getTrianglesAroundVertex(indexA).size() > 1)
+        {
+            std::cout << "SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBLIER-------------------------------------" << std::endl;
+            sofa::helper::vector<Index> indexTriangleList = m_topology->getTrianglesAroundVertex(indexA);
+            sofa::helper::vector<Index> indexTriangleListSide1;
+            sofa::helper::vector<Index> indexTriangleListSide2;
+
+            //get index 
+            Index indexTriangleA = d_indexTriangleMaxStress.getValue();
+            indexTriangleListSide1.push_back(indexTriangleA);
+            Element t = m_topology->getTriangle(indexTriangleA);
+            int k0= (t[0] == indexA) ? 0 : 1;
+            k0 = (t[k0] == indexA) ? k0 : 2;
+
+            Coord normal = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+            Coord p0a = x[t[k0]];
+            Coord p1a = x[t[(3 + (k0 + 1)) % 3]];
+            Coord vec_a = p1a - p0a;
+
+            for (unsigned int i = 0; i < indexTriangleList.size(); i++)
+            {
+                if (indexTriangleList[i] != indexTriangleA)
+                {
+                    Element t_i = m_topology->getTriangle(indexTriangleList[i]);
+                    int k_i = (t_i[0] == indexA) ? 0 : 1;
+                    k_i = (t_i[k_i] == indexA) ? k_i : 2;
+
+                    Coord p0b = x[t[k_i]];
+                    Coord p1b = x[t[(3 + (k_i + 1)) % 3]];
+                    Coord vec_b = p1b - p0b;
+
+                    if ((vec_a * normal) * (vec_b * normal) > 0)
+                    {
+                        indexTriangleListSide1.push_back(indexTriangleList[i]);
+                    }
+                    else
+                    {
+                        indexTriangleListSide2.push_back(indexTriangleList[i]);
+                    }
+                }
+            }
+            
+            std::cout << "nb triangle autour =" << m_topology->getTrianglesAroundVertex(indexA).size() << std::endl;
+            std::cout << "nb indexTriangleListSide1 =" << indexTriangleListSide1.size() << std::endl;
+            std::cout << "nb indexTriangleListSide2 =" << indexTriangleListSide2.size() << std::endl;
+            sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
+            sofa::helper::vector<Index> indices_list;
+            sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list;
+
+        }
     }
 }
 
@@ -530,6 +600,7 @@ void TearingEngine<DataTypes>::computeEndPoints(
 template <class DataTypes>
 bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
     Coord Pa,
+    Index indexA,
     Coord endPoint,
     bool& endPoint_inTriangle,
     Index& endPointTriangle,
@@ -544,7 +615,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
 
     bool resume = true;
     Coord current_point = Pa;
-    Index current_triangle = m_triangleGeo->getTriangleInDirection(d_indexVertexMaxStress.getValue(), endPoint - current_point);
+    Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, endPoint - current_point);
     triangle_list.push_back(current_triangle);
     if (current_triangle > m_topology->getNbTriangles() - 1)
         resume = false;
@@ -746,7 +817,7 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     std::cout << "      pointA=" << std::endl;
     //ajout du point A
     topoPath_list.push_back(core::topology::TopologyElementType::POINT);
-    indices_list.push_back(d_indexVertexMaxStress.getValue());
+    indices_list.push_back(indexA);
     coords_list.push_back(Pa);
     std::cout << "      fin pointA=" << std::endl;
 
