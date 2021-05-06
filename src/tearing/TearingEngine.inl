@@ -429,12 +429,17 @@ void TearingEngine<DataTypes>::algoFracturePath()
         path.push_back(Pa);
 
         //----------------choix du point de depart, A FAIRE QUE LE PREMIER TOUR
-        //indexA = 523;
-        //Pa = x[523];
-        //Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
-        //indexTriangleMaxStress = 947;
-        //d_indexTriangleMaxStress.endEdit();
-        //principalStressDirection = d_triangleFEMInfo.getValue()[947].principalStressDirection;
+        if (d_counter.getValue() <= 2 * d_step.getValue())
+        {
+          //indexA = 523;
+          //Pa = x[523];
+          //Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
+          //indexTriangleMaxStress = 947;
+          //d_indexTriangleMaxStress.endEdit();
+          //principalStressDirection[0] = 0.0;
+          //principalStressDirection[1] = 1.0;
+          //principalStressDirection[2] = 0.0;
+        }
         //---------------------------------------
 
         //On détermine les B et C, extrémités de la fracture
