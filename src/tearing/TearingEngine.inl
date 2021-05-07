@@ -9,7 +9,6 @@
 
 //#include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
 
-
 namespace sofa::component::engine
 {
 template <class DataTypes>
@@ -23,6 +22,7 @@ TearingEngine<DataTypes>::TearingEngine()
 	, m_topology(nullptr)
     , m_triangleGeo(nullptr)
     , m_triangularFEM(nullptr)
+    , m_modifier(nullptr)
     , showChangedTriangle(initData(&showChangedTriangle, false,"showChangedTriangle", "Flag activating rendering of changed triangle"))
     , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
@@ -80,6 +80,14 @@ void TearingEngine<DataTypes>::init()
 
     m_topology->getContext()->get(m_triangularFEM);
     if (!m_triangularFEM)
+    {
+        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+        return;
+    }
+
+    m_topology->getContext()->get(m_modifier);
+    if (!m_modifier)
     {
         msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
         sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
@@ -541,6 +549,8 @@ void TearingEngine<DataTypes>::algoFracturePath()
             sofa::helper::vector<Index> indexTriangleList = m_topology->getTrianglesAroundVertex(indexA);
             sofa::helper::vector<Index> indexTriangleListSide1;
             sofa::helper::vector<Index> indexTriangleListSide2;
+            VecElement triangleList2;
+
 
             //get index 
             Index indexTriangleA = d_indexTriangleMaxStress.getValue();
@@ -573,17 +583,52 @@ void TearingEngine<DataTypes>::algoFracturePath()
                     else
                     {
                         indexTriangleListSide2.push_back(indexTriangleList[i]);
+                        triangleList2.push_back(m_topology->getTriangle(indexTriangleList[i]));
                     }
                 }
             }
             
+            // FINAL STEP : Apply changes
+            // Create all the points registered to be created
+                //m_modifier->addPointsProcess(sofa::Size(p_ancestors.size()));
+            // Warn for the creation of all the points registered to be created
+                //m_modifier->addPointsWarning(sofa::Size(p_ancestors.size()), p_ancestors, p_baryCoefs);
+            //Add and remove triangles lists
+                //m_modifier->addRemoveTriangles(sofa::Size(new_triangles.size()), new_triangles, new_triangles_id, triangles_ancestors, triangles_barycoefs, removed_triangles);
+
+
+
             std::cout << "nb triangle autour =" << m_topology->getTrianglesAroundVertex(indexA).size() << std::endl;
             std::cout << "nb indexTriangleListSide1 =" << indexTriangleListSide1.size() << std::endl;
             std::cout << "nb indexTriangleListSide2 =" << indexTriangleListSide2.size() << std::endl;
-            sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
-            sofa::helper::vector<Index> indices_list;
-            sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list;
+            if (indexTriangleListSide2.size()>0)
+            {
+               std::cout << "  addPointsProcess"<< std::endl;
+               addPointsProcess(1);
 
+               sofa::helper::vector<Index> indexs_ancestor;
+               indexs_ancestor.push_back(indexA);
+               sofa::helper::vector< sofa::helper::vector<Index> > ancestors;
+               ancestors.push_back(indexs_ancestor);
+               sofa::helper::vector<double> barycoefs;
+               barycoefs.push_back(1.0);
+               sofa::helper::vector< sofa::helper::vector<double> > coefs;
+               coefs.push_back(barycoefs);
+               std::cout << "  addPointsWarning" << std::endl;
+               addPointsWarning(1, ancestors, coefs);
+                
+                for (Element t : triangleList2)
+                {
+                    for(unsigned int i = 0; i < 3; i++)
+                    { 
+                        if (t[i] == indexA)
+                        {
+                
+                        }
+                    }     
+                }
+                //addRemoveTriangles(sofa::Size(new_triangles.size()), new_triangles, new_triangles_id, triangles_ancestors, triangles_barycoefs, removed_triangles)
+            }
         }
     }
 }

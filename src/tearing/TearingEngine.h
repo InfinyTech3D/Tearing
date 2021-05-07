@@ -27,7 +27,7 @@ namespace sofa::component::engine
 	using helper::vector;
 
 template <class DataTypes>
-class TearingEngine : public core::DataEngine
+class TearingEngine : public core::DataEngine, public sofa::component::topology::TriangleSetTopologyModifier
 {
 public:
 	SOFA_CLASS(SOFA_TEMPLATE(TearingEngine, DataTypes), core::DataEngine);
@@ -143,7 +143,7 @@ protected:
 	sofa::core::topology::BaseMeshTopology* m_topology;
 	sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
 	sofa::component::forcefield::TriangularFEMForceField<DataTypes>* m_triangularFEM;
-
+	sofa::component::topology::TriangleSetTopologyModifier* m_modifier;
 private:
 	sofa::helper::ColorMap* p_drawColorMap;
 
