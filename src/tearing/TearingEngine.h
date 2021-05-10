@@ -27,7 +27,7 @@ namespace sofa::component::engine
 	using helper::vector;
 
 template <class DataTypes>
-class TearingEngine : public core::DataEngine, public sofa::component::topology::TriangleSetTopologyModifier
+class TearingEngine : public core::DataEngine
 {
 public:
 	SOFA_CLASS(SOFA_TEMPLATE(TearingEngine, DataTypes), core::DataEngine);

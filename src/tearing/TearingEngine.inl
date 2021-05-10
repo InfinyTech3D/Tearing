@@ -587,52 +587,71 @@ void TearingEngine<DataTypes>::algoFracturePath()
                     }
                 }
             }
-            
-            // FINAL STEP : Apply changes
-            // Create all the points registered to be created
-                //m_modifier->addPointsProcess(sofa::Size(p_ancestors.size()));
-            // Warn for the creation of all the points registered to be created
-                //m_modifier->addPointsWarning(sofa::Size(p_ancestors.size()), p_ancestors, p_baryCoefs);
-            //Add and remove triangles lists
-                //m_modifier->addRemoveTriangles(sofa::Size(new_triangles.size()), new_triangles, new_triangles_id, triangles_ancestors, triangles_barycoefs, removed_triangles);
-
-
 
             std::cout << "nb triangle autour =" << m_topology->getTrianglesAroundVertex(indexA).size() << std::endl;
             std::cout << "nb indexTriangleListSide1 =" << indexTriangleListSide1.size() << std::endl;
             std::cout << "nb indexTriangleListSide2 =" << indexTriangleListSide2.size() << std::endl;
             if (indexTriangleListSide2.size()>0)
             {
-               std::cout << "  addPointsProcess"<< std::endl;
-               addPointsProcess(1);
+                Index indexNewPoint=m_topology->getNbPoints();
+                Index indexNewTriangle = m_topology->getNbTriangles();
 
-               sofa::helper::vector<Index> indexs_ancestor;
-               indexs_ancestor.push_back(indexA);
-               sofa::helper::vector< sofa::helper::vector<Index> > ancestors;
-               ancestors.push_back(indexs_ancestor);
-               sofa::helper::vector<double> barycoefs;
-               barycoefs.push_back(1.0);
-               sofa::helper::vector< sofa::helper::vector<double> > coefs;
-               coefs.push_back(barycoefs);
-               std::cout << "  addPointsWarning" << std::endl;
-               addPointsWarning(1, ancestors, coefs);
+                sofa::helper::vector<Index> indexs_ancestor;
+                indexs_ancestor.push_back(indexA);
+                sofa::helper::vector< sofa::helper::vector<Index> > ancestors;
+                ancestors.push_back(indexs_ancestor);
+                sofa::helper::vector<double> barycoefs;
+                barycoefs.push_back(1.0);
+                sofa::helper::vector< sofa::helper::vector<double> > coefs;
+                coefs.push_back(barycoefs);
+                m_modifier->addPoints(1, ancestors, coefs);
+
                 
-                for (Element t : triangleList2)
+                sofa::helper::vector< Element > triangles2Add;
+                sofa::helper::vector< Index > trianglesIndex2Add;
+                sofa::helper::vector< sofa::helper::vector< Index > > triangles_ancestors;
+                sofa::helper::vector< sofa::helper::vector< SReal > > triangles_baryCoefs;
+                barycoefs.clear();
+                barycoefs.push_back(1.0);
+                barycoefs.push_back(1.0);
+                barycoefs.push_back(1.0);
+                for (unsigned int i = 0; i < triangleList2.size(); i++)
                 {
-                    for(unsigned int i = 0; i < 3; i++)
+                    Element t = triangleList2[i];
+                    Element new_triangle;
+                    for(unsigned int j = 0; j < 3; j++)
                     { 
-                        if (t[i] == indexA)
+                        if (t[j] == indexA)
                         {
-                
+                            new_triangle[j] = indexNewPoint;
                         }
-                    }     
+                        else
+                        {
+                            new_triangle[j] = t[j];
+                        }
+                    }    
+                    triangles2Add.push_back(new_triangle);
+                    trianglesIndex2Add.push_back(indexNewTriangle++);
+                    triangles_ancestors.resize(triangles_ancestors.size() + 1);
+                    triangles_baryCoefs.resize(triangles_baryCoefs.size() + 1);
+                    triangles_ancestors[triangles_ancestors.size() - 1].push_back(indexTriangleListSide2[i]);
+                    triangles_baryCoefs[triangles_baryCoefs.size() - 1].push_back(1.0);
+
                 }
-                //addRemoveTriangles(sofa::Size(new_triangles.size()), new_triangles, new_triangles_id, triangles_ancestors, triangles_barycoefs, removed_triangles)
+                m_modifier->addRemoveTriangles(indexTriangleListSide2.size(), triangles2Add, trianglesIndex2Add, triangles_ancestors, triangles_baryCoefs, indexTriangleListSide2);
             }
         }
     }
 }
 
+
+/// <summary>
+/// compute extremities of fracture Pb and Pc from a start point Pa
+/// </summary>
+/// @param Pa - point with maxStress where fracture start
+/// @param direction - direction of maximum principal stress
+/// @param Pb - one of the extremities of fracture
+/// @param Pc - one of the extremities of fracture
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeEndPoints(
     Coord Pa,
@@ -647,6 +666,16 @@ void TearingEngine<DataTypes>::computeEndPoints(
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 }
 
+/// <summary>
+/// get intersection point between Pa and one of the endPoint Pb or Pc
+/// </summary>
+/// @param Pa - point with maxStress 
+/// @param indexA - index of vertex of point Pa
+/// @param endPoint - point Pb or Pc
+/// @param endPoint_inTriangle - boolean tell if endPoint is in an triangle
+/// @param endPointTriangle - index of endPoint triangle
+/// @param edges_list - list of edges intersect by the segment
+/// @param coordsEdge_list - list of baryCoef of intersection point on the edge
 template <class DataTypes>
 bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
     Coord Pa,
@@ -671,7 +700,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
         resume = false;
     Index ind_edge;
 
-    //début de la boucle
+    //loop start
     while (resume)
     {
         sofa::helper::vector<Index> candidateIndice;
@@ -685,7 +714,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
         }
 
 
-        //choisir parmis les candidats
+        //choose in candidats
         int j = -1;
         if (candidateBarycoef.size() > 1)
         {
@@ -704,7 +733,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
             j = 0;
         }
 
-        //on vérifie que nous n'avons pas dépassé l'extrémité
+        //check if endPoint is passed
         if (candidateCoordKmin[j] >= 1)
         {
             endPoint_inTriangle = true;
@@ -720,7 +749,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
         Index next_triangle = -1;
         if (candidateBarycoef[j] < EPS || abs(candidateBarycoef[j] - 1) < EPS)
         {
-            //next_point est sur un sommet
+            //next_point is on an vertex
             if (candidateBarycoef[j] < EPS)
             {
                 next_triangle = m_triangleGeo->getTriangleInDirection(candidateIndice[2 * j], endPoint - x[candidateIndice[2 * j]]);
@@ -732,7 +761,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
         }
         else
         {
-            //next_point est sur un edge
+            //next_point is on an edge
             Index next_point_edgeId = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
             sofa::helper::vector<Index>next_triangle_candidate = m_topology->getTrianglesAroundEdge(next_point_edgeId);
 
@@ -741,7 +770,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
 
         }
 
-        //si on est au bord, il n'y a pas de next_triangle
+        //if on an border, there is no next_triangle
         if (next_triangle > m_topology->getNbTriangles() - 1)
         {
             ind_edge = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
@@ -792,6 +821,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
         candidateBarycoef.clear();
     }
 }
+
 
 template <class DataTypes>
 void TearingEngine<DataTypes>::pathAdaptationObject(
@@ -929,6 +959,7 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     edges_listC.clear();
     coordsEdge_listC.clear();
 }
+
 
 template <class DataTypes>
 int TearingEngine<DataTypes>::splitting(
