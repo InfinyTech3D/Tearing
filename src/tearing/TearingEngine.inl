@@ -418,6 +418,9 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
     }
 }
 
+/// <summary>
+/// compute intersection point and cut through them
+/// </summary>
 template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
@@ -430,13 +433,13 @@ void TearingEngine<DataTypes>::algoFracturePath()
         double EPS = 1e-8;
         bool PATH_IS_OK = false;
 
-        //On cherche le point de départ
+        //looking for starting point
         Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
         int indexA = d_indexVertexMaxStress.getValue();
         Coord Pa = x[indexA];
         path.push_back(Pa);
 
-        //----------------choix du point de depart, A FAIRE QUE LE PREMIER TOUR
+        //----------------manually choose the starting point
         if (d_counter.getValue() <= 2 * d_step.getValue())
         {
           //indexA = 523;
@@ -450,12 +453,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
         }
         //---------------------------------------
 
-        //On détermine les B et C, extrémités de la fracture
+        //compute B and C, fracture extremities
         Coord Pb;
         Coord Pc;
         computeEndPoints(Pa, principalStressDirection, Pb, Pc);
 
-        //Côté C
+        //Side C
         bool sideC_resumed = true;
         Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
         bool triangleInDirectionC = true;
@@ -474,7 +477,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
             PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC);
         path.push_back(Pc);
 
-        //Côté B
+        //Side B
         bool sideB_resumed = true;
         current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pb - Pa);
         bool triangleInDirectionB = true;
@@ -650,8 +653,8 @@ void TearingEngine<DataTypes>::algoFracturePath()
 /// </summary>
 /// @param Pa - point with maxStress where fracture start
 /// @param direction - direction of maximum principal stress
-/// @param Pb - one of the extremities of fracture
-/// @param Pc - one of the extremities of fracture
+/// @return Pb - one of the extremities of fracture
+/// @return Pc - one of the extremities of fracture
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeEndPoints(
     Coord Pa,
@@ -675,7 +678,7 @@ void TearingEngine<DataTypes>::computeEndPoints(
 /// @param endPoint_inTriangle - boolean tell if endPoint is in an triangle
 /// @param endPointTriangle - index of endPoint triangle
 /// @param edges_list - list of edges intersect by the segment
-/// @param coordsEdge_list - list of baryCoef of intersection point on the edge
+/// @param coordsEdge_list - list of baryCoef for intersected edges
 template <class DataTypes>
 bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
     Coord Pa,
@@ -822,7 +825,27 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
     }
 }
 
-
+/// <summary>
+/// creating path through different element POINT or EDGE or TRIANGLE
+/// </summary>
+/// @param EPS - value for zero
+/// @param pointB_inTriangle - boolean tell if Pb is in an triangle
+/// @param triangleB - index of triangle where Pb is
+/// @param Pb - coord of Pb
+/// @param edges_listB - list of edges intersect by the segment Pa to Pb
+/// @param coordsEdge_listB - list of baryCoef for intersected edges on sideB
+/// @param sizeB - number of edges intersect on sideB
+/// @param Pa - coord of Pa, point with maxStress
+/// @param indexA - index of vertex Pa
+/// @param pointC_inTriangle - boolean tell if Pc is in an triangle
+/// @param triangleC - index of triangle where Pc is
+/// @param Pc - coord of Pc
+/// @param edges_listC - list of edges intersect by the segment Pa to Pc
+/// @param coordsEdge_listC - list of baryCoef for intersected edges on sideC
+/// @param sizeC - number of edges intersect on sideC
+/// @return topoPath_list - List of object intersect
+/// @return indices_list - List of indices of these objetcs
+/// @return coords_list - List of barycentric coordinate defining the position of the intersection in each object
 template <class DataTypes>
 void TearingEngine<DataTypes>::pathAdaptationObject(
     double EPS,
@@ -842,15 +865,15 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
 
 
 
-    //début de l'adaptation
+    //adaptation start
     std::cout << "      pointB=" << std::endl;
-    //doit on mettre le point B ?
+    //add point B ?
     if (pointB_inTriangle)
     {
-        //calcul des coo barycentric du point B dans le triangle B
+        //compute barycoef of Pb in triangleB
         sofa::helper::vector< double > coefs_b = m_triangleGeo->computeTriangleBarycoefs(triangleB, Pb);
 
-        //le point est-il sur un sommet
+        //Pb is on an vertex ? 
         bool B_isOnVertex = false;
         Index indexPointB = -1;
         for (unsigned int i = 0; i < coefs_b.size(); i++)
@@ -863,13 +886,13 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
             }
         }
 
-        if (B_isOnVertex) //le point B est sur un sommet
+        if (B_isOnVertex) //Pb is on an vertex
         {
             topoPath_list.push_back(core::topology::TopologyElementType::POINT);
             indices_list.push_back(indexPointB);
             coords_list.push_back(Pb);
         }
-        else//le point B est dans le triangle
+        else//Pb is in an triangle
         {
             topoPath_list.push_back(core::topology::TopologyElementType::TRIANGLE);
             indices_list.push_back(triangleB);
@@ -880,7 +903,7 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     } //pointB_inTriangle
     std::cout << "      fin pointB=" << std::endl;
 
-    //point d'intersection entre B et A
+    //intersection between B and A
     if (sizeB > 0)
     {
         for (unsigned int i = 0; i < sizeB; i++)
@@ -895,13 +918,13 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     }
 
     std::cout << "      pointA=" << std::endl;
-    //ajout du point A
+    //add Pa
     topoPath_list.push_back(core::topology::TopologyElementType::POINT);
     indices_list.push_back(indexA);
     coords_list.push_back(Pa);
     std::cout << "      fin pointA=" << std::endl;
 
-    //point d'intersection entre A et C
+    //intersection between A and C
     if (sizeC > 0)
     {
         for (unsigned int i = 0; i < sizeC; i++)
@@ -917,13 +940,13 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     }
 
     std::cout << "      pointC=" << std::endl;
-    //doit on mettre le point C ?
+    //add point C ?
     if (pointC_inTriangle)
     {
-        //calcul des coo barycentric du point C dans le triangle C
+        //compute barycoef of Pc in triangleC
         sofa::helper::vector< double > coefs_c = m_triangleGeo->computeTriangleBarycoefs(triangleC, Pc);
 
-        //le point est-il sur un sommet
+        //Pc is on an vertex ? 
         bool C_isOnVertex = false;
         Index indexPointC = -1;
         for (unsigned int i = 0; i < coefs_c.size(); i++)
@@ -936,13 +959,13 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
             }
         }
 
-        if (C_isOnVertex) //le point C est sur un sommet
+        if (C_isOnVertex) //Pc is on an vertex
         {
             topoPath_list.push_back(core::topology::TopologyElementType::POINT);
             indices_list.push_back(indexPointC);
             coords_list.push_back(Pc);
         }
-        else//le point C est dans le triangle
+        else//Pc is in an triangle
         {
             topoPath_list.push_back(core::topology::TopologyElementType::TRIANGLE);
             indices_list.push_back(triangleC);
@@ -960,7 +983,20 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     coordsEdge_listC.clear();
 }
 
-
+/// <summary>
+/// Split triangles to create edges along a path given as a the list of existing edges and triangles crossed by it
+/// </summary>
+/// @param snapingValue - snaping value
+/// @param snapingBorderValue - snaping border value
+/// @param Pa - maxStress
+/// @param Pb - extremity of fracture
+/// @param Pc - extremity of fracture
+/// @param sizeB - number of edges intersect on sideB
+/// @param sizeC - number of edges intersect on sideC
+/// @param topoPath_list - List of object intersect
+/// @param indices_list - List of indices of these objetcs
+/// @param coords_list - List of barycentric coordinate defining the position of the intersection in each object
+/// @returns new_edges - the indice of the end point, or -1 if the incision failed
 template <class DataTypes>
 int TearingEngine<DataTypes>::splitting(
     int snapingValue, int snapingBorderValue,
