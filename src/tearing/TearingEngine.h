@@ -57,17 +57,10 @@ public:
 	void doUpdate() override;
 	void draw(const core::visual::VisualParams* vparams) override;
 
-	void initComputeArea();
-	void computeArea();
-
-	//Data
-	Data<vector<double> > d_initArea;
-	
 	Data<VecCoord> input_position; ///< Input position
 	Data<bool> showChangedTriangle;
 
 	//Looking for triangle will tear first
-	Data<double> d_seuilArea; ///<  threshold value for area
 	Data<double> d_seuilPrincipalStress; ///< threshold value for principal stress
 	Data<vector<Index>> d_triangleOverThresholdList;
 	Data<double> d_maxStress;
@@ -79,17 +72,12 @@ public:
 	Data<int> d_counter;
 	Data<double> d_fractureMaxLength;
 
-	void triangleOverThresholdArea();
 	void triangleOverThresholdPrincipalStress();
 	
 	class TriangleInformation
 	{
 	public:
-		Real area;
-
-		//StrainDisplacement strainDisplacementMatrix;
-		//Transformation rotation;
-		//defaulttype::Vec<3, Real> strain;
+		//Real area;
 		defaulttype::Vec<3, Real> stress;
 		Real maxStress;
 

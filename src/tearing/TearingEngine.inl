@@ -14,8 +14,6 @@ namespace sofa::component::engine
 template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
     : input_position(initData(&input_position, "input_position", "Input position"))
-    , d_initArea(initData(&d_initArea, "initArea", "list of initial area"))
-    , d_seuilArea(initData(&d_seuilArea, 0.1, "seuilArea", "threshold value for area"))
     , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 55.0, "seuilStress", "threshold value for stress"))
     , d_triangleOverThresholdList(initData(&d_triangleOverThresholdList, "triangleOverThresholdList", "triangles with maxStress over threshold value"))
 	, l_topology(initLink("topology", "link to the topology container"))
@@ -39,7 +37,6 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_fracturePath(initData(&d_fracturePath,"d_fracturePath","path created by algoFracturePath"))
 {
     addInput(&input_position);
-    addInput(&d_seuilArea);
     addInput(&d_seuilPrincipalStress);
     addInput(&d_step);
     addOutput(&d_triangleInfoTearing);
@@ -94,10 +91,7 @@ void TearingEngine<DataTypes>::init()
         return;
     }
    
-    initComputeArea();
-    computeArea();
     updateTriangleInformation();
-    //triangleOverThresholdArea();
     triangleOverThresholdPrincipalStress();
     d_counter.setValue(0);
     
@@ -114,9 +108,7 @@ void TearingEngine<DataTypes>::doUpdate()
 {
     d_counter.setValue(d_counter.getValue() + 1);
     std::cout << "counter=" << d_counter.getValue() << std::endl;
-    computeArea();
     updateTriangleInformation();
-    //triangleOverThresholdArea(); 
     triangleOverThresholdPrincipalStress();
 }
 
@@ -124,56 +116,7 @@ void TearingEngine<DataTypes>::doUpdate()
 template <class DataTypes>
 void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 {
-    if (showChangedTriangle.getValue())
-    {
-        VecElement triangleList;
-        triangleList = m_topology->getTriangles();
-        helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing); //ne fonctionne pas en ReadAccessor
-        helper::ReadAccessor< Data<vector<double>> > initArea(d_initArea);
-
-        double minDeltaArea = std::numeric_limits<double>::max();
-        double maxDeltaArea = 0.0;
-
-        for (unsigned int i = 0; i < triangleList.size(); i++)
-        {
-            TriangleInformation* tinfo = &triangleInf[i];
-            Real deltaArea = abs(initArea[i] - tinfo->area);
-
-            if (deltaArea < minDeltaArea)
-                minDeltaArea = deltaArea;
-            if (deltaArea > maxDeltaArea)
-                maxDeltaArea = deltaArea;
-        }
-
-        std::vector<sofa::defaulttype::Vector3> vertices;
-        std::vector<sofa::helper::types::RGBAColor> colorVector;
-        helper::ColorMap::evaluator<double> evalColor = p_drawColorMap->getEvaluator(0.0, maxDeltaArea);
-
-        for (unsigned int i = 0; i < triangleList.size(); i++)
-        {
-            Element triangle = triangleList[i];
-            TriangleInformation* tinfo = &triangleInf[i];
-
-            Index a = triangle[0];
-            Index b = triangle[1];
-            Index c = triangle[2];
-
-            Coord Pa = x[a];
-            Coord Pb = x[b];
-            Coord Pc = x[c];
-
-            colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
-            vertices.push_back(Pa);
-            colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
-            vertices.push_back(Pb);
-            colorVector.push_back(evalColor(abs(initArea[i] - tinfo->area)));
-            vertices.push_back(Pc);
-        }
-        vparams->drawTool()->drawTriangles(vertices, colorVector);
-        vertices.clear();
-        colorVector.clear();
-    }
+ 
 
     if (showTearableTriangle.getValue())
     {
@@ -259,96 +202,8 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 
 
 // --------------------------------------------------------------------------------------
-// --- Computation methodsB
+// --- Computation methods
 // --------------------------------------------------------------------------------------
-template <class DataTypes>
-void TearingEngine<DataTypes>::initComputeArea()
-{
-    VecElement triangleList;
-    triangleList = m_topology->getTriangles();
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<vector<double>> > initArea(d_initArea);
-    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
-    if (initArea.size() != triangleList.size())
-        initArea.resize(triangleList.size());
-    if (triangleInf.size() != triangleList.size())
-        triangleInf.resize(triangleList.size());
-
-    for (unsigned int i = 0; i < triangleList.size(); i++)
-    {
-        Element triangle = triangleList[i];
-        TriangleInformation* tinfo = &triangleInf[i];
-
-        Index a = triangle[0];
-        Index b = triangle[1];
-        Index c = triangle[2];
-
-        Coord Pa = x[a];
-        Coord Pb = x[b];
-        Coord Pc = x[c];
-
-        Real determinant;
-
-        Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
-        determinant = ab_cross_ac.norm();
-        tinfo->area = determinant * 0.5f;
-        initArea[i] = tinfo->area;
-    }
-}
-
-template <class DataTypes>
-void TearingEngine<DataTypes>::computeArea()
-{
-    VecElement triangleList;
-    triangleList = m_topology->getTriangles();
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
-    if(triangleInf.size() != triangleList.size() )
-    {
-        triangleInf.resize(triangleList.size());
-    }
-    for (unsigned int i = 0; i < triangleList.size(); i++)
-    {
-        Element triangle = triangleList[i];
-        TriangleInformation* tinfo = &triangleInf[i];
-        Index a = triangle[0];
-        Index b = triangle[1];
-        Index c = triangle[2];
-
-        Coord Pa = x[a];
-        Coord Pb = x[b];
-        Coord Pc = x[c];
-
-        Real determinant;
-        Coord ab_cross_ac = cross(Pb - Pa, Pc - Pa);
-        determinant = ab_cross_ac.norm();
-        tinfo->area = determinant * 0.5f;
-    }
-}
-
-
-template <class DataTypes>
-void TearingEngine<DataTypes>::triangleOverThresholdArea()
-{
-    VecElement triangleList;
-    triangleList = m_topology->getTriangles();
-    helper::ReadAccessor< Data<double> > threshold(d_seuilArea);
-    helper::WriteAccessor< Data<vector<Index>> > TEST(d_triangleOverThresholdList);
-    helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
-    TEST.clear();
-    //not forget to clear this list at the end of the step
-    Index max = 0;
-    for (unsigned int i = 0; i < triangleList.size(); i++)
-    {
-        TriangleInformation* tinfo = &triangleInf[i];
-        if (tinfo->area >= threshold)
-        {
-            TEST.push_back(i);
-            if (tinfo->area > triangleInf[max].area)
-                max = i;
-        }         
-    }
-}
 
 template <class DataTypes>
 void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
@@ -412,7 +267,6 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
         TriangleFEMInformation tFEMinfo = triangleFEMInf[i];
         TriangleInformation* tinfo = &triangleInf[i];
 
-        //tinfo->area =  tFEMinfo.area;;
         tinfo->stress = tFEMinfo.stress;
         tinfo->maxStress = tFEMinfo.maxStress;
     }
