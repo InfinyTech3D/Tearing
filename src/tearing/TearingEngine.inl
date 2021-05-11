@@ -336,7 +336,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdArea()
     helper::WriteAccessor< Data<vector<Index>> > TEST(d_triangleOverThresholdList);
     helper::WriteAccessor< Data<vector<TriangleInformation>> > triangleInf(d_triangleInfoTearing);
     TEST.clear();
-    //ne pas oublier à la fin d'un step de clear cette liste sinon on accumule les triangles
+    //not forget to clear this list at the end of the step
     Index max = 0;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
@@ -419,7 +419,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
 }
 
 /// <summary>
-/// compute intersection point and cut through them
+/// compute fracture path intersection point and cut through them
 /// </summary>
 template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
@@ -548,7 +548,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         }
         else if (!triangleInDirectionB && !triangleInDirectionC && m_topology->getTrianglesAroundVertex(indexA).size() > 1)
         {
-            std::cout << "SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBLIER-------------------------------------" << std::endl;
+            std::cout << "DEBUT T jUNCTION SABLIER-------------------------------------" << std::endl;
             sofa::helper::vector<Index> indexTriangleList = m_topology->getTrianglesAroundVertex(indexA);
             sofa::helper::vector<Index> indexTriangleListSide1;
             sofa::helper::vector<Index> indexTriangleListSide2;
@@ -643,6 +643,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
                 }
                 m_modifier->addRemoveTriangles(indexTriangleListSide2.size(), triangles2Add, trianglesIndex2Add, triangles_ancestors, triangles_baryCoefs, indexTriangleListSide2);
             }
+            std::cout << "FIN T jUNCTION SABLIER-------------------------------------" << std::endl;
         }
     }
 }
