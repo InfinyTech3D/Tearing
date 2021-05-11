@@ -575,9 +575,18 @@ void TearingEngine<DataTypes>::algoFracturePath()
                     int k_i = (t_i[0] == indexA) ? 0 : 1;
                     k_i = (t_i[k_i] == indexA) ? k_i : 2;
 
-                    Coord p0b = x[t[k_i]];
-                    Coord p1b = x[t[(3 + (k_i + 1)) % 3]];
+                    Coord p0b = x[t_i[k_i]];
+                    Coord p1b = x[t_i[(3 + (k_i + 1)) % 3]];
                     Coord vec_b = p1b - p0b;
+                    std::cout << "produit scalaire " << i <<" = "<< (vec_a * normal) * (vec_b * normal) << std::endl;
+
+                    std::cout << "triangleA= " << indexTriangleA << std::endl;
+                    std::cout << "triangleB= " << indexTriangleList[i] << std::endl;
+                    std::cout << "a0= " << t[k0] << std::endl;
+                    std::cout << "a1= " << t[(3 + (k0 + 1)) % 3] << std::endl;
+                    std::cout << "b0= " << t_i[k_i] << std::endl;
+                    std::cout << "b1= " << t_i[(3 + (k_i + 1)) % 3] << std::endl;
+
 
                     if ((vec_a * normal) * (vec_b * normal) > 0)
                     {
