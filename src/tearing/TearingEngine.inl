@@ -35,6 +35,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
     , d_fracturePath(initData(&d_fracturePath,"d_fracturePath","path created by algoFracturePath"))
+    , d_fractureNumber(initData(&d_fractureNumber, 0, "d_fractureNumber", "number of fracture done by the algorithm"))
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
@@ -44,6 +45,7 @@ TearingEngine<DataTypes>::TearingEngine()
     addOutput(&d_triangleOverThresholdList);
     addOutput(&d_maxStress);
     addOutput(&d_indexVertexMaxStress);
+    addOutput(&d_fractureNumber);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
 }
 
@@ -94,6 +96,7 @@ void TearingEngine<DataTypes>::init()
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
     d_counter.setValue(0);
+    d_fractureNumber.setValue(0);
     
 }
 
@@ -190,7 +193,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 {
     if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateBeginEvent::checkEventType(event))
     {
-        if ((d_counter.getValue() % d_step.getValue()) == 0 || !stepByStep.getValue())
+        if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue()<2) || !stepByStep.getValue())
         {
             std::cout << "  enter fracture" << std::endl;
             if(d_counter.getValue()>d_step.getValue())
@@ -391,6 +394,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
                         dmsg_error("TopologicalChangeManager") << " in InciseAlongEdgeList";
                         return;
                     }
+                    d_fractureNumber.setValue(d_fractureNumber.getValue()+1);
                     std::cout << "FIN STEP 6-------------------------------------" << std::endl;
                 }
             }
@@ -505,6 +509,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
                 }
                 m_modifier->addRemoveTriangles(indexTriangleListSide2.size(), triangles2Add, trianglesIndex2Add, triangles_ancestors, triangles_baryCoefs, indexTriangleListSide2);
+                d_fractureNumber.setValue(d_fractureNumber.getValue() + 1);
             }
             std::cout << "FIN T jUNCTION SABLIER-------------------------------------" << std::endl;
         }

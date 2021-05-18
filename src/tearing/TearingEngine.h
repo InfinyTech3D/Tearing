@@ -101,6 +101,7 @@ public:
 	void updateTriangleInformation();
 
 	/// Test algoFracturePath
+	Data<int> d_fractureNumber;
 	void algoFracturePath();
 	Data<vector<Coord>> d_fracturePath;
 	Data<bool> showFracturePath;
