@@ -34,12 +34,14 @@ TearingEngine<DataTypes>::TearingEngine()
 
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
-    , d_fracturePath(initData(&d_fracturePath,"d_fracturePath","path created by algoFracturePath"))
-    , d_fractureNumber(initData(&d_fractureNumber, 0, "d_fractureNumber", "number of fracture done by the algorithm"))
+    , d_fracturePath(initData(&d_fracturePath,"fracturePath","path created by algoFracturePath"))
+    , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
+    , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
     addInput(&d_step);
+    addInput(&d_scenario);
     addOutput(&d_triangleInfoTearing);
     addOutput(&d_triangleFEMInfo);
     addOutput(&d_triangleOverThresholdList);
@@ -193,7 +195,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 {
     if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateBeginEvent::checkEventType(event))
     {
-        if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue()<2) || !stepByStep.getValue())
+        if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue()<3) || !stepByStep.getValue())
         {
             std::cout << "  enter fracture" << std::endl;
             if(d_counter.getValue()>d_step.getValue())
@@ -290,30 +292,57 @@ void TearingEngine<DataTypes>::algoFracturePath()
         double EPS = 1e-8;
         bool PATH_IS_OK = false;
 
+
         //looking for starting point
-        Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-        int indexA = d_indexVertexMaxStress.getValue();
-        Coord Pa = x[indexA];
-        path.push_back(Pa);
-
-        //----------------manually choose the starting point
-        if (d_counter.getValue() <= 2 * d_step.getValue())
-        {
-          //indexA = 523;
-          //Pa = x[523];
-          //Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
-          //indexTriangleMaxStress = 947;
-          //d_indexTriangleMaxStress.endEdit();
-          //principalStressDirection[0] = 0.0;
-          //principalStressDirection[1] = 1.0;
-          //principalStressDirection[2] = 0.0;
-        }
-        //---------------------------------------
-
-        //compute B and C, fracture extremities
+        int indexA;
+        Coord Pa;
+        Coord principalStressDirection;
         Coord Pb;
         Coord Pc;
-        computeEndPoints(Pa, principalStressDirection, Pb, Pc);
+
+        int choice;
+        Coord dir;
+        double alpha;
+        if (d_fractureNumber.getValue() == 0)
+        {
+            choice = d_scenario.getValue();
+        }
+        else
+        {
+            choice = 0;
+        }
+        
+        switch (choice)
+        {
+        default:
+            indexA = d_indexVertexMaxStress.getValue();
+            Pa = x[indexA];
+            path.push_back(Pa);
+            principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+            computeEndPoints(Pa, principalStressDirection, Pb, Pc);
+            break;
+
+        case 1 :
+            indexA = 421;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
+            alpha = 2.5;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - alpha * dir;
+            break;
+        
+        case 2 :
+            indexA = 1;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 0.707; dir[1] = 0.707; dir[2] = 0.0;
+            alpha = 3.5;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - alpha * dir;
+            break;
+        }
+
 
         //Side C
         bool sideC_resumed = true;

@@ -127,6 +127,8 @@ public:
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
 
+	Data<int> d_scenario;
+
 protected:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology;
