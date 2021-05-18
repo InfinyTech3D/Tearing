@@ -36,6 +36,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
     , d_fracturePath(initData(&d_fracturePath,"fracturePath","path created by algoFracturePath"))
     , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
+    , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
     , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
 {
     addInput(&input_position);
@@ -195,7 +196,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 {
     if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateBeginEvent::checkEventType(event))
     {
-        if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue()<3) || !stepByStep.getValue())
+        if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue()< d_nbFractureMax.getValue()) || !stepByStep.getValue())
         {
             std::cout << "  enter fracture" << std::endl;
             if(d_counter.getValue()>d_step.getValue())
@@ -323,6 +324,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
             break;
 
         case 1 :
+            //CasTest1-1
             indexA = 421;
             Pa = x[indexA];
             path.push_back(Pa);
@@ -333,6 +335,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
             break;
         
         case 2 :
+            //CasTest1-2
             indexA = 1;
             Pa = x[indexA];
             path.push_back(Pa);
@@ -340,6 +343,83 @@ void TearingEngine<DataTypes>::algoFracturePath()
             alpha = 3.5;
             Pb = Pa + alpha * dir;
             Pc = Pa - alpha * dir;
+            break;
+
+        case 3:
+            //CasTest2-1
+            indexA = 470;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
+            alpha = 4.0;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - alpha * dir;
+            break;
+
+        case 4:
+            //CasTest2-2
+            indexA = 84;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 0.707; dir[1] = 0.707; dir[2] = 0.0;
+            alpha = 3.5;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - alpha * dir;
+            break;
+
+        case 5:
+            //CasTest4-1
+            indexA = 45;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
+            alpha = 2.0;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - alpha * dir;
+            break;
+
+        case 6:
+            //CasTest4-1
+            indexA = 51;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
+            alpha = 5.0;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - alpha * dir;
+            break;
+
+        case 7:
+            //CasTest5_holeCircular-1
+            indexA = 318;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
+            alpha = 2.5;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - alpha * dir;
+            break;
+
+        case 8:
+            //CasTest5_holeCircular-2
+            indexA = 282;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 0.707; dir[1] = -0.707; dir[2] = 0.0;
+            alpha = 2.0;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - alpha * dir;
+            break;
+
+        case 9:
+            //CasTest5_holeSquare
+            indexA = 231;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
+            alpha = 5.0;
+            Pb = Pa + alpha * dir;
+            Pc = Pa - dir;
             break;
         }
 

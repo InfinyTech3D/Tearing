@@ -102,6 +102,7 @@ public:
 
 	/// Test algoFracturePath
 	Data<int> d_fractureNumber;
+	Data<int> d_nbFractureMax;
 	void algoFracturePath();
 	Data<vector<Coord>> d_fracturePath;
 	Data<bool> showFracturePath;
