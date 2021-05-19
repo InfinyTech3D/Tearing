@@ -15,6 +15,8 @@
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
 
+#include <SofaBoundaryCondition/ConstantForceField.h>
+
 namespace sofa::helper
 {
 	class ColorMap;
@@ -71,6 +73,8 @@ public:
 	Data<int> d_step;
 	Data<int> d_counter;
 	Data<double> d_fractureMaxLength;
+	Data<vector<Index>> d_triangleToIgnoreList;
+	Data<bool> ignoreTriangleAtStart;
 
 	void triangleOverThresholdPrincipalStress();
 	
@@ -130,12 +134,15 @@ public:
 
 	Data<int> d_scenario;
 
+	void computeTriangleToSkip();
+
 protected:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology;
 	sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
 	sofa::component::forcefield::TriangularFEMForceField<DataTypes>* m_triangularFEM;
 	sofa::component::topology::TriangleSetTopologyModifier* m_modifier;
+	sofa::component::forcefield::ConstantForceField<DataTypes>* m_CFF;
 private:
 	sofa::helper::ColorMap* p_drawColorMap;
 

@@ -28,6 +28,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     SofaDefaultType
     SofaBaseTopology
     SofaMiscFem
+    SofaBoundaryCondition
     )
 
 # nested-namespace-definition requires compiler flag '/std:c++17'

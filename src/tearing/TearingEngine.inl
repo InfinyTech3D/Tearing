@@ -7,7 +7,6 @@
 #include <SofaBaseTopology/TopologyData.inl>
 #include <sofa/simulation/Simulation.h>
 
-//#include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
 
 namespace sofa::component::engine
 {
@@ -16,11 +15,13 @@ TearingEngine<DataTypes>::TearingEngine()
     : input_position(initData(&input_position, "input_position", "Input position"))
     , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 55.0, "seuilStress", "threshold value for stress"))
     , d_triangleOverThresholdList(initData(&d_triangleOverThresholdList, "triangleOverThresholdList", "triangles with maxStress over threshold value"))
+    , d_triangleToIgnoreList(initData(&d_triangleToIgnoreList, "triangleToIgnoreList", "triangles that can't be choosen as starting fracture point"))
 	, l_topology(initLink("topology", "link to the topology container"))
 	, m_topology(nullptr)
     , m_triangleGeo(nullptr)
     , m_triangularFEM(nullptr)
     , m_modifier(nullptr)
+    , m_CFF(nullptr)
     , showChangedTriangle(initData(&showChangedTriangle, false,"showChangedTriangle", "Flag activating rendering of changed triangle"))
     , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
@@ -38,6 +39,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
     , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
+    , ignoreTriangleAtStart(initData(&ignoreTriangleAtStart, true, "ignoreTriangleAtStart","option to ignore some triangles at start of the tearing algo"))
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
@@ -95,8 +97,18 @@ void TearingEngine<DataTypes>::init()
         sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         return;
     }
+
+    m_topology->getContext()->get(m_CFF);
+    if (!m_CFF)
+    {
+        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+        return;
+    }
    
     updateTriangleInformation();
+    if(ignoreTriangleAtStart.getValue())
+        computeTriangleToSkip();
     triangleOverThresholdPrincipalStress();
     d_counter.setValue(0);
     d_fractureNumber.setValue(0);
@@ -223,16 +235,21 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
     candidate.clear();
     maxStress = 0;
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
+
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
-        TriangleInformation* tinfo = &triangleInf[i];
-        if (tinfo->maxStress >= threshold)
+        if (std::find(triangleToSkip.begin(), triangleToSkip.end(), i) == triangleToSkip.end())
         {
-            candidate.push_back(i);
-            if (tinfo->maxStress > maxStress)
+            TriangleInformation* tinfo = &triangleInf[i];
+            if (tinfo->maxStress >= threshold)
             {
-                indexTriangleMaxStress = i;
-                maxStress = tinfo->maxStress;
+                candidate.push_back(i);
+                if (tinfo->maxStress > maxStress)
+                {
+                    indexTriangleMaxStress = i;
+                    maxStress = tinfo->maxStress;
+                }
             }
         }
     }
@@ -578,14 +595,14 @@ void TearingEngine<DataTypes>::algoFracturePath()
                     Coord p0b = x[t_i[k_i]];
                     Coord p1b = x[t_i[(3 + (k_i + 1)) % 3]];
                     Coord vec_b = p1b - p0b;
-                    std::cout << "produit scalaire " << i <<" = "<< (vec_a * normal) * (vec_b * normal) << std::endl;
-
-                    std::cout << "triangleA= " << indexTriangleA << std::endl;
-                    std::cout << "triangleB= " << indexTriangleList[i] << std::endl;
-                    std::cout << "a0= " << t[k0] << std::endl;
-                    std::cout << "a1= " << t[(3 + (k0 + 1)) % 3] << std::endl;
-                    std::cout << "b0= " << t_i[k_i] << std::endl;
-                    std::cout << "b1= " << t_i[(3 + (k_i + 1)) % 3] << std::endl;
+                    //std::cout << "produit scalaire " << i <<" = "<< (vec_a * normal) * (vec_b * normal) << std::endl;
+                    //
+                    //std::cout << "triangleA= " << indexTriangleA << std::endl;
+                    //std::cout << "triangleB= " << indexTriangleList[i] << std::endl;
+                    //std::cout << "a0= " << t[k0] << std::endl;
+                    //std::cout << "a1= " << t[(3 + (k0 + 1)) % 3] << std::endl;
+                    //std::cout << "b0= " << t_i[k_i] << std::endl;
+                    //std::cout << "b1= " << t_i[(3 + (k_i + 1)) % 3] << std::endl;
 
 
                     if ((vec_a * normal) * (vec_b * normal) > 0)
@@ -600,9 +617,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
                 }
             }
 
-            std::cout << "nb triangle autour =" << m_topology->getTrianglesAroundVertex(indexA).size() << std::endl;
-            std::cout << "nb indexTriangleListSide1 =" << indexTriangleListSide1.size() << std::endl;
-            std::cout << "nb indexTriangleListSide2 =" << indexTriangleListSide2.size() << std::endl;
+            //std::cout << "nb triangle autour =" << m_topology->getTrianglesAroundVertex(indexA).size() << std::endl;
+            //std::cout << "nb indexTriangleListSide1 =" << indexTriangleListSide1.size() << std::endl;
+            //std::cout << "nb indexTriangleListSide2 =" << indexTriangleListSide2.size() << std::endl;
             if (indexTriangleListSide2.size()>0)
             {
                 Index indexNewPoint=m_topology->getNbPoints();
@@ -757,7 +774,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
             return PATH_IS_OK;
         }
         Coord next_point = x[candidateIndice[2 * j]] + candidateBarycoef[j] * (x[candidateIndice[2 * j + 1]] - x[candidateIndice[2 * j]]);
-        std::cout << "                      next point=" << next_point << std::endl;
+        //std::cout << "                      next point=" << next_point << std::endl;
         path.push_back(next_point);
 
         Index next_triangle = -1;
@@ -812,7 +829,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
 
 
 
-        std::cout << "                      next triangle=" << next_triangle<< std::endl;
+        //std::cout << "                      next triangle=" << next_triangle<< std::endl;
 
         //MAJ
         current_triangle = next_triangle;
@@ -871,13 +888,13 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     //equivalent STEP 4
     sizeB = edges_listB.size();
     sizeC = edges_listC.size();
-    std::cout << "    sizeB=" << sizeB << std::endl;
-    std::cout << "    sizeC=" << sizeC << std::endl;
+    //std::cout << "    sizeB=" << sizeB << std::endl;
+    //std::cout << "    sizeC=" << sizeC << std::endl;
 
 
 
     //adaptation start
-    std::cout << "      pointB=" << std::endl;
+    //std::cout << "      pointB=" << std::endl;
     //add point B ?
     if (pointB_inTriangle)
     {
@@ -912,7 +929,7 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
             coords_list.push_back(baryCoords);
         }
     } //pointB_inTriangle
-    std::cout << "      fin pointB=" << std::endl;
+    //std::cout << "      fin pointB=" << std::endl;
 
     //intersection between B and A
     if (sizeB > 0)
@@ -928,12 +945,12 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
         }
     }
 
-    std::cout << "      pointA=" << std::endl;
+    //std::cout << "      pointA=" << std::endl;
     //add Pa
     topoPath_list.push_back(core::topology::TopologyElementType::POINT);
     indices_list.push_back(indexA);
     coords_list.push_back(Pa);
-    std::cout << "      fin pointA=" << std::endl;
+    //std::cout << "      fin pointA=" << std::endl;
 
     //intersection between A and C
     if (sizeC > 0)
@@ -950,7 +967,7 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
         }
     }
 
-    std::cout << "      pointC=" << std::endl;
+    //std::cout << "      pointC=" << std::endl;
     //add point C ?
     if (pointC_inTriangle)
     {
@@ -985,9 +1002,9 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
             coords_list.push_back(baryCoords);
         }
     } //pointC_inTriangle
-    std::cout << "      fin pointC=" << std::endl;
+    //std::cout << "      fin pointC=" << std::endl;
 
-    std::cout << "          indices_list=" << indices_list << std::endl;
+    //std::cout << "          indices_list=" << indices_list << std::endl;
     edges_listB.clear();
     coordsEdge_listB.clear();
     edges_listC.clear();
@@ -1036,9 +1053,29 @@ int TearingEngine<DataTypes>::splitting(
     {
         result = m_triangleGeo->SplitAlongPath(core::topology::BaseMeshTopology::InvalidID, Pb, core::topology::BaseMeshTopology::InvalidID, Pc, topoPath_list, indices_list, coords_list, new_edges, epsilonSnap, epsilonBorderSnap);
     }
-    std::cout << "              results SplitAlongPath=" << result << std::endl;
+    //std::cout << "              results SplitAlongPath=" << result << std::endl;
     
     return result;
+}
+
+/// <summary>
+/// compute ignored triangle at start of the tearing algo
+/// </summary>
+template <class DataTypes>
+void TearingEngine<DataTypes>::computeTriangleToSkip()
+{
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
+    vector<Index> vertexToSkip = m_CFF->d_indices.getValue();
+
+    for (unsigned int i = 0; i < vertexToSkip.size(); i++)
+    {
+        vector<Index> triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vertexToSkip[i]);
+        for (unsigned int j = 0; j < triangleAroundVertex_i.size(); j++)
+        {
+            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), triangleAroundVertex_i[j]) == triangleToSkip.end())
+                triangleToSkip.push_back(triangleAroundVertex_i[j]);
+        }
+    }
 }
 
 } //namespace sofa::component::engine
