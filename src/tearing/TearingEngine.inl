@@ -421,6 +421,39 @@ void TearingEngine<DataTypes>::algoFracturePath()
             Pb = Pa + alpha * dir;
             Pc = Pa - dir;
             break;
+
+        case 10:
+            //CasTest5_holeSquareVertical
+            indexA = 229;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
+            alpha = 2.0;
+            Pb = Pa - alpha * dir;
+            Pc = Pa + dir;
+            break;
+
+        case 11:
+            //CasTest5_incision-1
+            indexA = 179;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
+            alpha = 2.0;
+            Pb = Pa - alpha * dir;
+            Pc = Pa + alpha * dir;
+            break;
+
+        case 12:
+            //CasTest5_incision-2
+            indexA = 188;
+            Pa = x[indexA];
+            path.push_back(Pa);
+            dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
+            alpha = 4.0;
+            Pb = Pa - alpha * dir;
+            Pc = Pa + 0.1 * dir;
+            break;
         }
 
 
