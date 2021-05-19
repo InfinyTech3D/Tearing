@@ -450,9 +450,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
             Pa = x[indexA];
             path.push_back(Pa);
             dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
-            alpha = 4.0;
-            Pb = Pa - alpha * dir;
-            Pc = Pa + 0.1 * dir;
+            alpha = 5.0;
+            Pb = Pa;
+            Pc = Pa - alpha * dir;
             break;
         }
 
