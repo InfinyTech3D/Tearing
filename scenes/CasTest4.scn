@@ -40,7 +40,7 @@ On fixe un coté et nous tirons sur le côté opposé en un coin-->
 		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PullCorner" box="9.9 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PullCorner.indices" force="0 -100 0" showArrowSize=".02" />		
+		<ConstantForceField name="CFF" indices="@PullCorner.indices" force="0 -120 0" showArrowSize=".02" />		
 
 		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
