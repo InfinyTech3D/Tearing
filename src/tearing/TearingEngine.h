@@ -75,6 +75,7 @@ public:
 	Data<double> d_fractureMaxLength;
 	Data<vector<Index>> d_triangleToIgnoreList;
 	Data<bool> ignoreTriangleAtStart;
+	Data<vector<vector<int>>> d_TjunctionTriangle;
 
 	void triangleOverThresholdPrincipalStress();
 	

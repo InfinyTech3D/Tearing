@@ -40,6 +40,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
     , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
     , ignoreTriangleAtStart(initData(&ignoreTriangleAtStart, true, "ignoreTriangleAtStart","option to ignore some triangles at start of the tearing algo"))
+    , d_TjunctionTriangle(initData(&d_TjunctionTriangle, "TjunctionTriangle", "list of triangle where a T junction is blocking the algorithm"))
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
@@ -105,10 +106,10 @@ void TearingEngine<DataTypes>::init()
         sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         return;
     }
-   
-    updateTriangleInformation();
-    if(ignoreTriangleAtStart.getValue())
+
+    if (ignoreTriangleAtStart.getValue())
         computeTriangleToSkip();
+    updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
     d_counter.setValue(0);
     d_fractureNumber.setValue(0);
@@ -126,6 +127,18 @@ void TearingEngine<DataTypes>::doUpdate()
 {
     d_counter.setValue(d_counter.getValue() + 1);
     std::cout << "counter=" << d_counter.getValue() << std::endl;
+
+    if (ignoreTriangleAtStart.getValue())
+    {
+        if(d_fractureNumber.getValue() == 0)
+            computeTriangleToSkip();
+    }
+    else
+    {
+        vector<Index> emptyIndexList;
+        d_triangleToIgnoreList.setValue(emptyIndexList);
+    }
+
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
 }
@@ -670,6 +683,16 @@ void TearingEngine<DataTypes>::algoFracturePath()
                 m_modifier->addRemoveTriangles(indexTriangleListSide2.size(), triangles2Add, trianglesIndex2Add, triangles_ancestors, triangles_baryCoefs, indexTriangleListSide2);
                 d_fractureNumber.setValue(d_fractureNumber.getValue() + 1);
             }
+            else
+            {
+                std::cout << "                  TjunctionTriangle add" << std::endl;
+                helper::WriteAccessor< Data<vector<vector<int>>> > TjunctionTriangle(d_TjunctionTriangle);
+                int a = d_fractureNumber.getValue();
+                int b = d_indexTriangleMaxStress.getValue();
+                TjunctionTriangle.push_back({ {a},{b} });
+                //std::cout << "          fractureNumber" <<TjunctionTriangle[0][0]<< std::endl;
+                //std::cout << "          indexTriangleA" << TjunctionTriangle[0][1]<< std::endl;
+            }
             std::cout << "FIN T jUNCTION SABLIER-------------------------------------" << std::endl;
         }
     }
@@ -1065,10 +1088,8 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
-
     sofa::helper::vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
     this->getContext()->get< sofa::component::forcefield::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
-    std::cout << "CFFs=" << m_ConstantForceFields.size()<<std::endl;
 
     for each (sofa::component::forcefield::ConstantForceField<DataTypes>* cff_i in m_ConstantForceFields)
     {
