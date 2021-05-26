@@ -760,7 +760,7 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
         sofa::helper::vector<Index> candidateIndice;
         sofa::helper::vector<double> candidateBarycoef;
         sofa::helper::vector<double> candidateCoordKmin;
-        bool intersection_exist = m_triangleGeo->computeSegmentTriangleIntersections(false, current_point, endPoint, current_triangle, candidateIndice, candidateBarycoef, candidateCoordKmin);
+        bool intersection_exist = m_triangleGeo->computeIntersectionsLineTriangle(false, current_point, endPoint, current_triangle, candidateIndice, candidateBarycoef, candidateCoordKmin);
         if (intersection_exist == false)
         {
             resume = false;
@@ -1105,4 +1105,5 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
         }
     }   
 }
+
 } //namespace sofa::component::engine

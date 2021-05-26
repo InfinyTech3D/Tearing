@@ -40,7 +40,7 @@ On fixe un coté et nous tirons sur le côté opposé au milieu-->
 		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PullMiddle" box="4.9 0.1 0.1  5.1 -0.1 -0.1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PullMiddle.indices" force="0 -190 0" showArrowSize=".01" />        
+		<ConstantForceField name="CFF" indices="@PullMiddle.indices" force="0 -650 0" showArrowSize=".01" />        
 		
 		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
