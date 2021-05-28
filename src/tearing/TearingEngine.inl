@@ -44,6 +44,7 @@ TearingEngine<DataTypes>::TearingEngine()
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
+    addInput(&d_fractureMaxLength);
     addInput(&d_step);
     addInput(&d_scenario);
     addOutput(&d_triangleInfoTearing);
@@ -236,6 +237,9 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 // --- Computation methods
 // --------------------------------------------------------------------------------------
 
+/// <summary>
+/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
+/// </summary>
 template <class DataTypes>
 void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
 {
@@ -279,10 +283,12 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     d_indexTriangleMaxStress.endEdit();
 }
 
+/// <summary>
+/// update d_triangleInfoTearing with value from d_triangleFEMInfo
+/// </summary>
 template <class DataTypes>
 void TearingEngine<DataTypes>::updateTriangleInformation()
 {
-    //update triangleInformation
     VecElement triangleList;
     triangleList = m_topology->getTriangles();
     d_triangleFEMInfo = m_triangularFEM->triangleInfo.getValue();
@@ -343,6 +349,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         Coord dir;
         double alpha;
         
+        //scenario
         switch (choice)
         {
         default:
@@ -608,16 +615,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
                     Coord p0b = x[t_i[k_i]];
                     Coord p1b = x[t_i[(3 + (k_i + 1)) % 3]];
                     Coord vec_b = p1b - p0b;
-                    //std::cout << "produit scalaire " << i <<" = "<< (vec_a * normal) * (vec_b * normal) << std::endl;
-                    //
-                    //std::cout << "triangleA= " << indexTriangleA << std::endl;
-                    //std::cout << "triangleB= " << indexTriangleList[i] << std::endl;
-                    //std::cout << "a0= " << t[k0] << std::endl;
-                    //std::cout << "a1= " << t[(3 + (k0 + 1)) % 3] << std::endl;
-                    //std::cout << "b0= " << t_i[k_i] << std::endl;
-                    //std::cout << "b1= " << t_i[(3 + (k_i + 1)) % 3] << std::endl;
-
-
+                    
                     if ((vec_a * normal) * (vec_b * normal) > 0)
                     {
                         indexTriangleListSide1.push_back(indexTriangleList[i]);
