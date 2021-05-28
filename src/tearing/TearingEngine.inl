@@ -628,9 +628,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
                 }
             }
 
-            //std::cout << "nb triangle autour =" << m_topology->getTrianglesAroundVertex(indexA).size() << std::endl;
-            //std::cout << "nb indexTriangleListSide1 =" << indexTriangleListSide1.size() << std::endl;
-            //std::cout << "nb indexTriangleListSide2 =" << indexTriangleListSide2.size() << std::endl;
             if (indexTriangleListSide2.size()>0)
             {
                 Index indexNewPoint=m_topology->getNbPoints();
@@ -688,8 +685,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
                 int a = d_fractureNumber.getValue();
                 int b = d_indexTriangleMaxStress.getValue();
                 TjunctionTriangle.push_back({ {a},{b} });
-                //std::cout << "          fractureNumber" <<TjunctionTriangle[0][0]<< std::endl;
-                //std::cout << "          indexTriangleA" << TjunctionTriangle[0][1]<< std::endl;
             }
             std::cout << "FIN T jUNCTION SABLIER-------------------------------------" << std::endl;
         }
@@ -848,10 +843,6 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
                 return PATH_IS_OK;
         }
 
-
-
-        //std::cout << "                      next triangle=" << next_triangle<< std::endl;
-
         //MAJ
         current_triangle = next_triangle;
         current_point = next_point;
@@ -909,13 +900,8 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     //equivalent STEP 4
     sizeB = edges_listB.size();
     sizeC = edges_listC.size();
-    //std::cout << "    sizeB=" << sizeB << std::endl;
-    //std::cout << "    sizeC=" << sizeC << std::endl;
-
-
 
     //adaptation start
-    //std::cout << "      pointB=" << std::endl;
     //add point B ?
     if (pointB_inTriangle)
     {
@@ -950,7 +936,6 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
             coords_list.push_back(baryCoords);
         }
     } //pointB_inTriangle
-    //std::cout << "      fin pointB=" << std::endl;
 
     //intersection between B and A
     if (sizeB > 0)
@@ -966,12 +951,10 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
         }
     }
 
-    //std::cout << "      pointA=" << std::endl;
     //add Pa
     topoPath_list.push_back(core::topology::TopologyElementType::POINT);
     indices_list.push_back(indexA);
     coords_list.push_back(Pa);
-    //std::cout << "      fin pointA=" << std::endl;
 
     //intersection between A and C
     if (sizeC > 0)
@@ -988,7 +971,6 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
         }
     }
 
-    //std::cout << "      pointC=" << std::endl;
     //add point C ?
     if (pointC_inTriangle)
     {
@@ -1023,9 +1005,7 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
             coords_list.push_back(baryCoords);
         }
     } //pointC_inTriangle
-    //std::cout << "      fin pointC=" << std::endl;
 
-    //std::cout << "          indices_list=" << indices_list << std::endl;
     edges_listB.clear();
     coordsEdge_listB.clear();
     edges_listC.clear();
@@ -1074,8 +1054,6 @@ int TearingEngine<DataTypes>::splitting(
     {
         result = m_triangleGeo->SplitAlongPath(core::topology::BaseMeshTopology::InvalidID, Pb, core::topology::BaseMeshTopology::InvalidID, Pc, topoPath_list, indices_list, coords_list, new_edges, epsilonSnap, epsilonBorderSnap);
     }
-    //std::cout << "              results SplitAlongPath=" << result << std::endl;
-    
     return result;
 }
 
