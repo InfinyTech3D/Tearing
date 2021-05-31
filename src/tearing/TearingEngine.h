@@ -143,7 +143,6 @@ protected:
 	sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
 	sofa::component::forcefield::TriangularFEMForceField<DataTypes>* m_triangularFEM;
 	sofa::component::topology::TriangleSetTopologyModifier* m_modifier;
-	sofa::component::forcefield::ConstantForceField<DataTypes>* m_CFF;
 private:
 	sofa::helper::ColorMap* p_drawColorMap;
 

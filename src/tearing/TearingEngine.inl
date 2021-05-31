@@ -21,7 +21,6 @@ TearingEngine<DataTypes>::TearingEngine()
     , m_triangleGeo(nullptr)
     , m_triangularFEM(nullptr)
     , m_modifier(nullptr)
-    , m_CFF(nullptr)
     , showChangedTriangle(initData(&showChangedTriangle, false,"showChangedTriangle", "Flag activating rendering of changed triangle"))
     , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_triangleInfoTearing(initData(&d_triangleInfoTearing, "triangleInfoTearing", "Internal triangle data"))
@@ -100,14 +99,6 @@ void TearingEngine<DataTypes>::init()
         return;
     }
 
-    m_topology->getContext()->get(m_CFF);
-    if (!m_CFF)
-    {
-        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
-        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
-        return;
-    }
-
     if (ignoreTriangleAtStart.getValue())
         computeTriangleToSkip();
     updateTriangleInformation();
@@ -140,6 +131,17 @@ void TearingEngine<DataTypes>::doUpdate()
         d_triangleToIgnoreList.setValue(emptyIndexList);
     }
 
+    helper::ReadAccessor< Data<vector<vector<int>>> > TjunctionTriangle(d_TjunctionTriangle);
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
+    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
+    {
+        if (TjunctionTriangle[i][0] == d_fractureNumber.getValue())
+        {
+            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
+                triangleToSkip.push_back(TjunctionTriangle[i][1]);
+        }
+    }
+
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
 }
@@ -157,18 +159,33 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         std::vector<sofa::defaulttype::Vector3> vertices;
         sofa::helper::types::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
+        std::vector<sofa::defaulttype::Vector3> tearTriangleVertices;
+        sofa::helper::types::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
         if (candidate.size() > 0)
         {
             for (unsigned int i = 0; i < candidate.size(); i++)
             {
+                if(candidate[i]!= d_indexTriangleMaxStress.getValue())
+                {
                 Coord Pa = x[triangleList[candidate[i]][0]];
                 Coord Pb = x[triangleList[candidate[i]][1]];
                 Coord Pc = x[triangleList[candidate[i]][2]];
                 vertices.push_back(Pa);
                 vertices.push_back(Pb);
                 vertices.push_back(Pc);
+                }
+                else
+                {
+                    Coord Pa = x[triangleList[candidate[i]][0]];
+                    Coord Pb = x[triangleList[candidate[i]][1]];
+                    Coord Pc = x[triangleList[candidate[i]][2]];
+                    tearTriangleVertices.push_back(Pa);
+                    tearTriangleVertices.push_back(Pb);
+                    tearTriangleVertices.push_back(Pc);
+                }
             }
             vparams->drawTool()->drawTriangles(vertices, color);
+            vparams->drawTool()->drawTriangles(tearTriangleVertices, color2);
 
             std::vector<sofa::defaulttype::Vector3> vecteur;
             Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
@@ -685,6 +702,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
                 int a = d_fractureNumber.getValue();
                 int b = d_indexTriangleMaxStress.getValue();
                 TjunctionTriangle.push_back({ {a},{b} });
+                std::cout << "          fractureNumber" << a << std::endl;
+                std::cout << "          indexTriangleA" << b << std::endl;
+
             }
             std::cout << "FIN T jUNCTION SABLIER-------------------------------------" << std::endl;
         }
