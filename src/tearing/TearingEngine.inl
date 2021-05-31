@@ -800,6 +800,9 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
             j = 0;
         }
 
+        if(j==-1)
+            return PATH_IS_OK;
+
         //check if endPoint is passed
         if (candidateCoordKmin[j] >= 1)
         {
