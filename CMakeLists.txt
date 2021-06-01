@@ -11,11 +11,16 @@ set(HEADER_FILES
     src/tearing/StressDetector.h
     src/tearing/TearingEngine.h
     src/tearing/TearingEngine.inl
+    
+    src/tearing/VolumeTearingEngine.h
+    src/tearing/VolumeTearingEngine.inl
     )
 set(SOURCE_FILES
     src/tearing/inittearing.cpp
     src/tearing/StressDetector.cpp
     src/tearing/TearingEngine.cpp
+
+    src/tearing/VolumeTearingEngine.cpp
     )
 
 # SOFA plugin are basically libraries
