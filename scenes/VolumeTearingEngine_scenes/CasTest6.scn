@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!-- Automatic Hexahedron removing with Hexa2Tetra mapping example: Element removed are define in: Not yet supported -->
 
-<Node name="root" gravity="0 0 0" dt="0.01">
+<Node name="root" gravity="0 -9.81 0" dt="0.01">
     <RequiredPlugin pluginName="SofaOpenglVisual"/>
     <RequiredPlugin pluginName='SofaBoundaryCondition'/>
     <RequiredPlugin pluginName='SofaEngine'/>
@@ -42,11 +42,14 @@
         <UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" />
         <TetrahedronFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" />
         
-        <BoxROI template="Vec3d" name="FixedSide" box="-0.5 9.5 -0.5 10.5 10.5 1.5" indices="0" drawSize="1"  drawBoxes="1"/>
+        <BoxROI template="Vec3d" name="box_roi" box="-0.5 9.5 -0.5 10.5 10.5 1.5" indices="0" drawSize="1"  drawBoxes="1"/>
         <FixedConstraint template="Vec3d" name="default27" indices="@box_roi.indices" drawSize="0" />
 		
-		<BoxROI template="Vec3d" name="PulledSide" box="-0.5 -0.5 -0.5 10.5 0.5 1.5" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -50 0" showArrowSize=".01" />
+		<BoxROI template="Vec3d" name="PulledSide1" box="-0.5 -0.5 0.9 10.5 10.5 1.1" drawSize="1" drawBoxes="1"/>
+		<ConstantForceField name="CFF1" indices="@PulledSide1.indices" force="0 0 200" showArrowSize=".01" />
+		
+		<BoxROI template="Vec3d" name="PulledSide2" box="-0.5 -0.5 -0.1 10.5 10.5 0.1" drawSize="1" drawBoxes="1"/>
+		<ConstantForceField name="CFF2" indices="@PulledSide2.indices" force="0 0 -200" showArrowSize=".01" />
 		
 		<VolumeTearingEngine name="VolumeTearingEngine"/>
 		
