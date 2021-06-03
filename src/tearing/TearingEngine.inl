@@ -86,7 +86,7 @@ void TearingEngine<DataTypes>::init()
     m_topology->getContext()->get(m_triangularFEM);
     if (!m_triangularFEM)
     {
-        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
+        msg_error() << "Missing component: Unable to get TriangularFEMForceField from the current context.";
         sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         return;
     }
@@ -94,7 +94,7 @@ void TearingEngine<DataTypes>::init()
     m_topology->getContext()->get(m_modifier);
     if (!m_modifier)
     {
-        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
+        msg_error() << "Missing component: Unable to get TriangleSetTopologyModifier from the current context.";
         sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         return;
     }
