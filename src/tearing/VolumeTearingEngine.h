@@ -38,8 +38,8 @@ namespace sofa::component::engine
 		typedef sofa::core::topology::BaseMeshTopology::Edge Edge;
 		typedef sofa::core::topology::BaseMeshTopology::SeqEdges VecEdges;
 
-		//typedef typename sofa::component::forcefield::TetrahedronFEMForceField<DataTypes> TetrahedronFEMInformation;
-		//typedef vector<TetrahedronFEMInformation> VecTetrahedronFEMInformation;
+		typedef typename sofa::component::forcefield::TetrahedralCorotationalFEMForceField<DataTypes>::TetrahedronHandler::TetrahedronInformation TetrahedronFEMInformation;
+		typedef vector<TetrahedronFEMInformation> VecTetrahedronFEMInformation;
 
 	protected:
 		VolumeTearingEngine();
@@ -79,7 +79,7 @@ namespace sofa::component::engine
 
 		void updateTetrahedronInformation();
 		Data<vector<TetrahedronInformation> > d_tetrahedronInfoTearing;
-		//Data<VecTetrahedronFEMInformation > d_tetrahedronFEMInfo;
+		Data<VecTetrahedronFEMInformation > d_tetrahedronFEMInfo;
 
 		Data<bool> showChangedVolumeColormap;
 
@@ -87,7 +87,6 @@ namespace sofa::component::engine
 	protected:
 		/// Pointer to the current topology
 		sofa::core::topology::BaseMeshTopology* m_topology;
-		//sofa::component::forcefield::TetrahedronFEMForceField<DataTypes>* m_tetraFEM;
 		sofa::component::forcefield::TetrahedralCorotationalFEMForceField<DataTypes>* m_tetraFEM;
 	
 	private:

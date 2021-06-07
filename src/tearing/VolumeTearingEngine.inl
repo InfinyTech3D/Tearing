@@ -15,7 +15,7 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
 	, m_topology(nullptr)
     , m_tetraFEM(nullptr)
     , d_tetrahedronInfoTearing(initData(&d_tetrahedronInfoTearing, "tetrahedronInfoTearing", "tetrahedron data use in VolumeTearingEngine"))
-    //, d_tetrahedronFEMInfo(initData(&d_tetrahedronFEMInfo, "tetrahedronFEMInfo", "tetrahedron data"))
+    , d_tetrahedronFEMInfo(initData(&d_tetrahedronFEMInfo, "tetrahedronFEMInfo", "tetrahedron data"))
     , showChangedVolumeColormap(initData(&showChangedVolumeColormap, true, "showChangedVolumeColormap", "Flag activating rendering of changed tetra"))
 {
     addInput(&input_position);
