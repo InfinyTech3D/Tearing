@@ -21,7 +21,7 @@
     
     
     <Node name="Model">
-        <RegularGridTopology name="grid" n="15 15 3" min="-5 -5 -0.5" max="5 5 0.5" p0="0 0 0" />
+        <RegularGridTopology name="grid" n="40 5 5" min="0 0 0" max="50 5 5" p0="0 0 0" />
         <MechanicalObject name="ref_positions" />
         
         <TetrahedronSetTopologyContainer name="ref_tetra" />
@@ -40,12 +40,12 @@
         <TetrahedronSetGeometryAlgorithms template="Vec3d" name="GeomAlgo" />
         
         <UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" />
-		<TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0"/>
+        <TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" />
         
-        <BoxROI template="Vec3d" name="FixedSide" box="-0.5 9.5 -0.5 10.5 10.5 1.5" indices="0" drawSize="1"  drawBoxes="1"/>
-        <FixedConstraint template="Vec3d" name="default27" indices="@FixedSide.indices" drawSize="0" />
+        <BoxROI template="Vec3d" name="box_roi" box="0 0 0 0 5 5" indices="0" drawSize="1"  drawBoxes="1"/>
+        <FixedConstraint template="Vec3d" name="default27" indices="@box_roi.indices" drawSize="0" />
 		
-		<BoxROI template="Vec3d" name="PulledSide" box="-0.5 -0.5 -0.5 10.5 0.5 1.5" drawBoxes="1"/>
+		<BoxROI template="Vec3d" name="PulledSide" box="49 0 0 51 5 5" drawBoxes="1" drawSize="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -50 0" showArrowSize=".01" />
 		
 		<VolumeTearingEngine name="VolumeTearingEngine" input_position="@Mo.position"/>
