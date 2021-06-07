@@ -4,17 +4,23 @@
 #include <sofa/core/visual/VisualParams.h>
 #include <sofa/helper/types/RGBAColor.h>
 #include <sofa/simulation/Simulation.h>
+#include <sofa/helper/ColorMap.h>
 
 namespace sofa::component::engine
 {
 template <class DataTypes>
 VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
-	: l_topology(initLink("topology", "link to the topology container"))
+	: input_position(initData(&input_position, "input_position", "Input position"))
+    , l_topology(initLink("topology", "link to the topology container"))
 	, m_topology(nullptr)
     , m_tetraFEM(nullptr)
     , d_tetrahedronInfoTearing(initData(&d_tetrahedronInfoTearing, "tetrahedronInfoTearing", "tetrahedron data use in VolumeTearingEngine"))
     //, d_tetrahedronFEMInfo(initData(&d_tetrahedronFEMInfo, "tetrahedronFEMInfo", "tetrahedron data"))
-{}
+    , showChangedVolumeColormap(initData(&showChangedVolumeColormap, true, "showChangedVolumeColormap", "Flag activating rendering of changed tetra"))
+{
+    addInput(&input_position);
+    p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
+}
 template <class DataTypes>
 void VolumeTearingEngine<DataTypes>::init()
 {
@@ -61,7 +67,14 @@ void VolumeTearingEngine<DataTypes>::doUpdate()
 
 template <class DataTypes>
 void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
-{}
+{
+    if (showChangedVolumeColormap.getValue())
+    {
+        VecTetrahedra TetrahedraList;
+        TetrahedraList = m_topology->getTetrahedra();
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    }
+}
 
 template <class DataTypes>
 void VolumeTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)

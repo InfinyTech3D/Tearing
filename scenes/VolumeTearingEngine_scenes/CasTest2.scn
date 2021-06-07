@@ -21,7 +21,7 @@
     
     
     <Node name="Model">
-        <RegularGridTopology name="grid" n="10 10 5" min="-5 -5 -0.5" max="5 5 0.5" p0="0 0 0" />
+        <RegularGridTopology name="grid" n="15 15 3" min="-5 -5 -0.5" max="5 5 0.5" p0="0 0 0" />
         <MechanicalObject name="ref_positions" />
         
         <TetrahedronSetTopologyContainer name="ref_tetra" />
@@ -33,14 +33,14 @@
     <Node name="Cube" gravity="0 0 0">
         <EulerImplicitSolver name="cg_odesolver" printLog="0"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver template="GraphScattered" name="linear solver" iterations="25" tolerance="1e-09" threshold="1e-09" />
-        <MechanicalObject template="Vec3d" position="@../Model/ref_positions.position" />
+        <MechanicalObject name="Mo" template="Vec3d" position="@../Model/ref_positions.position" />
         
         <TetrahedronSetTopologyContainer name="Tetra_topo" src="@../Model/ref_tetra"/>
         <TetrahedronSetTopologyModifier name="Modifier" />
         <TetrahedronSetGeometryAlgorithms template="Vec3d" name="GeomAlgo" />
         
         <UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" />
-        <TetrahedronFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" />
+        <TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" />
 
 		<BoxROI template="Vec3d" name="PulledSide1" box="-0.5 9.5 -0.5 10.5 10.5 1.5" drawBoxes="1"/>
 		<ConstantForceField name="CFF1" indices="@PulledSide1.indices" force="0 50 0" showArrowSize=".01" />	
@@ -48,7 +48,7 @@
 		<BoxROI template="Vec3d" name="PulledSide2" box="-0.5 -0.5 -0.5 10.5 0.5 1.5" drawBoxes="1"/>
 		<ConstantForceField name="CFF2" indices="@PulledSide2.indices" force="0 -50 0" showArrowSize=".01" />	
 		
-		<VolumeTearingEngine name="VolumeTearingEngine"/>
+		<VolumeTearingEngine name="VolumeTearingEngine" input_position="@Mo.position"/>
 		
         <Node name="Triangles" gravity="0 -9.81 0">
             <TriangleSetTopologyContainer name="Triangle_topo" />

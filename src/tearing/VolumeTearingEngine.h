@@ -8,7 +8,13 @@
 #include <sofa/core/topology/BaseMeshTopology.h>
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
-#include <SofaSimpleFem/TetrahedronFEMForceField.h>
+//#include <SofaSimpleFem/TetrahedronFEMForceField.h>
+#include <SofaGeneralSimpleFem/TetrahedralCorotationalFEMForceField.h>
+
+namespace sofa::helper
+{
+	class ColorMap;
+}
 
 namespace sofa::component::engine
 {
@@ -32,8 +38,8 @@ namespace sofa::component::engine
 		typedef sofa::core::topology::BaseMeshTopology::Edge Edge;
 		typedef sofa::core::topology::BaseMeshTopology::SeqEdges VecEdges;
 
-		typedef typename sofa::component::forcefield::TetrahedronFEMForceField<DataTypes> TetrahedronFEMInformation;
-		typedef vector<TetrahedronFEMInformation> VecTetrahedronFEMInformation;
+		//typedef typename sofa::component::forcefield::TetrahedronFEMForceField<DataTypes> TetrahedronFEMInformation;
+		//typedef vector<TetrahedronFEMInformation> VecTetrahedronFEMInformation;
 
 	protected:
 		VolumeTearingEngine();
@@ -45,6 +51,8 @@ namespace sofa::component::engine
 		void doUpdate() override;
 		void draw(const core::visual::VisualParams* vparams) override;
 		void handleEvent(sofa::core::objectmodel::Event* event) override;
+
+		Data<VecCoord> input_position; ///< Input position
 
 		/// Link to be set to the topology container in the component graph
 		SingleLink<VolumeTearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
@@ -73,11 +81,18 @@ namespace sofa::component::engine
 		Data<vector<TetrahedronInformation> > d_tetrahedronInfoTearing;
 		//Data<VecTetrahedronFEMInformation > d_tetrahedronFEMInfo;
 
+		Data<bool> showChangedVolumeColormap;
+
 
 	protected:
 		/// Pointer to the current topology
 		sofa::core::topology::BaseMeshTopology* m_topology;
-		sofa::component::forcefield::TetrahedronFEMForceField<DataTypes>* m_tetraFEM;
+		//sofa::component::forcefield::TetrahedronFEMForceField<DataTypes>* m_tetraFEM;
+		sofa::component::forcefield::TetrahedralCorotationalFEMForceField<DataTypes>* m_tetraFEM;
+	
+	private:
+		sofa::helper::ColorMap* p_drawColorMap;
+
 	};
 
 #if !defined(SOFA_COMPONENT_ENGINE_TEARINGENGINE_CPP)
