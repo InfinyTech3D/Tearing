@@ -77,6 +77,9 @@ public:
 	Data<bool> ignoreTriangleAtStart;
 	Data<vector<vector<int>>> d_TjunctionTriangle;
 
+	/// <summary>
+	/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
+	/// </summary>
 	void triangleOverThresholdPrincipalStress();
 	
 	class TriangleInformation
@@ -103,16 +106,65 @@ public:
 	Data<vector<TriangleInformation> > d_triangleInfoTearing;
 	Data<VecTriangleFEMInformation> d_triangleFEMInfo;
 
+	/// <summary>
+	/// update d_triangleInfoTearing with value from d_triangleFEMInfo
+	/// </summary>
 	void updateTriangleInformation();
 
 	/// Test algoFracturePath
 	Data<int> d_fractureNumber;
 	Data<int> d_nbFractureMax;
+
+	/// <summary>
+	/// compute fracture path intersection point and cut through them
+	/// </summary>
 	void algoFracturePath();
+
 	Data<vector<Coord>> d_fracturePath;
 	Data<bool> showFracturePath;
+
+	/// <summary>
+	/// compute extremities of fracture Pb and Pc from a start point Pa
+	/// </summary>
+	/// @param Pa - point with maxStress where fracture start
+	/// @param direction - direction of maximum principal stress
+	/// @return Pb - one of the extremities of fracture
+	/// @return Pc - one of the extremities of fracture
 	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+
+	/// <summary>
+	/// get intersection point between Pa and one of the endPoint Pb or Pc
+	/// </summary>
+	/// @param Pa - point with maxStress 
+	/// @param indexA - index of vertex of point Pa
+	/// @param endPoint - point Pb or Pc
+	/// @param endPoint_inTriangle - boolean tell if endPoint is in an triangle
+	/// @param endPointTriangle - index of endPoint triangle
+	/// @param edges_list - list of edges intersect by the segment
+	/// @param coordsEdge_list - list of baryCoef for intersected edges
 	bool computeSegmentMeshIntersection(Coord Pa,Index indexA, Coord endPoint, bool& endPoint_inTriangle, Index& endPointTriangle, sofa::helper::vector<Index>& edges_list, sofa::helper::vector<double>& coordsEdge_list);
+	
+	/// <summary>
+	/// creating path through different element POINT or EDGE or TRIANGLE
+	/// </summary>
+	/// @param EPS - value for zero
+	/// @param pointB_inTriangle - boolean tell if Pb is in an triangle
+	/// @param triangleB - index of triangle where Pb is
+	/// @param Pb - coord of Pb
+	/// @param edges_listB - list of edges intersect by the segment Pa to Pb
+	/// @param coordsEdge_listB - list of baryCoef for intersected edges on sideB
+	/// @param sizeB - number of edges intersect on sideB
+	/// @param Pa - coord of Pa, point with maxStress
+	/// @param indexA - index of vertex Pa
+	/// @param pointC_inTriangle - boolean tell if Pc is in an triangle
+	/// @param triangleC - index of triangle where Pc is
+	/// @param Pc - coord of Pc
+	/// @param edges_listC - list of edges intersect by the segment Pa to Pc
+	/// @param coordsEdge_listC - list of baryCoef for intersected edges on sideC
+	/// @param sizeC - number of edges intersect on sideC
+	/// @return topoPath_list - List of object intersect
+	/// @return indices_list - List of indices of these objetcs
+	/// @return coords_list - List of barycentric coordinate defining the position of the intersection in each object
 	void pathAdaptationObject(
 		double EPS,
 		bool pointB_inTriangle, Index triangleB, Coord Pb, sofa::helper::vector<Index> edges_listB, sofa::helper::vector<double> coordsEdge_listB, int& sizeB,
@@ -121,6 +173,21 @@ public:
 		sofa::helper::vector< sofa::core::topology::TopologyElementType>& topoPath_list,
 		sofa::helper::vector<Index>& indices_list,
 		sofa::helper::vector< sofa::defaulttype::Vec<3, double> >& coords_list);
+
+	/// <summary>
+	/// Split triangles to create edges along a path given as a the list of existing edges and triangles crossed by it
+	/// </summary>
+	/// @param snapingValue - snaping value
+	/// @param snapingBorderValue - snaping border value
+	/// @param Pa - maxStress
+	/// @param Pb - extremity of fracture
+	/// @param Pc - extremity of fracture
+	/// @param sizeB - number of edges intersect on sideB
+	/// @param sizeC - number of edges intersect on sideC
+	/// @param topoPath_list - List of object intersect
+	/// @param indices_list - List of indices of these objetcs
+	/// @param coords_list - List of barycentric coordinate defining the position of the intersection in each object
+	/// @returns new_edges - the indice of the end point, or -1 if the incision failed
 	int splitting(
 		int snapingValue, int snapingBorderValue,
 		Coord Pa, Coord Pb, Coord Pc,
@@ -135,6 +202,9 @@ public:
 
 	Data<int> d_scenario;
 
+	/// <summary>
+	/// compute ignored triangle at start of the tearing algo
+	/// </summary>
 	void computeTriangleToSkip();
 
 protected:

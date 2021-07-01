@@ -254,9 +254,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 // --- Computation methods
 // --------------------------------------------------------------------------------------
 
-/// <summary>
-/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
-/// </summary>
+
 template <class DataTypes>
 void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
 {
@@ -300,9 +298,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     d_indexTriangleMaxStress.endEdit();
 }
 
-/// <summary>
-/// update d_triangleInfoTearing with value from d_triangleFEMInfo
-/// </summary>
+
 template <class DataTypes>
 void TearingEngine<DataTypes>::updateTriangleInformation()
 {
@@ -331,9 +327,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
     }
 }
 
-/// <summary>
-/// compute fracture path intersection point and cut through them
-/// </summary>
+
 template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
@@ -712,13 +706,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
 }
 
 
-/// <summary>
-/// compute extremities of fracture Pb and Pc from a start point Pa
-/// </summary>
-/// @param Pa - point with maxStress where fracture start
-/// @param direction - direction of maximum principal stress
-/// @return Pb - one of the extremities of fracture
-/// @return Pc - one of the extremities of fracture
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeEndPoints(
     Coord Pa,
@@ -733,16 +720,6 @@ void TearingEngine<DataTypes>::computeEndPoints(
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 }
 
-/// <summary>
-/// get intersection point between Pa and one of the endPoint Pb or Pc
-/// </summary>
-/// @param Pa - point with maxStress 
-/// @param indexA - index of vertex of point Pa
-/// @param endPoint - point Pb or Pc
-/// @param endPoint_inTriangle - boolean tell if endPoint is in an triangle
-/// @param endPointTriangle - index of endPoint triangle
-/// @param edges_list - list of edges intersect by the segment
-/// @param coordsEdge_list - list of baryCoef for intersected edges
 template <class DataTypes>
 bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
     Coord Pa,
@@ -888,27 +865,6 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
     }
 }
 
-/// <summary>
-/// creating path through different element POINT or EDGE or TRIANGLE
-/// </summary>
-/// @param EPS - value for zero
-/// @param pointB_inTriangle - boolean tell if Pb is in an triangle
-/// @param triangleB - index of triangle where Pb is
-/// @param Pb - coord of Pb
-/// @param edges_listB - list of edges intersect by the segment Pa to Pb
-/// @param coordsEdge_listB - list of baryCoef for intersected edges on sideB
-/// @param sizeB - number of edges intersect on sideB
-/// @param Pa - coord of Pa, point with maxStress
-/// @param indexA - index of vertex Pa
-/// @param pointC_inTriangle - boolean tell if Pc is in an triangle
-/// @param triangleC - index of triangle where Pc is
-/// @param Pc - coord of Pc
-/// @param edges_listC - list of edges intersect by the segment Pa to Pc
-/// @param coordsEdge_listC - list of baryCoef for intersected edges on sideC
-/// @param sizeC - number of edges intersect on sideC
-/// @return topoPath_list - List of object intersect
-/// @return indices_list - List of indices of these objetcs
-/// @return coords_list - List of barycentric coordinate defining the position of the intersection in each object
 template <class DataTypes>
 void TearingEngine<DataTypes>::pathAdaptationObject(
     double EPS,
@@ -1035,20 +991,6 @@ void TearingEngine<DataTypes>::pathAdaptationObject(
     coordsEdge_listC.clear();
 }
 
-/// <summary>
-/// Split triangles to create edges along a path given as a the list of existing edges and triangles crossed by it
-/// </summary>
-/// @param snapingValue - snaping value
-/// @param snapingBorderValue - snaping border value
-/// @param Pa - maxStress
-/// @param Pb - extremity of fracture
-/// @param Pc - extremity of fracture
-/// @param sizeB - number of edges intersect on sideB
-/// @param sizeC - number of edges intersect on sideC
-/// @param topoPath_list - List of object intersect
-/// @param indices_list - List of indices of these objetcs
-/// @param coords_list - List of barycentric coordinate defining the position of the intersection in each object
-/// @returns new_edges - the indice of the end point, or -1 if the incision failed
 template <class DataTypes>
 int TearingEngine<DataTypes>::splitting(
     int snapingValue, int snapingBorderValue,
@@ -1080,9 +1022,6 @@ int TearingEngine<DataTypes>::splitting(
     return result;
 }
 
-/// <summary>
-/// compute ignored triangle at start of the tearing algo
-/// </summary>
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
