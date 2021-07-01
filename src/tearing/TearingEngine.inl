@@ -241,7 +241,6 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     {
         if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue()< d_nbFractureMax.getValue()) || !stepByStep.getValue())
         {
-            std::cout << "  enter fracture" << std::endl;
             if(d_counter.getValue()>d_step.getValue())
                 algoFracturePath();
         }
@@ -351,16 +350,17 @@ void TearingEngine<DataTypes>::algoFracturePath()
         bool PATH_IS_OK = false;
 
 
-        //looking for starting point
+        //Calculate fracture starting point (Pa)
         int indexA;
         Coord Pa;
         Coord principalStressDirection;
+        //Calculate fracture end points (Pb and Pc)
         Coord Pb;
         Coord Pc; 
         Coord dir;
         double alpha;
         
-        //scenario
+        //scenario with specific starting point and specific direction
         switch (choice)
         {
         default:
@@ -505,7 +505,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         }
 
 
-        //Side C
+        //computeSegmentMeshIntersection [Pa;Pc]
         bool sideC_resumed = true;
         Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
         bool triangleInDirectionC = true;
@@ -524,7 +524,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
             PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC);
         path.push_back(Pc);
 
-        //Side B
+        //computeSegmentMeshIntersection [Pa;Pb]
         bool sideB_resumed = true;
         current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pb - Pa);
         bool triangleInDirectionB = true;
@@ -547,24 +547,22 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
         if (PATH_C_IS_OK || PATH_B_IS_OK)
         {
-            //output de STEP 4
             sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
             sofa::helper::vector<Index> indices_list;
             sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list;
             int sizeB, sizeC;
 
-            std::cout << "DEBUT STEP 4-------------------------------------" << std::endl;
+            //convert path through different element
             pathAdaptationObject(
                 EPS,
                 pointB_inTriangle, triangleB, Pb, edges_listB, coordsEdge_listB, sizeB,
                 Pa, indexA,
                 pointC_inTriangle, triangleC, Pc, edges_listC, coordsEdge_listC, sizeC,
                 topoPath_list, indices_list, coords_list);
-            std::cout << "FIN STEP 4-------------------------------------" << std::endl;
 
             if (topoPath_list.size() > 1)
             {
-                //STEP 5: Splitting elements along path (incision path is stored inside "new_edges")
+                //split along path
                 int snapingValue = 20;
                 int snapingBorderValue = 0;
                 sofa::helper::vector< Index > new_edges;
@@ -573,8 +571,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
                 if (result > 0)
                 {
-                    //STEP 6: Incise along new_edges path (i.e duplicating edges to create an incision)
-                    std::cout << "DEBUT STEP 6-------------------------------------" << std::endl;
+                    //incise along new_edges
                     sofa::helper::vector<Index> new_points;
                     sofa::helper::vector<Index> end_points;
                     bool reachBorder = false;
@@ -585,7 +582,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
                         return;
                     }
                     d_fractureNumber.setValue(d_fractureNumber.getValue()+1);
-                    std::cout << "FIN STEP 6-------------------------------------" << std::endl;
                 }
             }
 
@@ -596,14 +592,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
         }
         else if (!triangleInDirectionB && !triangleInDirectionC && m_topology->getTrianglesAroundVertex(indexA).size() > 1)
         {
-            std::cout << "DEBUT T jUNCTION SABLIER-------------------------------------" << std::endl;
+            //T-Junction or X-junction
             sofa::helper::vector<Index> indexTriangleList = m_topology->getTrianglesAroundVertex(indexA);
             sofa::helper::vector<Index> indexTriangleListSide1;
             sofa::helper::vector<Index> indexTriangleListSide2;
             VecElement triangleList2;
 
-
-            //get index 
             Index indexTriangleA = d_indexTriangleMaxStress.getValue();
             indexTriangleListSide1.push_back(indexTriangleA);
             Element t = m_topology->getTriangle(indexTriangleA);
@@ -641,6 +635,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
             if (indexTriangleListSide2.size()>0)
             {
+                //X-junction
                 Index indexNewPoint=m_topology->getNbPoints();
                 Index indexNewTriangle = m_topology->getNbTriangles();
 
@@ -691,16 +686,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
             }
             else
             {
-                std::cout << "                  TjunctionTriangle add" << std::endl;
+                //T-junction
                 helper::WriteAccessor< Data<vector<vector<int>>> > TjunctionTriangle(d_TjunctionTriangle);
                 int a = d_fractureNumber.getValue();
                 int b = d_indexTriangleMaxStress.getValue();
                 TjunctionTriangle.push_back({ {a},{b} });
-                std::cout << "          fractureNumber" << a << std::endl;
-                std::cout << "          indexTriangleA" << b << std::endl;
-
             }
-            std::cout << "FIN T jUNCTION SABLIER-------------------------------------" << std::endl;
         }
     }
 }
@@ -790,7 +781,6 @@ bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
             return PATH_IS_OK;
         }
         Coord next_point = x[candidateIndice[2 * j]] + candidateBarycoef[j] * (x[candidateIndice[2 * j + 1]] - x[candidateIndice[2 * j]]);
-        //std::cout << "                      next point=" << next_point << std::endl;
         path.push_back(next_point);
 
         Index next_triangle = -1;
