@@ -332,6 +332,8 @@ void TearingEngine<DataTypes>::algoFracturePath()
 {
     helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
     int choice;
+
+    //start with specific scenario
     if (d_fractureNumber.getValue() == 0)
     {
         choice = d_scenario.getValue();
@@ -341,6 +343,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         choice = 0;
     }
 
+    //if no candidate available we don't call intersection process
     if (candidate.size() || choice)
     {
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
@@ -509,16 +512,17 @@ void TearingEngine<DataTypes>::algoFracturePath()
         bool sideC_resumed = true;
         Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
         bool triangleInDirectionC = true;
+        //no triangle around Pa in the direction Pc
         if (current_triangle > m_topology->getNbTriangles() - 1)
         {
             sideC_resumed = false;
             triangleInDirectionC = false;
         }
+
         bool pointC_inTriangle = false;
         Index triangleC = -1;
         sofa::helper::vector<Index> edges_listC;
         sofa::helper::vector< double > coordsEdge_listC;
-
         bool PATH_C_IS_OK = false;
         if (sideC_resumed)
             PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC);
@@ -528,6 +532,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         bool sideB_resumed = true;
         current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pb - Pa);
         bool triangleInDirectionB = true;
+        //no triangle around Pa in the direction Pb
         if (current_triangle > m_topology->getNbTriangles() - 1)
         {
             sideB_resumed = false;
@@ -538,13 +543,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
         Index triangleB = -1;
         sofa::helper::vector<Index> edges_listB;
         sofa::helper::vector< double > coordsEdge_listB;
-
         bool PATH_B_IS_OK = false;
         if (sideB_resumed)
             PATH_B_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pb, pointB_inTriangle, triangleB, edges_listB, coordsEdge_listB);
         path.push_back(Pb);
 
-
+        //intersections with the mesh exists 
         if (PATH_C_IS_OK || PATH_B_IS_OK)
         {
             sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
@@ -590,9 +594,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
             indices_list.clear();
             coords_list.clear();
         }
+        //there is no intersection with the mesh,either in direction of Pb or Pc, we have to see if it is a T-junction or a X-junction in point Pa
         else if (!triangleInDirectionB && !triangleInDirectionC && m_topology->getTrianglesAroundVertex(indexA).size() > 1)
         {
-            //T-Junction or X-junction
             sofa::helper::vector<Index> indexTriangleList = m_topology->getTrianglesAroundVertex(indexA);
             sofa::helper::vector<Index> indexTriangleListSide1;
             sofa::helper::vector<Index> indexTriangleListSide2;
@@ -621,10 +625,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
                     Coord p1b = x[t_i[(3 + (k_i + 1)) % 3]];
                     Coord vec_b = p1b - p0b;
                     
+                    //TriangleList[i] is on same side of line [Pb;Pc] than TriangleA
                     if ((vec_a * normal) * (vec_b * normal) > 0)
                     {
                         indexTriangleListSide1.push_back(indexTriangleList[i]);
                     }
+                    //TriangleList[i] is on the other side of line [Pb;Pc] than TriangleA
                     else
                     {
                         indexTriangleListSide2.push_back(indexTriangleList[i]);
@@ -632,10 +638,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
                     }
                 }
             }
-
+            //there is some triangles on the other side of line [Pb;Pc] so it's a X-junction, we have to incise at Pa
             if (indexTriangleListSide2.size()>0)
             {
-                //X-junction
                 Index indexNewPoint=m_topology->getNbPoints();
                 Index indexNewTriangle = m_topology->getNbTriangles();
 
@@ -684,9 +689,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
                 m_modifier->addRemoveTriangles(indexTriangleListSide2.size(), triangles2Add, trianglesIndex2Add, triangles_ancestors, triangles_baryCoefs, indexTriangleListSide2);
                 d_fractureNumber.setValue(d_fractureNumber.getValue() + 1);
             }
+            //no triangle on the other side of line [Pb;Pc] so it's a T-junction, we have to skip Pa on the next detection
             else
             {
-                //T-junction
                 helper::WriteAccessor< Data<vector<vector<int>>> > TjunctionTriangle(d_TjunctionTriangle);
                 int a = d_fractureNumber.getValue();
                 int b = d_indexTriangleMaxStress.getValue();
