@@ -81,8 +81,21 @@ namespace sofa::component::engine
 		Data<vector<TetrahedronInformation> > d_tetrahedronInfoTearing;
 		Data<VecTetrahedronFEMInformation > d_tetrahedronFEMInfo;
 
-		Data<bool> showChangedVolumeColormap;
+		Data<double> d_seuilPrincipalStress;
+		/// <summary>
+		/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
+		/// </summary>
+		void computeTetraOverThresholdPrincipalStress();
+		Data<vector<Index>> d_tetraToIgnoreList;
+		Data<vector<Index>> d_tetraOverThresholdList;
+		Real maxStress;
+		Index indexTetraMaxStress;
 
+		Data<int> d_counter;
+		Data<bool> stepByStep;
+		Data<int> d_step;
+		Data<int> d_fractureNumber;
+		Data<int> d_nbFractureMax;
 
 	protected:
 		/// Pointer to the current topology
