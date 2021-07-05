@@ -5,23 +5,30 @@ project(tearing VERSION 1.0)
 find_package(SofaFramework REQUIRED) # Needed to use SofaCore, SofaHelper and SofaDefaultType
 find_package(SofaGeneral REQUIRED) # Needed to use SofaBaseTopology
 
+set(TEARING_SRC_DIR src/tearing)
+
 # Our nice new SOFA Components
 set(HEADER_FILES
-    src/tearing/config.h.in
-    src/tearing/StressDetector.h
-    src/tearing/TearingEngine.h
-    src/tearing/TearingEngine.inl
-    
-    src/tearing/VolumeTearingEngine.h
-    src/tearing/VolumeTearingEngine.inl
-    )
-set(SOURCE_FILES
-    src/tearing/inittearing.cpp
-    src/tearing/StressDetector.cpp
-    src/tearing/TearingEngine.cpp
+    ${TEARING_SRC_DIR}/config.h.in
+    ${TEARING_SRC_DIR}/StressDetector.h
+    ${TEARING_SRC_DIR}/TearingAlgorithms.h
+    ${TEARING_SRC_DIR}/TearingAlgorithms.inl
 
-    src/tearing/VolumeTearingEngine.cpp
-    )
+    ${TEARING_SRC_DIR}/TearingEngine.h
+    ${TEARING_SRC_DIR}/TearingEngine.inl
+    
+    ${TEARING_SRC_DIR}/VolumeTearingEngine.h
+    ${TEARING_SRC_DIR}/VolumeTearingEngine.inl
+)
+
+set(SOURCE_FILES
+    ${TEARING_SRC_DIR}/inittearing.cpp
+    ${TEARING_SRC_DIR}/StressDetector.cpp
+    ${TEARING_SRC_DIR}/TearingAlgorithms.cpp
+    
+    ${TEARING_SRC_DIR}/TearingEngine.cpp
+    ${TEARING_SRC_DIR}/VolumeTearingEngine.cpp
+)
 
 # SOFA plugin are basically libraries
 add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
