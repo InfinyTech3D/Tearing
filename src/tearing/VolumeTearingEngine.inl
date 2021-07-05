@@ -19,6 +19,7 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 100.0, "seuilStress", "threshold value for stress"))
     , d_tetraOverThresholdList(initData(&d_tetraOverThresholdList, "tetraOverThresholdList", "tetrahedral with maxStress over threshold value"))
     , d_tetraToIgnoreList(initData(&d_tetraToIgnoreList, "tetraToIgnoreList", "tetrahedral that can't be choosen as starting fracture point"))
+    , showTetraOverThreshold(initData(&showTetraOverThreshold, true, "showTetraOverThreshold", "Flag activating rendering of possible starting tetrahedron for fracture"))
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
     , d_step(initData(&d_step, 20, "step", "step size"))
@@ -82,49 +83,80 @@ void VolumeTearingEngine<DataTypes>::doUpdate()
 
     updateTetrahedronInformation();
     computeTetraOverThresholdPrincipalStress();
-    //std::cout << "maxstress " << maxStress<<std::endl;
 }
 
 
 template <class DataTypes>
 void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 {
-    helper::ReadAccessor< Data<vector<Index>> > candidate(d_tetraOverThresholdList);
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    std::vector< defaulttype::Vector3 > points[4];
-
-    for (Size i = 0; i < candidate.size(); ++i)
+    if (showTetraOverThreshold.getValue())
     {
-        const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidate[i]);
-        Index a = t[0];
-        Index b = t[1];
-        Index c = t[2];
-        Index d = t[3];
-        Coord pa = x[a];
-        Coord pb = x[b];
-        Coord pc = x[c];
-        Coord pd = x[d];
+        helper::ReadAccessor< Data<vector<Index>> > candidate(d_tetraOverThresholdList);
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        std::vector< defaulttype::Vector3 > points[4];
 
-        points[0].push_back(pa);
-        points[0].push_back(pb);
-        points[0].push_back(pc);
+        for (Size i = 0; i < candidate.size(); ++i)
+        {
+            const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidate[i]);
+            
+            Index a = t[0];
+            Index b = t[1];
+            Index c = t[2];
+            Index d = t[3];
+            Coord pa = x[a];
+            Coord pb = x[b];
+            Coord pc = x[c];
+            Coord pd = x[d];
 
-        points[1].push_back(pb);
-        points[1].push_back(pc);
-        points[1].push_back(pd);
+            if (candidate[i] != indexTetraMaxStress)
+            {
+                points[0].push_back(pa);
+                points[0].push_back(pb);
+                points[0].push_back(pc);
 
-        points[2].push_back(pc);
-        points[2].push_back(pd);
-        points[2].push_back(pa);
+                points[1].push_back(pb);
+                points[1].push_back(pc);
+                points[1].push_back(pd);
 
-        points[3].push_back(pd);
-        points[3].push_back(pa);
-        points[3].push_back(pb);
+                points[2].push_back(pc);
+                points[2].push_back(pd);
+                points[2].push_back(pa);
+
+                points[3].push_back(pd);
+                points[3].push_back(pa);
+                points[3].push_back(pb);
+            }
+            else
+            {
+                std::vector< defaulttype::Vector3 > TetraMaxStressPoints[4];
+
+                TetraMaxStressPoints[0].push_back(pa);
+                TetraMaxStressPoints[0].push_back(pb);
+                TetraMaxStressPoints[0].push_back(pc);
+
+                TetraMaxStressPoints[1].push_back(pb);
+                TetraMaxStressPoints[1].push_back(pc);
+                TetraMaxStressPoints[1].push_back(pd);
+
+                TetraMaxStressPoints[2].push_back(pc);
+                TetraMaxStressPoints[2].push_back(pd);
+                TetraMaxStressPoints[2].push_back(pa);
+
+                TetraMaxStressPoints[3].push_back(pd);
+                TetraMaxStressPoints[3].push_back(pa);
+                TetraMaxStressPoints[3].push_back(pb);
+
+                vparams->drawTool()->drawTriangles(TetraMaxStressPoints[0], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+            }
+        }
+        vparams->drawTool()->drawTriangles(points[0], sofa::helper::types::RGBAColor(0, 0, 1, 1));
+        vparams->drawTool()->drawTriangles(points[1], sofa::helper::types::RGBAColor(0, 0, 1, 1));
+        vparams->drawTool()->drawTriangles(points[2], sofa::helper::types::RGBAColor(0, 0, 1, 1));
+        vparams->drawTool()->drawTriangles(points[3], sofa::helper::types::RGBAColor(0, 0, 1, 1));
     }
-    vparams->drawTool()->drawTriangles(points[0], sofa::helper::types::RGBAColor(0, 0, 1, 1));
-    vparams->drawTool()->drawTriangles(points[1], sofa::helper::types::RGBAColor(0, 0, 1, 1));
-    vparams->drawTool()->drawTriangles(points[2], sofa::helper::types::RGBAColor(0, 0, 1, 1));
-    vparams->drawTool()->drawTriangles(points[3], sofa::helper::types::RGBAColor(0, 0, 1, 1));
 }
 
 template <class DataTypes>
@@ -192,7 +224,6 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
             }
         }
     }
-    std::cout << "maxstress " << maxStress << std::endl;
 }
 
 

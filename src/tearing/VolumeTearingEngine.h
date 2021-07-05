@@ -82,12 +82,11 @@ namespace sofa::component::engine
 		Data<VecTetrahedronFEMInformation > d_tetrahedronFEMInfo;
 
 		Data<double> d_seuilPrincipalStress;
-		/// <summary>
-		/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
-		/// </summary>
+		/// put in d_tetraOverThresholdList tetrahedron with a maxStress greater than a threshold value (d_seuilPrincipalStress)
 		void computeTetraOverThresholdPrincipalStress();
 		Data<vector<Index>> d_tetraToIgnoreList;
 		Data<vector<Index>> d_tetraOverThresholdList;
+		Data<bool> showTetraOverThreshold;
 		Real maxStress;
 		Index indexTetraMaxStress;
 
