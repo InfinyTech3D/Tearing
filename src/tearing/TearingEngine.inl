@@ -35,7 +35,6 @@ TearingEngine<DataTypes>::TearingEngine()
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
     , d_fracturePath(initData(&d_fracturePath,"fracturePath","path created by algoFracturePath"))
-    , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
     , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
     , ignoreTriangleAtStart(initData(&ignoreTriangleAtStart, true, "ignoreTriangleAtStart","option to ignore some triangles at start of the tearing algo"))
@@ -52,7 +51,6 @@ TearingEngine<DataTypes>::TearingEngine()
     addOutput(&d_triangleOverThresholdList);
     addOutput(&d_maxStress);
     addOutput(&d_indexVertexMaxStress);
-    addOutput(&d_fractureNumber);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
 }
 
@@ -105,7 +103,6 @@ void TearingEngine<DataTypes>::init()
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
     d_counter.setValue(0);
-    d_fractureNumber.setValue(0);
     
     if (m_tearingAlgo == nullptr)
         m_tearingAlgo = new TearingAlgorithms<DataTypes>(m_topology, m_modifier, m_triangleGeo);
@@ -125,7 +122,7 @@ void TearingEngine<DataTypes>::doUpdate()
 
     if (ignoreTriangleAtStart.getValue())
     {
-        if(d_fractureNumber.getValue() == 0)
+        if(m_tearingAlgo->getFractureNumber() == 0)
             computeTriangleToSkip();
     }
     else
@@ -138,7 +135,7 @@ void TearingEngine<DataTypes>::doUpdate()
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
     for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
     {
-        if (TjunctionTriangle[i][0] == d_fractureNumber.getValue())
+        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
         {
             if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
                 triangleToSkip.push_back(TjunctionTriangle[i][1]);
@@ -242,7 +239,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 {
     if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateBeginEvent::checkEventType(event))
     {
-        if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue()< d_nbFractureMax.getValue()) || !stepByStep.getValue())
+        if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
         {
             if(d_counter.getValue()>d_step.getValue())
                 algoFracturePath();
@@ -337,7 +334,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
     int choice;
 
     //start with specific scenario
-    if (d_fractureNumber.getValue() == 0)
+    if (m_tearingAlgo->getFractureNumber() == 0)
     {
         choice = d_scenario.getValue();
     }
@@ -362,10 +359,10 @@ void TearingEngine<DataTypes>::algoFracturePath()
         Coord principalStressDirection;
         //Calculate fracture end points (Pb and Pc)
         Coord Pb;
-        Coord Pc; 
+        Coord Pc;
         Coord dir;
         double alpha;
-        
+
         //scenario with specific starting point and specific direction
         switch (choice)
         {
@@ -377,7 +374,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
             computeEndPoints(Pa, principalStressDirection, Pb, Pc);
             break;
 
-        case 1 :
+        case 1:
             //CasTest1-1
             indexA = 421;
             Pa = x[indexA];
@@ -387,8 +384,8 @@ void TearingEngine<DataTypes>::algoFracturePath()
             Pb = Pa + alpha * dir;
             Pc = Pa - alpha * dir;
             break;
-        
-        case 2 :
+
+        case 2:
             //CasTest1-2
             indexA = 1;
             Pa = x[indexA];
@@ -510,197 +507,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
             break;
         }
 
-
-        //computeSegmentMeshIntersection [Pa;Pc]
-        bool sideC_resumed = true;
-        Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
-        bool triangleInDirectionC = true;
-        //no triangle around Pa in the direction Pc
-        if (current_triangle > m_topology->getNbTriangles() - 1)
-        {
-            sideC_resumed = false;
-            triangleInDirectionC = false;
-        }
-
-        bool pointC_inTriangle = false;
-        Index triangleC = -1;
-        sofa::helper::vector<Index> edges_listC;
-        sofa::helper::vector< double > coordsEdge_listC;
-        bool PATH_C_IS_OK = false;
-        if (sideC_resumed)
-            PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC);
-        path.push_back(Pc);
-
-        //computeSegmentMeshIntersection [Pa;Pb]
-        bool sideB_resumed = true;
-        current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pb - Pa);
-        bool triangleInDirectionB = true;
-        //no triangle around Pa in the direction Pb
-        if (current_triangle > m_topology->getNbTriangles() - 1)
-        {
-            sideB_resumed = false;
-            triangleInDirectionB = false;
-        }
-
-        bool pointB_inTriangle = false;
-        Index triangleB = -1;
-        sofa::helper::vector<Index> edges_listB;
-        sofa::helper::vector< double > coordsEdge_listB;
-        bool PATH_B_IS_OK = false;
-        if (sideB_resumed)
-            PATH_B_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pb, pointB_inTriangle, triangleB, edges_listB, coordsEdge_listB);
-        path.push_back(Pb);
-
-        //intersections with the mesh exists 
-        if (PATH_C_IS_OK || PATH_B_IS_OK)
-        {
-            sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
-            sofa::helper::vector<Index> indices_list;
-            sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list;
-            int sizeB, sizeC;
-
-            //convert path through different element
-            pathAdaptationObject(
-                EPS,
-                pointB_inTriangle, triangleB, Pb, edges_listB, coordsEdge_listB, sizeB,
-                Pa, indexA,
-                pointC_inTriangle, triangleC, Pc, edges_listC, coordsEdge_listC, sizeC,
-                topoPath_list, indices_list, coords_list);
-
-            if (topoPath_list.size() > 1)
-            {
-                //split along path
-                int snapingValue = 20;
-                int snapingBorderValue = 0;
-                sofa::helper::vector< Index > new_edges;
-                int result;
-                result = splitting(snapingValue, snapingBorderValue, Pa, Pb, Pc, sizeB, sizeC, topoPath_list, indices_list, coords_list, new_edges);
-
-                if (result > 0)
-                {
-                    //incise along new_edges
-                    sofa::helper::vector<Index> new_points;
-                    sofa::helper::vector<Index> end_points;
-                    bool reachBorder = false;
-                    bool incision_ok = m_triangleGeo->InciseAlongEdgeList(new_edges, new_points, end_points, reachBorder);
-                    if (!incision_ok)
-                    {
-                        dmsg_error("TopologicalChangeManager") << " in InciseAlongEdgeList";
-                        return;
-                    }
-                    d_fractureNumber.setValue(d_fractureNumber.getValue()+1);
-                }
-            }
-
-
-            topoPath_list.clear();
-            indices_list.clear();
-            coords_list.clear();
-        }
-        //there is no intersection with the mesh,either in direction of Pb or Pc, we have to see if it is a T-junction or a X-junction in point Pa
-        else if (!triangleInDirectionB && !triangleInDirectionC && m_topology->getTrianglesAroundVertex(indexA).size() > 1)
-        {
-            sofa::helper::vector<Index> indexTriangleList = m_topology->getTrianglesAroundVertex(indexA);
-            sofa::helper::vector<Index> indexTriangleListSide1;
-            sofa::helper::vector<Index> indexTriangleListSide2;
-            VecElement triangleList2;
-
-            Index indexTriangleA = d_indexTriangleMaxStress.getValue();
-            indexTriangleListSide1.push_back(indexTriangleA);
-            Element t = m_topology->getTriangle(indexTriangleA);
-            int k0= (t[0] == indexA) ? 0 : 1;
-            k0 = (t[k0] == indexA) ? k0 : 2;
-
-            Coord normal = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-            Coord p0a = x[t[k0]];
-            Coord p1a = x[t[(3 + (k0 + 1)) % 3]];
-            Coord vec_a = p1a - p0a;
-
-            for (unsigned int i = 0; i < indexTriangleList.size(); i++)
-            {
-                if (indexTriangleList[i] != indexTriangleA)
-                {
-                    Element t_i = m_topology->getTriangle(indexTriangleList[i]);
-                    int k_i = (t_i[0] == indexA) ? 0 : 1;
-                    k_i = (t_i[k_i] == indexA) ? k_i : 2;
-
-                    Coord p0b = x[t_i[k_i]];
-                    Coord p1b = x[t_i[(3 + (k_i + 1)) % 3]];
-                    Coord vec_b = p1b - p0b;
-                    
-                    //TriangleList[i] is on same side of line [Pb;Pc] than TriangleA
-                    if ((vec_a * normal) * (vec_b * normal) > 0)
-                    {
-                        indexTriangleListSide1.push_back(indexTriangleList[i]);
-                    }
-                    //TriangleList[i] is on the other side of line [Pb;Pc] than TriangleA
-                    else
-                    {
-                        indexTriangleListSide2.push_back(indexTriangleList[i]);
-                        triangleList2.push_back(m_topology->getTriangle(indexTriangleList[i]));
-                    }
-                }
-            }
-            //there is some triangles on the other side of line [Pb;Pc] so it's a X-junction, we have to incise at Pa
-            if (indexTriangleListSide2.size()>0)
-            {
-                Index indexNewPoint=m_topology->getNbPoints();
-                Index indexNewTriangle = m_topology->getNbTriangles();
-
-                sofa::helper::vector<Index> indexs_ancestor;
-                indexs_ancestor.push_back(indexA);
-                sofa::helper::vector< sofa::helper::vector<Index> > ancestors;
-                ancestors.push_back(indexs_ancestor);
-                sofa::helper::vector<double> barycoefs;
-                barycoefs.push_back(1.0);
-                sofa::helper::vector< sofa::helper::vector<double> > coefs;
-                coefs.push_back(barycoefs);
-                m_modifier->addPoints(1, ancestors, coefs);
-
-                
-                sofa::helper::vector< Element > triangles2Add;
-                sofa::helper::vector< Index > trianglesIndex2Add;
-                sofa::helper::vector< sofa::helper::vector< Index > > triangles_ancestors;
-                sofa::helper::vector< sofa::helper::vector< SReal > > triangles_baryCoefs;
-                barycoefs.clear();
-                barycoefs.push_back(1.0);
-                barycoefs.push_back(1.0);
-                barycoefs.push_back(1.0);
-                for (unsigned int i = 0; i < triangleList2.size(); i++)
-                {
-                    Element t = triangleList2[i];
-                    Element new_triangle;
-                    for(unsigned int j = 0; j < 3; j++)
-                    { 
-                        if (t[j] == indexA)
-                        {
-                            new_triangle[j] = indexNewPoint;
-                        }
-                        else
-                        {
-                            new_triangle[j] = t[j];
-                        }
-                    }    
-                    triangles2Add.push_back(new_triangle);
-                    trianglesIndex2Add.push_back(indexNewTriangle++);
-                    triangles_ancestors.resize(triangles_ancestors.size() + 1);
-                    triangles_baryCoefs.resize(triangles_baryCoefs.size() + 1);
-                    triangles_ancestors[triangles_ancestors.size() - 1].push_back(indexTriangleListSide2[i]);
-                    triangles_baryCoefs[triangles_baryCoefs.size() - 1].push_back(1.0);
-
-                }
-                m_modifier->addRemoveTriangles(indexTriangleListSide2.size(), triangles2Add, trianglesIndex2Add, triangles_ancestors, triangles_baryCoefs, indexTriangleListSide2);
-                d_fractureNumber.setValue(d_fractureNumber.getValue() + 1);
-            }
-            //no triangle on the other side of line [Pb;Pc] so it's a T-junction, we have to skip Pa on the next detection
-            else
-            {
-                helper::WriteAccessor< Data<vector<vector<int>>> > TjunctionTriangle(d_TjunctionTriangle);
-                int a = d_fractureNumber.getValue();
-                int b = d_indexTriangleMaxStress.getValue();
-                TjunctionTriangle.push_back({ {a},{b} });
-            }
-        }
+        m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, d_indexTriangleMaxStress.getValue(), principalStressDirection, input_position.getValue());
     }
 }
 
@@ -717,307 +524,6 @@ void TearingEngine<DataTypes>::computeEndPoints(
     Real norm_fractureDirection = fractureDirection.norm();
     Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-}
-
-template <class DataTypes>
-bool TearingEngine<DataTypes>::computeSegmentMeshIntersection(
-    Coord Pa,
-    Index indexA,
-    Coord endPoint,
-    bool& endPoint_inTriangle,
-    Index& endPointTriangle,
-    sofa::helper::vector<Index>& edges_list,
-    sofa::helper::vector<double>& coordsEdge_list)
-{
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
-    helper::WriteAccessor< Data<vector<Coord>> > path(d_fracturePath);
-    bool PATH_IS_OK = false;
-    double EPS = 1e-8;
-    sofa::helper::vector<Index> triangle_list;
-
-    bool resume = true;
-    Coord current_point = Pa;
-    Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, endPoint - current_point);
-    triangle_list.push_back(current_triangle);
-    if (current_triangle > m_topology->getNbTriangles() - 1)
-        resume = false;
-    Index ind_edge;
-
-    //loop start
-    while (resume)
-    {
-        sofa::helper::vector<Index> candidateIndice;
-        sofa::helper::vector<double> candidateBarycoef;
-        sofa::helper::vector<double> candidateCoordKmin;
-        bool intersection_exist = m_triangleGeo->computeIntersectionsLineTriangle(false, current_point, endPoint, current_triangle, candidateIndice, candidateBarycoef, candidateCoordKmin);
-        if (intersection_exist == false)
-        {
-            resume = false;
-            return PATH_IS_OK;
-        }
-
-
-        //choose in candidats
-        int j = -1;
-        if (candidateBarycoef.size() > 1)
-        {
-            for (unsigned int i = 0; i < candidateBarycoef.size(); i++)
-            {
-                Coord next_point_candidat = x[candidateIndice[2 * i]] + candidateBarycoef[i] * (x[candidateIndice[2 * i + 1]] - x[candidateIndice[2 * i]]);
-                if ((current_point - next_point_candidat) * (current_point - next_point_candidat) > EPS)
-                {
-                    j = i;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            j = 0;
-        }
-
-        if(j==-1)
-            return PATH_IS_OK;
-
-        //check if endPoint is passed
-        if (candidateCoordKmin[j] >= 1)
-        {
-            endPoint_inTriangle = true;
-            endPointTriangle = current_triangle;
-            resume = false;
-            PATH_IS_OK = true;
-            return PATH_IS_OK;
-        }
-        Coord next_point = x[candidateIndice[2 * j]] + candidateBarycoef[j] * (x[candidateIndice[2 * j + 1]] - x[candidateIndice[2 * j]]);
-        path.push_back(next_point);
-
-        Index next_triangle = -1;
-        if (candidateBarycoef[j] < EPS || abs(candidateBarycoef[j] - 1) < EPS)
-        {
-            //next_point is on an vertex
-            if (candidateBarycoef[j] < EPS)
-            {
-                next_triangle = m_triangleGeo->getTriangleInDirection(candidateIndice[2 * j], endPoint - x[candidateIndice[2 * j]]);
-            }
-            else
-            {
-                next_triangle = m_triangleGeo->getTriangleInDirection(candidateIndice[2 * j + 1], endPoint - x[candidateIndice[2 * j + 1]]);
-            }
-        }
-        else
-        {
-            //next_point is on an edge
-            Index next_point_edgeId = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
-            sofa::helper::vector<Index>next_triangle_candidate = m_topology->getTrianglesAroundEdge(next_point_edgeId);
-
-            if (next_triangle_candidate.size() > 1)
-                next_triangle = (current_triangle == next_triangle_candidate[0]) ? next_triangle_candidate[1] : next_triangle_candidate[0];
-
-        }
-
-        //if on an border, there is no next_triangle
-        if (next_triangle > m_topology->getNbTriangles() - 1)
-        {
-            ind_edge = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
-            edges_list.push_back(ind_edge);
-            Edge e = m_topology->getEdge(ind_edge);
-            if (e[0] == candidateIndice[2 * j])
-            {
-                coordsEdge_list.push_back(candidateBarycoef[j]);
-            }
-            else
-            {
-                coordsEdge_list.push_back(1 - candidateBarycoef[j]);
-            }
-            resume = false;
-            PATH_IS_OK = true;
-            return PATH_IS_OK;
-        }
-
-        //check if we are not all ready pass in this triangle
-        for (unsigned int i = 0; i < triangle_list.size(); i++)
-        {
-            if (next_triangle == triangle_list[i])
-                return PATH_IS_OK;
-        }
-
-        //MAJ
-        current_triangle = next_triangle;
-        current_point = next_point;
-        triangle_list.push_back(current_triangle);
-
-        ind_edge = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
-        edges_list.push_back(ind_edge);
-        Edge e = m_topology->getEdge(ind_edge);
-        if (e[0] == candidateIndice[2 * j])
-        {
-            coordsEdge_list.push_back(candidateBarycoef[j]);
-        }
-        else
-        {
-            coordsEdge_list.push_back(1 - candidateBarycoef[j]);
-        }
-        PATH_IS_OK = true;
-        candidateIndice.clear();
-        candidateBarycoef.clear();
-    }
-}
-
-template <class DataTypes>
-void TearingEngine<DataTypes>::pathAdaptationObject(
-    double EPS,
-    bool pointB_inTriangle, Index triangleB, Coord Pb, sofa::helper::vector<Index> edges_listB, sofa::helper::vector<double> coordsEdge_listB, int& sizeB,
-    Coord Pa, Index indexA,
-    bool pointC_inTriangle, Index triangleC, Coord Pc, sofa::helper::vector<Index> edges_listC, sofa::helper::vector<double> coordsEdge_listC, int& sizeC,
-    sofa::helper::vector< sofa::core::topology::TopologyElementType>& topoPath_list,
-    sofa::helper::vector<Index>& indices_list,
-    sofa::helper::vector< sofa::defaulttype::Vec<3, double> >& coords_list)
-{
-    sofa::defaulttype::Vec<3, double> baryCoords;
-    //equivalent STEP 4
-    sizeB = edges_listB.size();
-    sizeC = edges_listC.size();
-
-    //adaptation start
-    //add point B ?
-    if (pointB_inTriangle)
-    {
-        //compute barycoef of Pb in triangleB
-        sofa::helper::vector< double > coefs_b = m_triangleGeo->computeTriangleBarycoefs(triangleB, Pb);
-
-        //Pb is on an vertex ? 
-        bool B_isOnVertex = false;
-        Index indexPointB = -1;
-        for (unsigned int i = 0; i < coefs_b.size(); i++)
-        {
-            if (abs(coefs_b[i] - 1.0) < EPS)
-            {
-                indexPointB = m_topology->getTriangle(triangleB)[i];
-                B_isOnVertex = true;
-                break;
-            }
-        }
-
-        if (B_isOnVertex) //Pb is on an vertex
-        {
-            topoPath_list.push_back(core::topology::TopologyElementType::POINT);
-            indices_list.push_back(indexPointB);
-            coords_list.push_back(Pb);
-        }
-        else//Pb is in an triangle
-        {
-            topoPath_list.push_back(core::topology::TopologyElementType::TRIANGLE);
-            indices_list.push_back(triangleB);
-            for (unsigned int i = 0; i < 3; i++)
-                baryCoords[i] = coefs_b[i];
-            coords_list.push_back(baryCoords);
-        }
-    } //pointB_inTriangle
-
-    //intersection between B and A
-    if (sizeB > 0)
-    {
-        for (unsigned int i = 0; i < sizeB; i++)
-        {
-            topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
-            indices_list.push_back(edges_listB[sizeB - 1 - i]);
-            baryCoords[0] = coordsEdge_listB[sizeB - 1 - i];
-            baryCoords[1] = 0.0;
-            baryCoords[2] = 0.0;
-            coords_list.push_back(baryCoords);
-        }
-    }
-
-    //add Pa
-    topoPath_list.push_back(core::topology::TopologyElementType::POINT);
-    indices_list.push_back(indexA);
-    coords_list.push_back(Pa);
-
-    //intersection between A and C
-    if (sizeC > 0)
-    {
-        for (unsigned int i = 0; i < sizeC; i++)
-        {
-            topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
-            indices_list.push_back(edges_listC[i]);
-            Edge e = m_topology->getEdge(edges_listC[i]);
-            baryCoords[0] = coordsEdge_listC[i];
-            baryCoords[1] = 0.0;
-            baryCoords[2] = 0.0;
-            coords_list.push_back(baryCoords);
-        }
-    }
-
-    //add point C ?
-    if (pointC_inTriangle)
-    {
-        //compute barycoef of Pc in triangleC
-        sofa::helper::vector< double > coefs_c = m_triangleGeo->computeTriangleBarycoefs(triangleC, Pc);
-
-        //Pc is on an vertex ? 
-        bool C_isOnVertex = false;
-        Index indexPointC = -1;
-        for (unsigned int i = 0; i < coefs_c.size(); i++)
-        {
-            if (abs(coefs_c[i] - 1.0) < EPS)
-            {
-                indexPointC = m_topology->getTriangle(triangleC)[i];
-                C_isOnVertex = true;
-                break;
-            }
-        }
-
-        if (C_isOnVertex) //Pc is on an vertex
-        {
-            topoPath_list.push_back(core::topology::TopologyElementType::POINT);
-            indices_list.push_back(indexPointC);
-            coords_list.push_back(Pc);
-        }
-        else//Pc is in an triangle
-        {
-            topoPath_list.push_back(core::topology::TopologyElementType::TRIANGLE);
-            indices_list.push_back(triangleC);
-            for (unsigned int i = 0; i < 3; i++)
-                baryCoords[i] = coefs_c[i];
-            coords_list.push_back(baryCoords);
-        }
-    } //pointC_inTriangle
-
-    edges_listB.clear();
-    coordsEdge_listB.clear();
-    edges_listC.clear();
-    coordsEdge_listC.clear();
-}
-
-template <class DataTypes>
-int TearingEngine<DataTypes>::splitting(
-    int snapingValue, int snapingBorderValue,
-    Coord Pa, Coord Pb, Coord Pc,
-    int sizeB, int sizeC,
-    sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list,
-    sofa::helper::vector<Index> indices_list,
-    sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list,
-    sofa::helper::vector< Index >& new_edges)
-{
-
-    // Snaping value: input are percentages, we need to transform it as real epsilon value;
-    double epsilonSnap = (double)snapingValue / 200;
-    double epsilonBorderSnap = (double)snapingBorderValue / 210; // magic number (0.5 is max value and must not be reached, as threshold is compared to barycoord value)
-    
-    int result = -1;
-    if (sizeB == 0)
-    {
-        result = m_triangleGeo->SplitAlongPath(core::topology::BaseMeshTopology::InvalidID, Pa, core::topology::BaseMeshTopology::InvalidID, Pc, topoPath_list, indices_list, coords_list, new_edges, epsilonSnap, epsilonBorderSnap);
-    }
-    else if (sizeC == 0)
-    {
-        result = m_triangleGeo->SplitAlongPath(core::topology::BaseMeshTopology::InvalidID, Pb, core::topology::BaseMeshTopology::InvalidID, Pa, topoPath_list, indices_list, coords_list, new_edges, epsilonSnap, epsilonBorderSnap);
-    }
-    else
-    {
-        result = m_triangleGeo->SplitAlongPath(core::topology::BaseMeshTopology::InvalidID, Pb, core::topology::BaseMeshTopology::InvalidID, Pc, topoPath_list, indices_list, coords_list, new_edges, epsilonSnap, epsilonBorderSnap);
-    }
-    return result;
 }
 
 template <class DataTypes>

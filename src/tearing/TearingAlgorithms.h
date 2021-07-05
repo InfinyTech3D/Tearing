@@ -26,8 +26,7 @@ public:
 		sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo);
 
 	virtual ~TearingAlgorithms();
-
-	sofa::helper::vector<Coord> m_fracturePath;
+	
 
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
@@ -40,6 +39,9 @@ public:
 	void algoFracturePath(Coord Pa, Index indexA, Coord Pb, Coord Pc, 
 		Index indexTriangleMaxStress, Coord principalStressDirection, const VecCoord& input_position);
 
+	int getFractureNumber() const { return m_fractureNumber; }
+
+protected:
 	/// <summary>
 	/// get intersection point between Pa and one of the endPoint Pb or Pc
 	/// </summary>
@@ -108,8 +110,13 @@ public:
 		sofa::helper::vector< Index >& new_edges);
 
 protected:
+	/// number of fracture done by the algorithm
 	int m_fractureNumber;
+	
+	/// list of triangle where a T junction is blocking the algorithm
 	sofa::helper::vector< sofa::helper::vector<int> > m_TjunctionTriangle;
+
+	sofa::helper::vector<Coord> m_fracturePath;
 
 	sofa::core::topology::BaseMeshTopology* m_topology;
 	sofa::component::topology::TriangleSetTopologyModifier* m_modifier;
