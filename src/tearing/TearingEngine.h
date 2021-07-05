@@ -1,6 +1,7 @@
 #pragma once
 
 #include <tearing/config.h>
+#include <tearing/TearingAlgorithms.h>
 
 #include <sofa/core/DataEngine.h>
 #include <sofa/core/objectmodel/BaseObject.h>
@@ -216,7 +217,7 @@ protected:
 private:
 	sofa::helper::ColorMap* p_drawColorMap;
 
-
+	TearingAlgorithms<DataTypes>* m_tearingAlgo;
 public:
 	void handleEvent(sofa::core::objectmodel::Event* event) override;
 

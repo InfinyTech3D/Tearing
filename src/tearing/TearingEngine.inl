@@ -40,6 +40,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
     , ignoreTriangleAtStart(initData(&ignoreTriangleAtStart, true, "ignoreTriangleAtStart","option to ignore some triangles at start of the tearing algo"))
     , d_TjunctionTriangle(initData(&d_TjunctionTriangle, "TjunctionTriangle", "list of triangle where a T junction is blocking the algorithm"))
+    , m_tearingAlgo(nullptr)
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
@@ -106,6 +107,8 @@ void TearingEngine<DataTypes>::init()
     d_counter.setValue(0);
     d_fractureNumber.setValue(0);
     
+    if (m_tearingAlgo == nullptr)
+        m_tearingAlgo = new TearingAlgorithms<DataTypes>(m_topology, m_modifier, m_triangleGeo);
 }
 
 template <class DataTypes>
