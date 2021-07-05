@@ -37,9 +37,13 @@ public:
 	/// @param Pc - coord of Pc
 	/// @param indexTriangleMaxStress - index of triangle where the principal stress is maximum
 	void algoFracturePath(Coord Pa, Index indexA, Coord Pb, Coord Pc, 
-		Index indexTriangleMaxStress, Coord principalStressDirection, const VecCoord& input_position);
+		const Index indexTriangleMaxStress, const Coord principalStressDirection, const VecCoord& input_position);
 
 	int getFractureNumber() const { return m_fractureNumber; }
+
+	const sofa::helper::vector< sofa::helper::vector<int> >& getTjunctionTriangles() const { return m_TjunctionTriangle; }
+
+	const sofa::helper::vector<Coord>& getFracturePath() const { return m_fracturePath; }
 
 protected:
 	/// <summary>
@@ -116,6 +120,7 @@ protected:
 	/// list of triangle where a T junction is blocking the algorithm
 	sofa::helper::vector< sofa::helper::vector<int> > m_TjunctionTriangle;
 
+	/// path created by algoFracturePath
 	sofa::helper::vector<Coord> m_fracturePath;
 
 	sofa::core::topology::BaseMeshTopology* m_topology;

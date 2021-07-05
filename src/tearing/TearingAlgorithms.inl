@@ -29,9 +29,10 @@ TearingAlgorithms<DataTypes>::~TearingAlgorithms()
 
 template <class DataTypes>
 void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coord Pb, Coord Pc, 
-    Index indexTriangleMaxStress, Coord principalStressDirection, const VecCoord& input_position)
+    const Index indexTriangleMaxStress, const Coord principalStressDirection, const VecCoord& input_position)
 {
     m_fracturePath.clear();
+    m_fracturePath.push_back(Pa);
     double EPS = 1e-8;
 
     //computeSegmentMeshIntersection [Pa;Pc]

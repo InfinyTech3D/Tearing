@@ -76,7 +76,6 @@ public:
 	Data<double> d_fractureMaxLength;
 	Data<vector<Index>> d_triangleToIgnoreList;
 	Data<bool> ignoreTriangleAtStart;
-	Data<vector<vector<int>>> d_TjunctionTriangle;
 
 	/// <summary>
 	/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
@@ -120,7 +119,6 @@ public:
 	/// </summary>
 	void algoFracturePath();
 
-	Data<vector<Coord>> d_fracturePath;
 	Data<bool> showFracturePath;
 
 	/// <summary>

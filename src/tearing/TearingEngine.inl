@@ -34,11 +34,9 @@ TearingEngine<DataTypes>::TearingEngine()
 
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
-    , d_fracturePath(initData(&d_fracturePath,"fracturePath","path created by algoFracturePath"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
     , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
     , ignoreTriangleAtStart(initData(&ignoreTriangleAtStart, true, "ignoreTriangleAtStart","option to ignore some triangles at start of the tearing algo"))
-    , d_TjunctionTriangle(initData(&d_TjunctionTriangle, "TjunctionTriangle", "list of triangle where a T junction is blocking the algorithm"))
     , m_tearingAlgo(nullptr)
 {
     addInput(&input_position);
@@ -122,7 +120,7 @@ void TearingEngine<DataTypes>::doUpdate()
 
     if (ignoreTriangleAtStart.getValue())
     {
-        if(m_tearingAlgo->getFractureNumber() == 0)
+        if(m_tearingAlgo!= nullptr && m_tearingAlgo->getFractureNumber() == 0)
             computeTriangleToSkip();
     }
     else
@@ -131,14 +129,17 @@ void TearingEngine<DataTypes>::doUpdate()
         d_triangleToIgnoreList.setValue(emptyIndexList);
     }
 
-    helper::ReadAccessor< Data<vector<vector<int>>> > TjunctionTriangle(d_TjunctionTriangle);
-    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
-    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
+    if (m_tearingAlgo != nullptr)
     {
-        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
+        const vector< vector<int> >& TjunctionTriangle = m_tearingAlgo->getTjunctionTriangles();
+        helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
+        for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
         {
-            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
-                triangleToSkip.push_back(TjunctionTriangle[i][1]);
+            if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
+            {
+                if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
+                    triangleToSkip.push_back(TjunctionTriangle[i][1]);
+            }
         }
     }
 
@@ -227,8 +228,8 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vparams->drawTool()->drawLines(points, 1, sofa::helper::types::RGBAColor(1, 0.5, 0, 1));
             points.clear();
 
-            helper::ReadAccessor< Data<vector<Coord>> > path(d_fracturePath);
-            if (path.size())
+            const sofa::helper::vector<Coord>& path = m_tearingAlgo->getFracturePath();
+            if (!path.empty())
                 vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
         }
     }
@@ -347,11 +348,8 @@ void TearingEngine<DataTypes>::algoFracturePath()
     if (candidate.size() || choice)
     {
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        helper::WriteAccessor< Data<vector<Coord>> > path(d_fracturePath);
-        path.clear();
         double EPS = 1e-8;
         bool PATH_IS_OK = false;
-
 
         //Calculate fracture starting point (Pa)
         int indexA;
@@ -369,7 +367,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
         default:
             indexA = d_indexVertexMaxStress.getValue();
             Pa = x[indexA];
-            path.push_back(Pa);
             principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
             computeEndPoints(Pa, principalStressDirection, Pb, Pc);
             break;
@@ -378,7 +375,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest1-1
             indexA = 421;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
             alpha = 2.5;
             Pb = Pa + alpha * dir;
@@ -389,7 +385,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest1-2
             indexA = 1;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 0.707; dir[1] = 0.707; dir[2] = 0.0;
             alpha = 3.5;
             Pb = Pa + alpha * dir;
@@ -400,7 +395,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest2-1
             indexA = 470;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
             alpha = 4.0;
             Pb = Pa + alpha * dir;
@@ -411,7 +405,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest2-2
             indexA = 84;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 0.707; dir[1] = 0.707; dir[2] = 0.0;
             alpha = 3.5;
             Pb = Pa + alpha * dir;
@@ -422,7 +415,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest4-1
             indexA = 45;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
             alpha = 2.0;
             Pb = Pa + alpha * dir;
@@ -433,7 +425,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest4-1
             indexA = 51;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
             alpha = 5.0;
             Pb = Pa + alpha * dir;
@@ -444,7 +435,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest5_holeCircular-1
             indexA = 318;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
             alpha = 2.5;
             Pb = Pa + alpha * dir;
@@ -455,7 +445,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest5_holeCircular-2
             indexA = 282;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 0.707; dir[1] = -0.707; dir[2] = 0.0;
             alpha = 2.0;
             Pb = Pa + alpha * dir;
@@ -466,7 +455,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest5_holeSquare
             indexA = 231;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
             alpha = 5.0;
             Pb = Pa + alpha * dir;
@@ -477,7 +465,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest5_holeSquareVertical
             indexA = 229;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
             alpha = 2.0;
             Pb = Pa - alpha * dir;
@@ -488,7 +475,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest5_incision-1
             indexA = 179;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
             alpha = 2.0;
             Pb = Pa - alpha * dir;
@@ -499,7 +485,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
             //CasTest5_incision-2
             indexA = 188;
             Pa = x[indexA];
-            path.push_back(Pa);
             dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
             alpha = 5.0;
             Pb = Pa;
