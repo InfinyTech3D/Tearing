@@ -19,7 +19,7 @@ namespace sofa::helper
 namespace sofa::component::engine
 {
 	using core::DataEngine;
-	using helper::vector;
+	using type::vector;
 
 	template <class DataTypes>
 	class VolumeTearingEngine : public core::DataEngine
@@ -37,8 +37,9 @@ namespace sofa::component::engine
 		typedef sofa::core::topology::BaseMeshTopology::SeqTriangles VecTriangles;
 		typedef sofa::core::topology::BaseMeshTopology::Edge Edge;
 		typedef sofa::core::topology::BaseMeshTopology::SeqEdges VecEdges;
+		typedef sofa::type::Vec<3, double> Vec3;
 
-		typedef typename sofa::component::forcefield::TetrahedralCorotationalFEMForceField<DataTypes>::TetrahedronHandler::TetrahedronInformation TetrahedronFEMInformation;
+		typedef typename sofa::component::forcefield::TetrahedralCorotationalFEMForceField<DataTypes>::TetrahedronInformation TetrahedronFEMInformation;
 		typedef vector<TetrahedronFEMInformation> VecTetrahedronFEMInformation;
 
 	protected:

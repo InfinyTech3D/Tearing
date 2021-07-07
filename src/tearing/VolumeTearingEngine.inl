@@ -93,7 +93,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
     {
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_tetraOverThresholdList);
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        std::vector< defaulttype::Vector3 > points[4];
+        std::vector< Vec3 > points[4];
 
         for (Size i = 0; i < candidate.size(); ++i)
         {
@@ -128,7 +128,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
             }
             else
             {
-                std::vector< defaulttype::Vector3 > TetraMaxStressPoints[4];
+                std::vector< Vec3 > TetraMaxStressPoints[4];
 
                 TetraMaxStressPoints[0].push_back(pa);
                 TetraMaxStressPoints[0].push_back(pb);

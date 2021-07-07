@@ -158,9 +158,9 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         VecElement triangleList = m_topology->getTriangles();
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        std::vector<sofa::defaulttype::Vector3> vertices;
+        std::vector<Vec3> vertices;
         sofa::helper::types::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
-        std::vector<sofa::defaulttype::Vector3> tearTriangleVertices;
+        std::vector<Vec3> tearTriangleVertices;
         sofa::helper::types::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
         if (candidate.size() > 0)
         {
@@ -188,7 +188,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vparams->drawTool()->drawTriangles(vertices, color);
             vparams->drawTool()->drawTriangles(tearTriangleVertices, color2);
 
-            std::vector<sofa::defaulttype::Vector3> vecteur;
+            std::vector<Vec3> vecteur;
             Coord principalStressDirection = d_triangleFEMInfo.getValue()[d_indexTriangleMaxStress.getValue()].principalStressDirection;
             Coord Pa = x[d_indexVertexMaxStress.getValue()];
 
@@ -228,7 +228,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vparams->drawTool()->drawLines(points, 1, sofa::helper::types::RGBAColor(1, 0.5, 0, 1));
             points.clear();
 
-            const sofa::helper::vector<Coord>& path = m_tearingAlgo->getFracturePath();
+            const vector<Coord>& path = m_tearingAlgo->getFracturePath();
             if (!path.empty())
                 vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
         }
@@ -515,7 +515,7 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
-    sofa::helper::vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
+    vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
     this->getContext()->get< sofa::component::forcefield::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
 
     for each (sofa::component::forcefield::ConstantForceField<DataTypes>* cff_i in m_ConstantForceFields)
