@@ -82,6 +82,15 @@ namespace sofa::component::engine
 		Data<VecTetrahedronFEMInformation > d_tetrahedronFEMInfo;
 
 		Data<double> d_seuilPrincipalStress;
+		Data<double> d_RankineMaxTension;
+		Data<double> d_RankineMaxCompression;
+		vector<Index> candidateRankine;
+		vector<Index> candidateVonMises;
+		Data<double> d_seuilVonMises;
+		Data<bool> showSeuil;
+		Data<bool> showRankine;
+		Data<bool> showVonmises;
+
 		/// put in d_tetraOverThresholdList tetrahedron with a maxStress greater than a threshold value (d_seuilPrincipalStress)
 		void computeTetraOverThresholdPrincipalStress();
 		Data<vector<Index>> d_tetraToIgnoreList;

@@ -25,11 +25,19 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , d_step(initData(&d_step, 20, "step", "step size"))
     , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
-
+    , d_RankineMaxTension(initData(&d_RankineMaxTension, 110.0, "RankineMaxTension", "threshold value for stress"))
+    , d_RankineMaxCompression(initData(&d_RankineMaxCompression, 200.0, "RankineMaxCompression", "threshold value for Rankine stress"))
+    , d_seuilVonMises(initData(&d_seuilVonMises, 280.0, "seuilVonMises", "threshold value for VM stress"))
+    , showSeuil(initData(&showSeuil, true, "showSeuil", "plot candidate"))
+    , showRankine(initData(&showRankine, true, "showRankine", "plot candidateRankine"))
+    , showVonmises(initData(&showVonmises, true, "showVonmises", "plot candidateVonMises"))
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
     addInput(&d_step);
+    addInput(&d_RankineMaxTension);
+    addInput(&d_RankineMaxCompression);
+    addInput(&d_seuilVonMises);
     addOutput(&d_tetraOverThresholdList);
     addOutput(&d_fractureNumber);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
@@ -95,68 +103,153 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         std::vector< defaulttype::Vector3 > points[4];
 
-        for (Size i = 0; i < candidate.size(); ++i)
+        if (showSeuil.getValue())
         {
-            const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidate[i]);
-            
-            Index a = t[0];
-            Index b = t[1];
-            Index c = t[2];
-            Index d = t[3];
-            Coord pa = x[a];
-            Coord pb = x[b];
-            Coord pc = x[c];
-            Coord pd = x[d];
-
-            if (candidate[i] != indexTetraMaxStress)
+            for (Size i = 0; i < candidate.size(); ++i)
             {
-                points[0].push_back(pa);
-                points[0].push_back(pb);
-                points[0].push_back(pc);
+                const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidate[i]);
 
-                points[1].push_back(pb);
-                points[1].push_back(pc);
-                points[1].push_back(pd);
+                Index a = t[0];
+                Index b = t[1];
+                Index c = t[2];
+                Index d = t[3];
+                Coord pa = x[a];
+                Coord pb = x[b];
+                Coord pc = x[c];
+                Coord pd = x[d];
 
-                points[2].push_back(pc);
-                points[2].push_back(pd);
-                points[2].push_back(pa);
+                if (candidate[i] != indexTetraMaxStress)
+                {
+                    points[0].push_back(pa);
+                    points[0].push_back(pb);
+                    points[0].push_back(pc);
 
-                points[3].push_back(pd);
-                points[3].push_back(pa);
-                points[3].push_back(pb);
+                    points[1].push_back(pb);
+                    points[1].push_back(pc);
+                    points[1].push_back(pd);
+
+                    points[2].push_back(pc);
+                    points[2].push_back(pd);
+                    points[2].push_back(pa);
+
+                    points[3].push_back(pd);
+                    points[3].push_back(pa);
+                    points[3].push_back(pb);
+                }
+                else
+                {
+                    std::vector< defaulttype::Vector3 > TetraMaxStressPoints[4];
+
+                    TetraMaxStressPoints[0].push_back(pa);
+                    TetraMaxStressPoints[0].push_back(pb);
+                    TetraMaxStressPoints[0].push_back(pc);
+
+                    TetraMaxStressPoints[1].push_back(pb);
+                    TetraMaxStressPoints[1].push_back(pc);
+                    TetraMaxStressPoints[1].push_back(pd);
+
+                    TetraMaxStressPoints[2].push_back(pc);
+                    TetraMaxStressPoints[2].push_back(pd);
+                    TetraMaxStressPoints[2].push_back(pa);
+
+                    TetraMaxStressPoints[3].push_back(pd);
+                    TetraMaxStressPoints[3].push_back(pa);
+                    TetraMaxStressPoints[3].push_back(pb);
+
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[0], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                }
             }
-            else
-            {
-                std::vector< defaulttype::Vector3 > TetraMaxStressPoints[4];
-
-                TetraMaxStressPoints[0].push_back(pa);
-                TetraMaxStressPoints[0].push_back(pb);
-                TetraMaxStressPoints[0].push_back(pc);
-
-                TetraMaxStressPoints[1].push_back(pb);
-                TetraMaxStressPoints[1].push_back(pc);
-                TetraMaxStressPoints[1].push_back(pd);
-
-                TetraMaxStressPoints[2].push_back(pc);
-                TetraMaxStressPoints[2].push_back(pd);
-                TetraMaxStressPoints[2].push_back(pa);
-
-                TetraMaxStressPoints[3].push_back(pd);
-                TetraMaxStressPoints[3].push_back(pa);
-                TetraMaxStressPoints[3].push_back(pb);
-
-                vparams->drawTool()->drawTriangles(TetraMaxStressPoints[0], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-            }
+            vparams->drawTool()->drawTriangles(points[0], sofa::helper::types::RGBAColor(0, 0, 1, 1));
+            vparams->drawTool()->drawTriangles(points[1], sofa::helper::types::RGBAColor(0, 0, 1, 1));
+            vparams->drawTool()->drawTriangles(points[2], sofa::helper::types::RGBAColor(0, 0, 1, 1));
+            vparams->drawTool()->drawTriangles(points[3], sofa::helper::types::RGBAColor(0, 0, 1, 1));
         }
-        vparams->drawTool()->drawTriangles(points[0], sofa::helper::types::RGBAColor(0, 0, 1, 1));
-        vparams->drawTool()->drawTriangles(points[1], sofa::helper::types::RGBAColor(0, 0, 1, 1));
-        vparams->drawTool()->drawTriangles(points[2], sofa::helper::types::RGBAColor(0, 0, 1, 1));
-        vparams->drawTool()->drawTriangles(points[3], sofa::helper::types::RGBAColor(0, 0, 1, 1));
-    }
+        
+        if (showRankine.getValue())
+        {
+            std::vector< defaulttype::Vector3 > pointsRankine[4];
+            for (Size i = 0; i < candidateRankine.size(); ++i)
+            {
+                const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidateRankine[i]);
+
+                Index a = t[0];
+                Index b = t[1];
+                Index c = t[2];
+                Index d = t[3];
+                Coord pa = x[a];
+                Coord pb = x[b];
+                Coord pc = x[c];
+                Coord pd = x[d];
+
+
+                pointsRankine[0].push_back(pa);
+                pointsRankine[0].push_back(pb);
+                pointsRankine[0].push_back(pc);
+
+                pointsRankine[1].push_back(pb);
+                pointsRankine[1].push_back(pc);
+                pointsRankine[1].push_back(pd);
+
+                pointsRankine[2].push_back(pc);
+                pointsRankine[2].push_back(pd);
+                pointsRankine[2].push_back(pa);
+
+                pointsRankine[3].push_back(pd);
+                pointsRankine[3].push_back(pa);
+                pointsRankine[3].push_back(pb);
+
+
+            }
+            vparams->drawTool()->drawTriangles(pointsRankine[0], sofa::helper::types::RGBAColor(1, 0.36, 0.07, 1));
+            vparams->drawTool()->drawTriangles(pointsRankine[1], sofa::helper::types::RGBAColor(1, 0.36, 0.07, 1));
+            vparams->drawTool()->drawTriangles(pointsRankine[2], sofa::helper::types::RGBAColor(1, 0.36, 0.07, 1));
+            vparams->drawTool()->drawTriangles(pointsRankine[3], sofa::helper::types::RGBAColor(1, 0.36, 0.07, 1));
+        }
+
+        if (showVonmises.getValue())
+        {
+            std::vector< defaulttype::Vector3 > pointsVonMises[4];
+            for (Size i = 0; i < candidateVonMises.size(); ++i)
+            {
+                const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidateVonMises[i]);
+
+                Index a = t[0];
+                Index b = t[1];
+                Index c = t[2];
+                Index d = t[3];
+                Coord pa = x[a];
+                Coord pb = x[b];
+                Coord pc = x[c];
+                Coord pd = x[d];
+
+
+                pointsVonMises[0].push_back(pa);
+                pointsVonMises[0].push_back(pb);
+                pointsVonMises[0].push_back(pc);
+
+                pointsVonMises[1].push_back(pb);
+                pointsVonMises[1].push_back(pc);
+                pointsVonMises[1].push_back(pd);
+
+                pointsVonMises[2].push_back(pc);
+                pointsVonMises[2].push_back(pd);
+                pointsVonMises[2].push_back(pa);
+
+                pointsVonMises[3].push_back(pd);
+                pointsVonMises[3].push_back(pa);
+                pointsVonMises[3].push_back(pb);
+
+
+            }
+            vparams->drawTool()->drawTriangles(pointsVonMises[0], sofa::helper::types::RGBAColor(1, 0, 1, 1));
+            vparams->drawTool()->drawTriangles(pointsVonMises[1], sofa::helper::types::RGBAColor(1, 0, 1, 1));
+            vparams->drawTool()->drawTriangles(pointsVonMises[2], sofa::helper::types::RGBAColor(1, 0, 1, 1));
+            vparams->drawTool()->drawTriangles(pointsVonMises[3], sofa::helper::types::RGBAColor(1, 0, 1, 1));
+        }
+    }                                            
 }
 
 template <class DataTypes>
@@ -204,6 +297,8 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
     helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
     helper::WriteAccessor< Data<vector<Index>> >tetraToSkip(d_tetraToIgnoreList);
     helper::WriteAccessor< Data<vector<Index>> > candidate(d_tetraOverThresholdList);
+    candidateRankine.clear();
+    candidateVonMises.clear();
     candidate.clear();
     maxStress = 0;
     indexTetraMaxStress = -1;
@@ -222,6 +317,25 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
                     maxStress = tetrahedronInfo->maxStress;
                 }
             }
+
+            if (tetrahedronInfo->principalStress1 <= -d_RankineMaxCompression.getValue() || d_RankineMaxTension.getValue() <= tetrahedronInfo->principalStress1)
+            {
+                candidateRankine.push_back(i);
+            }
+            else if (tetrahedronInfo->principalStress2 <= -d_RankineMaxCompression.getValue() || d_RankineMaxTension.getValue() <= tetrahedronInfo->principalStress2)
+            {
+                candidateRankine.push_back(i);
+            }
+            else if (tetrahedronInfo->principalStress3 <= -d_RankineMaxCompression.getValue() || d_RankineMaxTension.getValue() <= tetrahedronInfo->principalStress3)
+            {
+                candidateRankine.push_back(i);
+            }
+        
+            if (tetrahedronInfo->vonMisesStress >= d_seuilVonMises.getValue())
+            {
+                candidateVonMises.push_back(i);
+            }
+        
         }
     }
 }
