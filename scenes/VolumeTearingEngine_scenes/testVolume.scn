@@ -18,9 +18,10 @@
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
     <DefaultCollisionGroupManager name="default23" />
     
+	<VisualStyle displayFlags="showBehaviorModels showForceFields" />
     
     <Node name="Model">
-        <RegularGridTopology name="grid" n="6 6 6" min="-10 -10 -10" max="10 10 10" p0="-10 -10 -10" />
+        <RegularGridTopology name="grid" n="2 2 2" min="-10 -10 -10" max="10 10 10" p0="-10 -10 -10" />
         <MechanicalObject name="ref_positions" />
         
         <TetrahedronSetTopologyContainer name="ref_tetra" />
@@ -43,6 +44,9 @@
         
         <BoxROI template="Vec3d" name="box_roi" box="-11 9 -11 11 11 11" indices="0" drawSize="0" />
         <FixedConstraint template="Vec3d" name="default27" indices="@box_roi.indices" drawSize="0" />
+		
+		<BoxROI template="Vec3d" name="PulledSide" box="-11 -11 -11 11 -8 11" drawBoxes="1"/>
+		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -10000 0" showArrowSize=".0001" />
 		
 		<VolumeTearingEngine name="VolumeTearingEngine" input_position="@Mo.position"/>
 		

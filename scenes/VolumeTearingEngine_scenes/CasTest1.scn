@@ -19,6 +19,7 @@
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
     <DefaultCollisionGroupManager name="default23" />
     
+	<VisualStyle displayFlags="showBehaviorModels showForceFields" />
     
     <Node name="Model">
         <RegularGridTopology name="grid" n="15 15 3" min="-5 -5 -0.5" max="5 5 0.5" p0="0 0 0" />
@@ -40,7 +41,7 @@
         <TetrahedronSetGeometryAlgorithms template="Vec3d" name="GeomAlgo" />
         
         <UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" />
-		<TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0"/>
+		<TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" showVonMisesColorMap="false"/>
         
         <BoxROI template="Vec3d" name="FixedSide" box="-0.5 9.5 -0.5 10.5 10.5 1.5" indices="0" drawSize="1"  drawBoxes="1"/>
         <FixedConstraint template="Vec3d" name="default27" indices="@FixedSide.indices" drawSize="0" />

@@ -1,6 +1,5 @@
 <?xml version="1.0" ?>
 <!-- Automatic Hexahedron removing with Hexa2Tetra mapping example: Element removed are define in: Not yet supported -->
-
 <Node name="root" gravity="0 -9.81 0" dt="0.01">
     <RequiredPlugin pluginName="SofaOpenglVisual"/>
     <RequiredPlugin pluginName='SofaBoundaryCondition'/>
@@ -19,9 +18,10 @@
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
     <DefaultCollisionGroupManager name="default23" />
     
+	<VisualStyle displayFlags="showBehaviorModels showForceFields" />
     
     <Node name="Model">
-        <RegularGridTopology name="grid" n="15 15 3" min="-5 -5 -0.5" max="5 5 0.5" p0="0 0 0" />
+        <RegularGridTopology name="grid" n="2 2 2" min="-10 -10 -10" max="10 10 10" p0="-10 -10 -10" />
         <MechanicalObject name="ref_positions" />
         
         <TetrahedronSetTopologyContainer name="ref_tetra" />
@@ -30,10 +30,10 @@
         <Hexa2TetraTopologicalMapping input="@grid" output="@ref_tetra" />
     </Node>
     
-    <Node name="Cube" gravity="0 0 0">
+    <Node name="Cube" gravity="0 -9.81 0">
         <EulerImplicitSolver name="cg_odesolver" printLog="0"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver template="GraphScattered" name="linear solver" iterations="25" tolerance="1e-09" threshold="1e-09" />
-        <MechanicalObject name="Mo" template="Vec3d" position="@../Model/ref_positions.position" />
+        <MechanicalObject name= "Mo" template="Vec3d" position="@../Model/ref_positions.position" />
         
         <TetrahedronSetTopologyContainer name="Tetra_topo" src="@../Model/ref_tetra"/>
         <TetrahedronSetTopologyModifier name="Modifier" />
@@ -42,11 +42,11 @@
         <UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" />
         <TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" />
         
-        <BoxROI template="Vec3d" name="box_roi" box="-0.5 9.5 -0.5 10.5 10.5 1.5" indices="0" drawSize="1"  drawBoxes="1"/>
+        <BoxROI template="Vec3d" name="box_roi" box="-11 11 -11 11 -11 -10" indices="0" drawSize="0" drawBoxes="0"/>
         <FixedConstraint template="Vec3d" name="default27" indices="@box_roi.indices" drawSize="0" />
 		
-		<BoxROI template="Vec3d" name="PulledSide" box="9.5 -0.5 0.9 10.5 0.5 1.1" drawSize="1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -300 0" showArrowSize=".01" />
+		<BoxROI template="Vec3d" name="PulledSide" box="11 11 10 -11 -11 11" drawBoxes="1"/>
+		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -1000 0" showArrowSize=".01" />
 		
 		<VolumeTearingEngine name="VolumeTearingEngine" input_position="@Mo.position"/>
 		

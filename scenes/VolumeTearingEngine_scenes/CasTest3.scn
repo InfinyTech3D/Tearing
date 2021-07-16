@@ -46,7 +46,7 @@
         <FixedConstraint template="Vec3d" name="default27" indices="@box_roi.indices" drawSize="0" />
 		
 		<BoxROI template="Vec3d" name="PulledSide" box="4.5 -0.5 0.45 5.5 0.5 0.55" drawSize="1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -100 0" showArrowSize=".01" />
+		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -300 0" showArrowSize=".01" />
 		
 		<VolumeTearingEngine name="VolumeTearingEngine" input_position="@Mo.position"/>
 		
