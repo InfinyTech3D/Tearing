@@ -28,8 +28,8 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , d_RankineMaxTension(initData(&d_RankineMaxTension, 110.0, "RankineMaxTension", "threshold value for stress"))
     , d_RankineMaxCompression(initData(&d_RankineMaxCompression, 200.0, "RankineMaxCompression", "threshold value for Rankine stress"))
     , d_seuilVonMises(initData(&d_seuilVonMises, 280.0, "seuilVonMises", "threshold value for VM stress"))
-    , showSeuil(initData(&showSeuil, true, "showSeuil", "plot candidate"))
-    , showRankine(initData(&showRankine, true, "showRankine", "plot candidateRankine"))
+    , showSeuil(initData(&showSeuil, false, "showSeuil", "plot candidate"))
+    , showRankine(initData(&showRankine, false, "showRankine", "plot candidateRankine"))
     , showVonmises(initData(&showVonmises, true, "showVonmises", "plot candidateVonMises"))
 {
     addInput(&input_position);
@@ -73,6 +73,7 @@ void VolumeTearingEngine<DataTypes>::init()
     
     updateTetrahedronInformation();
     computeTetraOverThresholdPrincipalStress();
+    computePlane();
     d_counter.setValue(0);
     d_fractureNumber.setValue(0);
 }
@@ -91,6 +92,7 @@ void VolumeTearingEngine<DataTypes>::doUpdate()
 
     updateTetrahedronInformation();
     computeTetraOverThresholdPrincipalStress();
+    computePlane();
 }
 
 
@@ -138,7 +140,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                 }
                 else
                 {
-                    std::vector< defaulttype::Vector3 > TetraMaxStressPoints[4];
+                    std::vector< type::Vector3 > TetraMaxStressPoints[4];
 
                     TetraMaxStressPoints[0].push_back(pa);
                     TetraMaxStressPoints[0].push_back(pb);
@@ -170,7 +172,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
         
         if (showRankine.getValue())
         {
-            std::vector< defaulttype::Vector3 > pointsRankine[4];
+            std::vector< type::Vector3 > pointsRankine[4];
             for (Size i = 0; i < candidateRankine.size(); ++i)
             {
                 const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidateRankine[i]);
@@ -211,7 +213,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
 
         if (showVonmises.getValue())
         {
-            std::vector< defaulttype::Vector3 > pointsVonMises[4];
+            std::vector< type::Vector3 > pointsVonMises[4];
             for (Size i = 0; i < candidateVonMises.size(); ++i)
             {
                 const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidateVonMises[i]);
@@ -225,29 +227,55 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                 Coord pc = x[c];
                 Coord pd = x[d];
 
+                if (candidateVonMises[i] != indexTetraMaxStress)
+                {
+                    pointsVonMises[0].push_back(pa);
+                    pointsVonMises[0].push_back(pb);
+                    pointsVonMises[0].push_back(pc);
 
-                pointsVonMises[0].push_back(pa);
-                pointsVonMises[0].push_back(pb);
-                pointsVonMises[0].push_back(pc);
+                    pointsVonMises[1].push_back(pb);
+                    pointsVonMises[1].push_back(pc);
+                    pointsVonMises[1].push_back(pd);
 
-                pointsVonMises[1].push_back(pb);
-                pointsVonMises[1].push_back(pc);
-                pointsVonMises[1].push_back(pd);
+                    pointsVonMises[2].push_back(pc);
+                    pointsVonMises[2].push_back(pd);
+                    pointsVonMises[2].push_back(pa);
 
-                pointsVonMises[2].push_back(pc);
-                pointsVonMises[2].push_back(pd);
-                pointsVonMises[2].push_back(pa);
+                    pointsVonMises[3].push_back(pd);
+                    pointsVonMises[3].push_back(pa);
+                    pointsVonMises[3].push_back(pb);
+                }
+                else
+                {
+                    std::vector< type::Vector3 > TetraMaxStressPoints[4];
 
-                pointsVonMises[3].push_back(pd);
-                pointsVonMises[3].push_back(pa);
-                pointsVonMises[3].push_back(pb);
+                    TetraMaxStressPoints[0].push_back(pa);
+                    TetraMaxStressPoints[0].push_back(pb);
+                    TetraMaxStressPoints[0].push_back(pc);
 
+                    TetraMaxStressPoints[1].push_back(pb);
+                    TetraMaxStressPoints[1].push_back(pc);
+                    TetraMaxStressPoints[1].push_back(pd);
+
+                    TetraMaxStressPoints[2].push_back(pc);
+                    TetraMaxStressPoints[2].push_back(pd);
+                    TetraMaxStressPoints[2].push_back(pa);
+
+                    TetraMaxStressPoints[3].push_back(pd);
+                    TetraMaxStressPoints[3].push_back(pa);
+                    TetraMaxStressPoints[3].push_back(pb);
+
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[0], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                }
 
             }
-            vparams->drawTool()->drawTriangles(pointsVonMises[0], sofa::helper::types::RGBAColor(1, 0, 1, 1));
-            vparams->drawTool()->drawTriangles(pointsVonMises[1], sofa::helper::types::RGBAColor(1, 0, 1, 1));
-            vparams->drawTool()->drawTriangles(pointsVonMises[2], sofa::helper::types::RGBAColor(1, 0, 1, 1));
-            vparams->drawTool()->drawTriangles(pointsVonMises[3], sofa::helper::types::RGBAColor(1, 0, 1, 1));
+            vparams->drawTool()->drawTriangles(pointsVonMises[0], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(pointsVonMises[1], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(pointsVonMises[2], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(pointsVonMises[3], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
         }
     }                                            
 }
@@ -311,11 +339,6 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
             if (tetrahedronInfo->maxStress >= threshold)
             {
                 candidate.push_back(i);
-                if (tetrahedronInfo->maxStress >= maxStress)
-                {
-                    indexTetraMaxStress = i;
-                    maxStress = tetrahedronInfo->maxStress;
-                }
             }
 
             if (tetrahedronInfo->principalStress1 <= -d_RankineMaxCompression.getValue() || d_RankineMaxTension.getValue() <= tetrahedronInfo->principalStress1)
@@ -334,9 +357,74 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
             if (tetrahedronInfo->vonMisesStress >= d_seuilVonMises.getValue())
             {
                 candidateVonMises.push_back(i);
+                //if (tetrahedronInfo->vonMisesStress >= maxStress)
+                //{
+                //    indexTetraMaxStress = i;
+                //    maxStress = tetrahedronInfo->vonMisesStress;
+                //}
+                if (tetrahedronInfo->maxStress >= maxStress)
+                {
+                    indexTetraMaxStress = i;
+                    maxStress = tetrahedronInfo->maxStress;
+                }
             }
         
         }
+    }
+}
+
+
+template<class DataTypes>
+void VolumeTearingEngine<DataTypes>::computePlane()
+{   
+    if (candidateVonMises.size() > 0)
+    {
+        helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
+        TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
+
+        //principalStressDirection vec_n=(A,B,C)
+        Coord vec_n = tetrahedronInfo->principalStressDirection;
+
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(indexTetraMaxStress);
+        Index a = t[0];
+        Index b = t[1];
+        Index c = t[2];
+        Index d = t[3];
+        Coord pa = x[a];
+        Coord pb = x[b];
+        Coord pc = x[c];
+        Coord pd = x[d];
+        //barycentre M=(x_m,y_m,z_m)
+        Coord M = (pa + pb + pc + pd) / 4;
+
+        // normal au plan + un point = def d'un plan
+        // A*x_m + B*y_m + C*z_m + D =0
+        Real D = -vec_n[0] * M[0] - vec_n[1] * M[1] - vec_n[2] * M[2];
+
+        // P1 point appartenant au plan P1(-B,A,alpha)
+        Real alpha = -d / vec_n[2];
+        Coord vec_P1M;
+        vec_P1M[0] = -vec_n[1];
+        vec_P1M[1] = vec_n[0];
+        vec_P1M[2] = alpha;
+
+        //normalise P1M
+        Real norm_P1M = helper::rsqrt(vec_P1M[0] * vec_P1M[0] + vec_P1M[1] * vec_P1M[1] + vec_P1M[2] * vec_P1M[2]);
+        vec_P1M = vec_P1M / norm_P1M;
+
+        // P2 point appartenant au plan tel que P1M normal a P2M, et (n,P1M,P2M) base directe
+        Coord vec_P2M;
+        vec_P2M[0] = vec_n[1] * vec_P1M[2] - vec_n[2] * vec_P1M[1];
+        vec_P2M[1] = vec_n[2] * vec_P1M[0] - vec_n[0] * vec_P1M[2];
+        vec_P2M[2] = vec_n[0] * vec_P1M[1] - vec_n[1] * vec_P1M[0];
+
+        //normalise P2M
+        Real norm_P2M = helper::rsqrt(vec_P2M[0] * vec_P2M[0] + vec_P2M[1] * vec_P2M[1] + vec_P2M[2] * vec_P2M[2]);
+        vec_P2M = vec_P2M / norm_P2M;
+
+        // (n,P1M,P2M) base orthonormee directe
+        //4 points dans le plan M+P1M, M-P1M, M+P2M, M-P2M
     }
 }
 

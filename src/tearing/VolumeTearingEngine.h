@@ -106,6 +106,10 @@ namespace sofa::component::engine
 		Data<int> d_fractureNumber;
 		Data<int> d_nbFractureMax;
 
+		/// compute barycenter of indexMaxTetra and compute the cutting plane
+		void computePlane();
+
+
 	protected:
 		/// Pointer to the current topology
 		sofa::core::topology::BaseMeshTopology* m_topology;
