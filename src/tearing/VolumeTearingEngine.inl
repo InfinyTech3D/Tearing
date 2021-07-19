@@ -68,7 +68,7 @@ void VolumeTearingEngine<DataTypes>::init()
     
     updateTetrahedronInformation();
     computeTetraOverThresholdPrincipalStress();
-    computePlane();
+    //computePlane();
     d_counter.setValue(0);
     d_fractureNumber.setValue(0);
 }
@@ -87,7 +87,7 @@ void VolumeTearingEngine<DataTypes>::doUpdate()
 
     updateTetrahedronInformation();
     computeTetraOverThresholdPrincipalStress();
-    computePlane();
+    //computePlane();
 }
 
 
@@ -223,6 +223,21 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::helper::types::RGBAColor(0, 1, 0, 1));
                     vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::helper::types::RGBAColor(0, 1, 0, 1));
                     vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+
+                    Coord vec_P1M;
+                    Coord vec_P2M;
+                    computePlane(vec_P1M, vec_P2M);
+                    std::vector< type::Vector3 > planePoints[4];
+                    Coord center = (pa + pb + pc + pd) / 4;
+                    planePoints[0].push_back(center + vec_P1M);
+                    planePoints[0].push_back(center - vec_P1M);
+                    planePoints[0].push_back(center + vec_P2M);
+
+                    planePoints[1].push_back(center + vec_P1M);
+                    planePoints[1].push_back(center - vec_P1M);
+                    planePoints[1].push_back(center - vec_P2M);
+                    vparams->drawTool()->drawTriangles(planePoints[0], sofa::helper::types::RGBAColor(1, 1, 1, 1));
+                    vparams->drawTool()->drawTriangles(planePoints[1], sofa::helper::types::RGBAColor(1, 1, 1, 1));
                 }
 
             }
@@ -230,6 +245,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
             vparams->drawTool()->drawTriangles(pointsVonMises[1], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
             vparams->drawTool()->drawTriangles(pointsVonMises[2], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
             vparams->drawTool()->drawTriangles(pointsVonMises[3], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
+            
         }
     }                                            
 }
@@ -315,7 +331,7 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
 
 
 template<class DataTypes>
-void VolumeTearingEngine<DataTypes>::computePlane()
+void VolumeTearingEngine<DataTypes>::computePlane(Coord& vec_P1M, Coord& vec_P2M)
 {   
     if (candidateVonMises.size() > 0)
     {
@@ -343,8 +359,8 @@ void VolumeTearingEngine<DataTypes>::computePlane()
         Real D = -vec_n[0] * M[0] - vec_n[1] * M[1] - vec_n[2] * M[2];
 
         // P1 point appartenant au plan P1(-B,A,alpha)
-        Real alpha = -d / vec_n[2];
-        Coord vec_P1M;
+        Real alpha = -D / vec_n[2];
+        
         vec_P1M[0] = -vec_n[1];
         vec_P1M[1] = vec_n[0];
         vec_P1M[2] = alpha;
@@ -354,7 +370,6 @@ void VolumeTearingEngine<DataTypes>::computePlane()
         vec_P1M = vec_P1M / norm_P1M;
 
         // P2 point appartenant au plan tel que P1M normal a P2M, et (n,P1M,P2M) base directe
-        Coord vec_P2M;
         vec_P2M[0] = vec_n[1] * vec_P1M[2] - vec_n[2] * vec_P1M[1];
         vec_P2M[1] = vec_n[2] * vec_P1M[0] - vec_n[0] * vec_P1M[2];
         vec_P2M[2] = vec_n[0] * vec_P1M[1] - vec_n[1] * vec_P1M[0];

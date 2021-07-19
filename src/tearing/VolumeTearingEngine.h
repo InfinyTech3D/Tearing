@@ -103,7 +103,7 @@ namespace sofa::component::engine
 		Data<int> d_nbFractureMax;
 
 		/// compute barycenter of indexMaxTetra and compute the cutting plane
-		void computePlane();
+		void computePlane(Coord& vec_P1M, Coord& vec_P2M);
 
 
 	protected:
