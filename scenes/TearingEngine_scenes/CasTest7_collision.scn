@@ -1,0 +1,83 @@
+<?xml version="1.0" ?>
+<!--CasTest5
+On fixe un coté et nous tirons de façon uniforme du côté opposé avec un trou circulaire-->
+
+<Node name="root" dt="0.02" showBoundingTree="0" gravity="0 -9.8 0">
+    <RequiredPlugin name="SofaOpenglVisual"/>
+    <RequiredPlugin name='SofaMiscFem'/>
+    <RequiredPlugin name='SofaGeneralDeformable'/>
+    <RequiredPlugin name='SofaImplicitOdeSolver'/>
+	<RequiredPlugin name='SofaEngine'/>
+	<RequiredPlugin name='SofaMeshCollision'/>
+	<RequiredPlugin name='SofaBoundaryCondition'/>
+	<RequiredPlugin name='SofaLoader'/>
+    <RequiredPlugin name="SofaTopologyMapping"/>
+    <RequiredPlugin name="SofaGeneralMeshCollision"/> 
+	
+	<RequiredPlugin name='tearing'/>
+    <VisualStyle displayFlags="showVisual showBehaviorModels showCollisionModels"/>
+    
+    <FreeMotionAnimationLoop/>
+    <GenericConstraintSolver unbuilt="false" tolerance="1e-3" maxIt="200" printLog="0" multithreading="false"/>
+    <DefaultPipeline depth="6" verbose="0" draw="0"/>
+    <BruteForceBroadPhase/>
+    <BVHNarrowPhase/>
+    <LocalMinDistance name="Proximity" alarmDistance="0.5" contactDistance="0.1" angleCone="0.0"/>
+    <DefaultContactManager name="Response" response="FrictionContact"/>
+
+	<RegularGridTopology name="grid" n="40 1 40" min="0 0 0" max="10 0 10" />
+
+   
+    <Node name="TriangularFEMForceField">
+        <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
+        <SparseLDLSolver  name="Torus1_SparseLDLSolver" printLog="false" />
+        
+        <QuadSetTopologyContainer name="Quad_topo" src="@../grid" />
+        <QuadSetTopologyModifier name="Modifier" />
+        <QuadSetGeometryAlgorithms name="GeomAlgo" template="Vec3d" />
+        
+        <MechanicalObject name="TriangularFEMForceField_dof" />
+        <DiagonalMass totalMass="1.0" />
+        
+        <BoxROI template="Vec3d" name="box_roi1X" box="-0.1 -0.1 -0.1 10.1 0.1 0.1"/>
+        <FixedConstraint template="Vec3d" name="fixedConstraint1" indices="@box_roi1X.indices"/>
+
+        <BoxROI template="Vec3d" name="box_roi2X" box="-0.1 -0.1 9.9 10.1 0.1 10.1"/>
+        <FixedConstraint template="Vec3d" name="fixedConstraint2" indices="@box_roi2X.indices"/>
+        
+        <BoxROI template="Vec3d" name="box_roi1Z" box="-0.1 -0.1 -0.1 0.1 0.1 10.1"/>
+        <FixedConstraint template="Vec3d" name="fixedConstraint3" indices="@box_roi1Z.indices"/>
+        
+        <BoxROI template="Vec3d" name="box_roi2Z" box="9.9 -0.1 -0.1 10.1 0.1 10.1"/>
+        <FixedConstraint template="Vec3d" name="fixedConstraint4" indices="@box_roi2Z.indices"/>
+
+        
+        <Node name="T">
+            <TriangleSetTopologyContainer name="Triangle_topo" />
+            <TriangleSetTopologyModifier name="Modifier" />
+            <TriangleSetGeometryAlgorithms name="GeomAlgo" template="Vec3d" />
+
+            <Quad2TriangleTopologicalMapping name="mapTopo" input="@../Quad_topo" output="@Triangle_topo" />
+            <TriangularFEMForceFieldOptim name="FEM" youngModulus="600" poissonRatio="0.3" method="large" showStressValue="0" />
+            <FastTriangularBendingSprings template="Vec3d" name="FEM-Bend" stiffness="1000" damping="1" />
+            <TriangleCollisionModel selfCollision="false" />
+            <PointCollisionModel  selfCollision="false" />
+            <Node name="Visu">
+                <OglModel name="visu" color="red" />
+                <IdentityMapping name="mapping" input="@../.." output="@." />
+            </Node>
+        </Node>
+        <GenericConstraintCorrection/>
+    </Node>
+    
+    
+    <Node name="collisionElement">
+        <EulerImplicitSolver name="cg_odesolver" printLog="false"  />
+        <SparseLDLSolver  name="Torus1_SparseLDLSolver" printLog="false" />
+
+        <MechanicalObject name="Particles" template="vec3" position="5 5 5"/>
+        <UniformMass name="Mass" totalMass="20.0" />
+        <SphereCollisionModel radius="0.5"/>
+        <GenericConstraintCorrection/>
+    </Node>
+</Node>

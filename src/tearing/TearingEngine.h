@@ -12,6 +12,7 @@
 #include <SofaBaseTopology/TriangleSetTopologyContainer.h>
 #include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
 #include <SofaMiscFem/TriangularFEMForceField.h>
+#include <SofaGeneralSimpleFem/TriangularFEMForceFieldOptim.h>
 #include <SofaBaseTopology/TriangleSetTopologyModifier.h>
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
@@ -38,12 +39,16 @@ public:
 	typedef typename DataTypes::Coord Coord;
 	typedef typename DataTypes::VecCoord VecCoord;
 
-	typedef sofa::core::topology::BaseMeshTopology::Edge Edge;
-
 	typedef sofa::core::topology::BaseMeshTopology::Index Index;
+	typedef sofa::core::topology::BaseMeshTopology::Edge Edge;
 	typedef sofa::core::topology::BaseMeshTopology::Triangle Element;
 	typedef sofa::core::topology::BaseMeshTopology::SeqTriangles VecElement;
+	
 	typedef sofa::type::Vec<3, double> Vec3;
+	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
+	typedef type::Mat<6, 3, Real> StrainDisplacement;				    ///< the strain-displacement matrix
+	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
+
 
 	typedef typename sofa::component::forcefield::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
 	typedef sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;
@@ -51,10 +56,7 @@ public:
 protected:
 	TearingEngine();
 	~TearingEngine() override {}
-	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
-	typedef type::Mat<6, 3, Real> StrainDisplacement;				    ///< the strain-displacement matrix
-	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
-
+	
 public:
 	void init() override;
 	void reinit() override;
@@ -83,29 +85,14 @@ public:
 	/// </summary>
 	void triangleOverThresholdPrincipalStress();
 	
-	class TriangleInformation
+	struct TriangleInformation
 	{
-	public:
 		//Real area;
 		type::Vec<3, Real> stress;
 		Real maxStress;
-
-		TriangleInformation() { }
-
-		/// Output stream
-		inline friend std::ostream& operator<< (std::ostream& os, const TriangleInformation& /*ti*/)
-		{
-			return os;
-		}
-
-		/// Input stream
-		inline friend std::istream& operator>> (std::istream& in, TriangleInformation& /*ti*/)
-		{
-			return in;
-		}
+		Coord principalStressDirection;
 	};
-	Data<vector<TriangleInformation> > d_triangleInfoTearing;
-	Data<VecTriangleFEMInformation> d_triangleFEMInfo;
+	vector<TriangleInformation> m_triangleInfoTearing;
 
 	/// <summary>
 	/// update d_triangleInfoTearing with value from d_triangleFEMInfo
@@ -146,6 +133,7 @@ protected:
 	sofa::core::topology::BaseMeshTopology* m_topology;
 	sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
 	sofa::component::forcefield::TriangularFEMForceField<DataTypes>* m_triangularFEM;
+	sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim;	
 	sofa::component::topology::TriangleSetTopologyModifier* m_modifier;
 private:
 	sofa::helper::ColorMap* p_drawColorMap;
