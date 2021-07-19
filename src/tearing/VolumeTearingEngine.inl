@@ -25,18 +25,13 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , d_step(initData(&d_step, 20, "step", "step size"))
     , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
-    , d_RankineMaxTension(initData(&d_RankineMaxTension, 110.0, "RankineMaxTension", "threshold value for stress"))
-    , d_RankineMaxCompression(initData(&d_RankineMaxCompression, 200.0, "RankineMaxCompression", "threshold value for Rankine stress"))
     , d_seuilVonMises(initData(&d_seuilVonMises, 280.0, "seuilVonMises", "threshold value for VM stress"))
     , showSeuil(initData(&showSeuil, false, "showSeuil", "plot candidate"))
-    , showRankine(initData(&showRankine, false, "showRankine", "plot candidateRankine"))
     , showVonmises(initData(&showVonmises, true, "showVonmises", "plot candidateVonMises"))
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
     addInput(&d_step);
-    addInput(&d_RankineMaxTension);
-    addInput(&d_RankineMaxCompression);
     addInput(&d_seuilVonMises);
     addOutput(&d_tetraOverThresholdList);
     addOutput(&d_fractureNumber);
@@ -169,47 +164,6 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
             vparams->drawTool()->drawTriangles(points[2], sofa::helper::types::RGBAColor(0, 0, 1, 1));
             vparams->drawTool()->drawTriangles(points[3], sofa::helper::types::RGBAColor(0, 0, 1, 1));
         }
-        
-        if (showRankine.getValue())
-        {
-            std::vector< type::Vector3 > pointsRankine[4];
-            for (Size i = 0; i < candidateRankine.size(); ++i)
-            {
-                const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(candidateRankine[i]);
-
-                Index a = t[0];
-                Index b = t[1];
-                Index c = t[2];
-                Index d = t[3];
-                Coord pa = x[a];
-                Coord pb = x[b];
-                Coord pc = x[c];
-                Coord pd = x[d];
-
-
-                pointsRankine[0].push_back(pa);
-                pointsRankine[0].push_back(pb);
-                pointsRankine[0].push_back(pc);
-
-                pointsRankine[1].push_back(pb);
-                pointsRankine[1].push_back(pc);
-                pointsRankine[1].push_back(pd);
-
-                pointsRankine[2].push_back(pc);
-                pointsRankine[2].push_back(pd);
-                pointsRankine[2].push_back(pa);
-
-                pointsRankine[3].push_back(pd);
-                pointsRankine[3].push_back(pa);
-                pointsRankine[3].push_back(pb);
-
-
-            }
-            vparams->drawTool()->drawTriangles(pointsRankine[0], sofa::helper::types::RGBAColor(1, 0.36, 0.07, 1));
-            vparams->drawTool()->drawTriangles(pointsRankine[1], sofa::helper::types::RGBAColor(1, 0.36, 0.07, 1));
-            vparams->drawTool()->drawTriangles(pointsRankine[2], sofa::helper::types::RGBAColor(1, 0.36, 0.07, 1));
-            vparams->drawTool()->drawTriangles(pointsRankine[3], sofa::helper::types::RGBAColor(1, 0.36, 0.07, 1));
-        }
 
         if (showVonmises.getValue())
         {
@@ -325,7 +279,6 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
     helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
     helper::WriteAccessor< Data<vector<Index>> >tetraToSkip(d_tetraToIgnoreList);
     helper::WriteAccessor< Data<vector<Index>> > candidate(d_tetraOverThresholdList);
-    candidateRankine.clear();
     candidateVonMises.clear();
     candidate.clear();
     maxStress = 0;
@@ -339,19 +292,6 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
             if (tetrahedronInfo->maxStress >= threshold)
             {
                 candidate.push_back(i);
-            }
-
-            if (tetrahedronInfo->principalStress1 <= -d_RankineMaxCompression.getValue() || d_RankineMaxTension.getValue() <= tetrahedronInfo->principalStress1)
-            {
-                candidateRankine.push_back(i);
-            }
-            else if (tetrahedronInfo->principalStress2 <= -d_RankineMaxCompression.getValue() || d_RankineMaxTension.getValue() <= tetrahedronInfo->principalStress2)
-            {
-                candidateRankine.push_back(i);
-            }
-            else if (tetrahedronInfo->principalStress3 <= -d_RankineMaxCompression.getValue() || d_RankineMaxTension.getValue() <= tetrahedronInfo->principalStress3)
-            {
-                candidateRankine.push_back(i);
             }
         
             if (tetrahedronInfo->vonMisesStress >= d_seuilVonMises.getValue())
