@@ -224,9 +224,13 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::helper::types::RGBAColor(0, 1, 0, 1));
                     vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::helper::types::RGBAColor(0, 1, 0, 1));
 
-                    Coord vec_P1M;
-                    Coord vec_P2M;
-                    computePlane(vec_P1M, vec_P2M);
+                    Coord compute_vec_P1M;
+                    Coord compute_vec_P2M;
+                    computePlane(compute_vec_P1M, compute_vec_P2M);
+                    helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
+                    TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[candidateVonMises[i]];
+                    Coord vec_P1M = tetrahedronInfo->principalStressDirection2;
+                    Coord vec_P2M = tetrahedronInfo->principalStressDirection3;
                     std::vector< type::Vector3 > planePoints[4];
                     Coord center = (pa + pb + pc + pd) / 4;
                     planePoints[0].push_back(center + vec_P1M);
@@ -236,8 +240,31 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     planePoints[1].push_back(center + vec_P1M);
                     planePoints[1].push_back(center - vec_P1M);
                     planePoints[1].push_back(center - vec_P2M);
+
+                    planePoints[2].push_back(center + compute_vec_P1M);
+                    planePoints[2].push_back(center - compute_vec_P1M);
+                    planePoints[2].push_back(center + compute_vec_P2M);
+
+                    planePoints[3].push_back(center + compute_vec_P1M);
+                    planePoints[3].push_back(center - compute_vec_P1M);
+                    planePoints[3].push_back(center - compute_vec_P2M);
                     vparams->drawTool()->drawTriangles(planePoints[0], sofa::helper::types::RGBAColor(1, 1, 1, 1));
                     vparams->drawTool()->drawTriangles(planePoints[1], sofa::helper::types::RGBAColor(1, 1, 1, 1));
+
+                    vparams->drawTool()->drawTriangles(planePoints[2], sofa::helper::types::RGBAColor(0, 1, 1, 1));
+                    vparams->drawTool()->drawTriangles(planePoints[3], sofa::helper::types::RGBAColor(0, 1, 1, 1));
+
+                    Coord direction = center + tetrahedronInfo->principalStressDirection;
+                    vector<Coord> vecteurPrincipalDirection;
+                    vecteurPrincipalDirection.push_back(center);
+                    vecteurPrincipalDirection.push_back(direction);
+                    vparams->drawTool()->drawLines(vecteurPrincipalDirection, 1, sofa::type::RGBAColor(1, 1, 1, 1));
+                   
+                    //std::cout << "------------------" << std::endl;
+                    //std::cout << tetrahedronInfo->principalStressDirection * vec_P1M << std::endl;
+                    //std::cout << tetrahedronInfo->principalStressDirection * vec_P2M << std::endl;
+                    //std::cout << tetrahedronInfo->principalStressDirection * compute_vec_P1M << std::endl;
+                    //std::cout << tetrahedronInfo->principalStressDirection * compute_vec_P2M << std::endl;
                 }
 
             }
@@ -339,7 +366,7 @@ void VolumeTearingEngine<DataTypes>::computePlane(Coord& vec_P1M, Coord& vec_P2M
         TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
 
         //principalStressDirection vec_n=(A,B,C)
-        Coord vec_n = tetrahedronInfo->principalStressDirection;
+        Coord vec_n = tetrahedronInfo->principalStressDirection1;
 
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(indexTetraMaxStress);
@@ -358,12 +385,10 @@ void VolumeTearingEngine<DataTypes>::computePlane(Coord& vec_P1M, Coord& vec_P2M
         // A*x_m + B*y_m + C*z_m + D =0
         Real D = -vec_n[0] * M[0] - vec_n[1] * M[1] - vec_n[2] * M[2];
 
-        // P1 point appartenant au plan P1(-B,A,alpha)
-        Real alpha = -D / vec_n[2];
-        
-        vec_P1M[0] = -vec_n[1];
-        vec_P1M[1] = vec_n[0];
-        vec_P1M[2] = alpha;
+        // P1 point appartenant au plan, produit vectoriel entre vec_n et vecteur(1,0,0)
+        vec_P1M[0] = 0;
+        vec_P1M[1] = vec_n[2];
+        vec_P1M[2] = - vec_n[1];
 
         //normalise P1M
         Real norm_P1M = helper::rsqrt(vec_P1M[0] * vec_P1M[0] + vec_P1M[1] * vec_P1M[1] + vec_P1M[2] * vec_P1M[2]);
