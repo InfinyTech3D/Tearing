@@ -11,6 +11,7 @@
 //#include <SofaSimpleFem/TetrahedronFEMForceField.h>
 #include <SofaGeneralSimpleFem/TetrahedralCorotationalFEMForceField.h>
 #include <SofaBoundaryCondition/ConstantForceField.h>
+#include <SofaBoundaryCondition/FixedConstraint.h>
 
 namespace sofa::helper
 {

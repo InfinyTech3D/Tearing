@@ -478,9 +478,27 @@ void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
     helper::WriteAccessor< Data<vector<Index>> >tetraToSkip(d_tetraToIgnoreList);
     vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
     this->getContext()->get< sofa::component::forcefield::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
+    
+    vector<sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>*> m_FixedConstraint;
+    this->getContext()->get<sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>>(&m_FixedConstraint, sofa::core::objectmodel::BaseContext::SearchUp);
+
     for each (sofa::component::forcefield::ConstantForceField<DataTypes>*cff_i in m_ConstantForceFields)
     {
         vector<Index> vertexToSkip = cff_i->d_indices.getValue();
+        for (unsigned int i = 0; i < vertexToSkip.size(); i++)
+        {
+            vector<Index> tetraAroundVertex_i = m_topology->getTetrahedraAroundVertex(vertexToSkip[i]);
+            for (unsigned int j = 0; j < tetraAroundVertex_i.size(); j++)
+            {
+                if (std::find(tetraToSkip.begin(), tetraToSkip.end(), tetraAroundVertex_i[j]) == tetraToSkip.end())
+                    tetraToSkip.push_back(tetraAroundVertex_i[j]);
+            }
+        }
+    }
+
+    for each (sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>*fc_i in m_FixedConstraint)
+    {
+        vector<Index> vertexToSkip = fc_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)
         {
             vector<Index> tetraAroundVertex_i = m_topology->getTetrahedraAroundVertex(vertexToSkip[i]);
