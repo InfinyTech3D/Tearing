@@ -10,6 +10,7 @@
 #include <sofa/simulation/AnimateEndEvent.h>
 //#include <SofaSimpleFem/TetrahedronFEMForceField.h>
 #include <SofaGeneralSimpleFem/TetrahedralCorotationalFEMForceField.h>
+#include <SofaBoundaryCondition/ConstantForceField.h>
 
 namespace sofa::helper
 {
@@ -105,6 +106,9 @@ namespace sofa::component::engine
 		/// compute barycenter of indexMaxTetra and compute the cutting plane
 		void computePlane(Coord& vec_P1M, Coord& vec_P2M);
 
+		Data<bool> ignoreTetraAtStart;
+		bool drawIgnoredTetraAtStart;
+		void computeTetraToSkip();
 
 	protected:
 		/// Pointer to the current topology

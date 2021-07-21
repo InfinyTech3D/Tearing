@@ -28,6 +28,7 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , d_seuilVonMises(initData(&d_seuilVonMises, 280.0, "seuilVonMises", "threshold value for VM stress"))
     , showSeuil(initData(&showSeuil, false, "showSeuil", "plot candidate"))
     , showVonmises(initData(&showVonmises, true, "showVonmises", "plot candidateVonMises"))
+    , ignoreTetraAtStart(initData(&ignoreTetraAtStart, true, "ignoreTetraAtStart", "option to ignore some tetrahedra at start of the tearing algo"))
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
@@ -66,6 +67,8 @@ void VolumeTearingEngine<DataTypes>::init()
         return;
     }
     
+    if (ignoreTetraAtStart.getValue())
+        computeTetraToSkip();
     updateTetrahedronInformation();
     computeTetraOverThresholdPrincipalStress();
     //computePlane();
@@ -85,9 +88,18 @@ void VolumeTearingEngine<DataTypes>::doUpdate()
     d_counter.setValue(d_counter.getValue() + 1);
     std::cout << "counter=" << d_counter.getValue() << std::endl;
 
+    if (ignoreTetraAtStart.getValue())
+    {
+        computeTetraToSkip();
+    }
+    else
+    {
+        vector<Index> emptyIndexList;
+        d_tetraToIgnoreList.setValue(emptyIndexList);
+    }
+
     updateTetrahedronInformation();
     computeTetraOverThresholdPrincipalStress();
-    //computePlane();
 }
 
 
@@ -251,14 +263,24 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     vparams->drawTool()->drawTriangles(planePoints[0], sofa::helper::types::RGBAColor(1, 1, 1, 1));
                     vparams->drawTool()->drawTriangles(planePoints[1], sofa::helper::types::RGBAColor(1, 1, 1, 1));
 
-                    vparams->drawTool()->drawTriangles(planePoints[2], sofa::helper::types::RGBAColor(0, 1, 1, 1));
-                    vparams->drawTool()->drawTriangles(planePoints[3], sofa::helper::types::RGBAColor(0, 1, 1, 1));
+                    //vparams->drawTool()->drawTriangles(planePoints[2], sofa::helper::types::RGBAColor(0, 1, 1, 1));
+                    //vparams->drawTool()->drawTriangles(planePoints[3], sofa::helper::types::RGBAColor(0, 1, 1, 1));
 
                     Coord direction = center + tetrahedronInfo->principalStressDirection;
+                    Coord direction2 = center + 2*tetrahedronInfo->principalStressDirection2;
+                    Coord direction3 = center + 2*tetrahedronInfo->principalStressDirection3;
                     vector<Coord> vecteurPrincipalDirection;
+                    vector<Coord> vecteurPrincipalDirection2;
+                    vector<Coord> vecteurPrincipalDirection3;
                     vecteurPrincipalDirection.push_back(center);
                     vecteurPrincipalDirection.push_back(direction);
+                    vecteurPrincipalDirection2.push_back(center);
+                    vecteurPrincipalDirection2.push_back(direction2);
+                    vecteurPrincipalDirection3.push_back(center);
+                    vecteurPrincipalDirection3.push_back(direction3);
                     vparams->drawTool()->drawLines(vecteurPrincipalDirection, 1, sofa::type::RGBAColor(1, 1, 1, 1));
+                    vparams->drawTool()->drawLines(vecteurPrincipalDirection2, 1, sofa::type::RGBAColor(1, 0, 1, 1));
+                    vparams->drawTool()->drawLines(vecteurPrincipalDirection3, 1, sofa::type::RGBAColor(0, 1, 1, 1));
                    
                     //std::cout << "------------------" << std::endl;
                     //std::cout << tetrahedronInfo->principalStressDirection * vec_P1M << std::endl;
@@ -274,7 +296,48 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
             vparams->drawTool()->drawTriangles(pointsVonMises[3], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
             
         }
-    }                                            
+    }             
+
+    drawIgnoredTetraAtStart = true;
+    if (drawIgnoredTetraAtStart)
+    {
+        helper::ReadAccessor< Data<vector<Index>> >tetraToSkip(d_tetraToIgnoreList);
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        std::vector< Vec3 > points_skip[4];
+        for (Size i = 0; i < tetraToSkip.size(); ++i)
+        {
+            const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(tetraToSkip[i]);
+
+            Index a = t[0];
+            Index b = t[1];
+            Index c = t[2];
+            Index d = t[3];
+            Coord pa = x[a];
+            Coord pb = x[b];
+            Coord pc = x[c];
+            Coord pd = x[d];
+
+            points_skip[0].push_back(pa);
+            points_skip[0].push_back(pb);
+            points_skip[0].push_back(pc);
+
+            points_skip[1].push_back(pb);
+            points_skip[1].push_back(pc);
+            points_skip[1].push_back(pd);
+
+            points_skip[2].push_back(pc);
+            points_skip[2].push_back(pd);
+            points_skip[2].push_back(pa);
+
+            points_skip[3].push_back(pd);
+            points_skip[3].push_back(pa);
+            points_skip[3].push_back(pb);
+        }
+        vparams->drawTool()->drawTriangles(points_skip[0], sofa::helper::types::RGBAColor(0, 0, 1, 0.1));
+        vparams->drawTool()->drawTriangles(points_skip[1], sofa::helper::types::RGBAColor(0, 0, 1, 0.1));
+        vparams->drawTool()->drawTriangles(points_skip[2], sofa::helper::types::RGBAColor(0, 0, 1, 0.1));
+        vparams->drawTool()->drawTriangles(points_skip[3], sofa::helper::types::RGBAColor(0, 0, 1, 0.1));
+    }
 }
 
 template <class DataTypes>
@@ -409,4 +472,25 @@ void VolumeTearingEngine<DataTypes>::computePlane(Coord& vec_P1M, Coord& vec_P2M
 }
 
 
+template<class DataTypes>
+void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
+{
+    helper::WriteAccessor< Data<vector<Index>> >tetraToSkip(d_tetraToIgnoreList);
+    vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
+    this->getContext()->get< sofa::component::forcefield::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
+    for each (sofa::component::forcefield::ConstantForceField<DataTypes>*cff_i in m_ConstantForceFields)
+    {
+        vector<Index> vertexToSkip = cff_i->d_indices.getValue();
+        for (unsigned int i = 0; i < vertexToSkip.size(); i++)
+        {
+            vector<Index> tetraAroundVertex_i = m_topology->getTetrahedraAroundVertex(vertexToSkip[i]);
+            for (unsigned int j = 0; j < tetraAroundVertex_i.size(); j++)
+            {
+                if (std::find(tetraToSkip.begin(), tetraToSkip.end(), tetraAroundVertex_i[j]) == tetraToSkip.end())
+                    tetraToSkip.push_back(tetraAroundVertex_i[j]);
+            }
+        }
+    }
+
+}
 } //namespace sofa::component::engine
