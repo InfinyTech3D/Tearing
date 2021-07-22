@@ -16,7 +16,7 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , m_tetraFEM(nullptr)
     , d_tetrahedronInfoTearing(initData(&d_tetrahedronInfoTearing, "tetrahedronInfoTearing", "tetrahedron data use in VolumeTearingEngine"))
     , d_tetrahedronFEMInfo(initData(&d_tetrahedronFEMInfo, "tetrahedronFEMInfo", "tetrahedron data"))
-    , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 100.0, "seuilStress", "threshold value for stress"))
+    , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 120.0, "seuilStress", "threshold value for stress"))
     , d_tetraOverThresholdList(initData(&d_tetraOverThresholdList, "tetraOverThresholdList", "tetrahedral with maxStress over threshold value"))
     , d_tetraToIgnoreList(initData(&d_tetraToIgnoreList, "tetraToIgnoreList", "tetrahedral that can't be choosen as starting fracture point"))
     , showTetraOverThreshold(initData(&showTetraOverThreshold, true, "showTetraOverThreshold", "Flag activating rendering of possible starting tetrahedron for fracture"))
@@ -280,7 +280,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
         }
     }             
 
-    drawIgnoredTetraAtStart = true;
+    drawIgnoredTetraAtStart = false;
     if (drawIgnoredTetraAtStart)
     {
         helper::ReadAccessor< Data<vector<Index>> >tetraToSkip(d_tetraToIgnoreList);
@@ -377,6 +377,7 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
         if (std::find(tetraToSkip.begin(), tetraToSkip.end(), i) == tetraToSkip.end())
         {
             TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[i];
+
             if (tetrahedronInfo->maxStress >= threshold)
             {
                candidate.push_back(i);
