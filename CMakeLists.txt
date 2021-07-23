@@ -13,6 +13,8 @@ set(HEADER_FILES
     ${TEARING_SRC_DIR}/StressDetector.h
     ${TEARING_SRC_DIR}/TearingAlgorithms.h
     ${TEARING_SRC_DIR}/TearingAlgorithms.inl
+    ${TEARING_SRC_DIR}/VolumeTearingAlgorithms.h
+    ${TEARING_SRC_DIR}/VolumeTearingAlgorithms.inl
 
     ${TEARING_SRC_DIR}/TearingEngine.h
     ${TEARING_SRC_DIR}/TearingEngine.inl
@@ -25,6 +27,7 @@ set(SOURCE_FILES
     ${TEARING_SRC_DIR}/inittearing.cpp
     ${TEARING_SRC_DIR}/StressDetector.cpp
     ${TEARING_SRC_DIR}/TearingAlgorithms.cpp
+    ${TEARING_SRC_DIR}/VolumeTearingAlgorithms.cpp
     
     ${TEARING_SRC_DIR}/TearingEngine.cpp
     ${TEARING_SRC_DIR}/VolumeTearingEngine.cpp
