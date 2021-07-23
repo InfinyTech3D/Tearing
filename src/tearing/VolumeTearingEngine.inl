@@ -5,6 +5,7 @@
 #include <sofa/helper/types/RGBAColor.h>
 #include <sofa/simulation/Simulation.h>
 #include <sofa/helper/ColorMap.h>
+#include <SofaBaseTopology/TetrahedronSetTopologyContainer.h>
 
 namespace sofa::component::engine
 {
@@ -29,6 +30,9 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , showSeuil(initData(&showSeuil, true, "showSeuil", "plot candidate"))
     , showVonmises(initData(&showVonmises, false, "showVonmises", "plot candidateVonMises"))
     , ignoreTetraAtStart(initData(&ignoreTetraAtStart, true, "ignoreTetraAtStart", "option to ignore some tetrahedra at start of the tearing algo"))
+    , m_modifier(nullptr)
+    , m_tetraGeo(nullptr)
+    , m_volumeTearingAlgo(nullptr)
 {
     addInput(&input_position);
     addInput(&d_seuilPrincipalStress);
@@ -59,6 +63,14 @@ void VolumeTearingEngine<DataTypes>::init()
         return;
     }
 
+    m_topology->getContext()->get(m_tetraGeo);
+    if (!m_tetraGeo)
+    {
+        msg_error() << "Missing component: Unable to get TetrahedronSetGeometryAlgorithms from the current context.";
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+        return;
+    }
+
     m_topology->getContext()->get(m_tetraFEM);
     if (!m_tetraFEM)
     {
@@ -67,6 +79,14 @@ void VolumeTearingEngine<DataTypes>::init()
         return;
     }
     
+    m_topology->getContext()->get(m_modifier);
+    if (!m_modifier)
+    {
+        msg_error() << "Missing component: Unable to get TriangleSetTopologyModifier from the current context.";
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+        return;
+    }
+
     if (ignoreTetraAtStart.getValue())
         computeTetraToSkip();
     updateTetrahedronInformation();
@@ -74,6 +94,17 @@ void VolumeTearingEngine<DataTypes>::init()
     //computePlane();
     d_counter.setValue(0);
     d_fractureNumber.setValue(0);
+
+    if (m_volumeTearingAlgo == nullptr)
+        m_volumeTearingAlgo = new VolumeTearingAlgorithms<DataTypes>(m_topology, m_modifier, m_tetraGeo);
+
+    sofa::component::topology::TetrahedronSetTopologyContainer* m_topoCon = dynamic_cast <sofa::component::topology::TetrahedronSetTopologyContainer*>(m_topology);
+
+    m_tetraCuttingMgr = new TetrahedronCuttingManager();
+    if(m_topoCon==nullptr)
+        msg_error() << "m_topoCon empty pointer";
+    else
+        m_tetraCuttingMgr->init(m_topoCon->getContext());
 }
 
 template <class DataTypes>
