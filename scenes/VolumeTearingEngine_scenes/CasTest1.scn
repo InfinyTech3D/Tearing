@@ -40,7 +40,8 @@
         <TetrahedronSetTopologyModifier name="Modifier" />
         <TetrahedronSetGeometryAlgorithms template="Vec3d" name="GeomAlgo" />
         
-        <UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" />
+        <!--UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" /-->
+		<DiagonalMass template="Vec3d,double" name="mass" massDensity="1.0" />
 		<TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" showVonMisesColorMap="false"/>
         
         <BoxROI template="Vec3d" name="FixedSide" box="-0.5 9.5 -0.5 10.5 10.5 1.5" indices="0" drawSize="1"  drawBoxes="1"/>

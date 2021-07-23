@@ -39,7 +39,8 @@
         <TetrahedronSetTopologyModifier name="Modifier" />
         <TetrahedronSetGeometryAlgorithms template="Vec3d" name="GeomAlgo" />
         
-        <UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" />
+        <!--UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" /-->
+		<DiagonalMass template="Vec3d,double" name="mass" massDensity="1.0" />
         <TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" />
         
         <BoxROI template="Vec3d" name="box_roi" box="-11 9 -11 11 11 11" indices="0" drawSize="0" />
