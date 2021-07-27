@@ -23,7 +23,7 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , showTetraOverThreshold(initData(&showTetraOverThreshold, true, "showTetraOverThreshold", "Flag activating rendering of possible starting tetrahedron for fracture"))
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
-    , d_step(initData(&d_step, 20, "step", "step size"))
+    , d_step(initData(&d_step, 50, "step", "step size"))
     , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
     , d_seuilVonMises(initData(&d_seuilVonMises, 280.0, "seuilVonMises", "threshold value for VM stress"))
@@ -46,6 +46,7 @@ template <class DataTypes>
 void VolumeTearingEngine<DataTypes>::init()
 {
     this->f_listening.setValue(true);
+    maxCrackLength = 1.5;
 
     if (l_topology.empty())
     {
@@ -129,7 +130,6 @@ void VolumeTearingEngine<DataTypes>::doUpdate()
         vector<Index> emptyIndexList;
         d_tetraToIgnoreList.setValue(emptyIndexList);
     }
-
     updateTetrahedronInformation();
     computeTetraOverThresholdPrincipalStress();
 }
@@ -208,13 +208,13 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     Coord vec_P2M = tetrahedronInfo->principalStressDirection3;
                     std::vector< type::Vector3 > planePoints[4];
                     Coord center = (pa + pb + pc + pd) / 4;
-                    planePoints[0].push_back(center + vec_P1M);
-                    planePoints[0].push_back(center - vec_P1M);
-                    planePoints[0].push_back(center + vec_P2M);
-
-                    planePoints[1].push_back(center + vec_P1M);
-                    planePoints[1].push_back(center - vec_P1M);
-                    planePoints[1].push_back(center - vec_P2M);
+                    planePoints[0].push_back(center + maxCrackLength*vec_P1M);
+                    planePoints[0].push_back(center - maxCrackLength*vec_P1M);
+                    planePoints[0].push_back(center + maxCrackLength*vec_P2M);
+                                                      
+                    planePoints[1].push_back(center + maxCrackLength*vec_P1M);
+                    planePoints[1].push_back(center - maxCrackLength*vec_P1M);
+                    planePoints[1].push_back(center - maxCrackLength*vec_P2M);
 
                     vparams->drawTool()->drawTriangles(planePoints[0], sofa::helper::types::RGBAColor(1, 1, 1, 1));
                     vparams->drawTool()->drawTriangles(planePoints[1], sofa::helper::types::RGBAColor(1, 1, 1, 1));
@@ -234,6 +234,9 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     vparams->drawTool()->drawLines(vecteurPrincipalDirection, 1, sofa::type::RGBAColor(1, 1, 1, 1));
                     vparams->drawTool()->drawLines(vecteurPrincipalDirection2, 1, sofa::type::RGBAColor(1, 0, 1, 1));
                     vparams->drawTool()->drawLines(vecteurPrincipalDirection3, 1, sofa::type::RGBAColor(0, 1, 1, 1));
+                    
+                    m_tetraCuttingMgr->drawCutPlan(vparams);
+                    m_tetraCuttingMgr->drawCut(vparams);
                 }
             }
             vparams->drawTool()->drawTriangles(points[0], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
@@ -361,8 +364,11 @@ void VolumeTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event*
         if (((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
         {
         //    std::cout << "  enter fracture" << std::endl;
-        //    if (d_counter.getValue() > d_step.getValue())
-        //        algoFracturePath();
+            if (d_counter.getValue() > d_step.getValue())
+            {
+                std::cout << "  compute plan" << std::endl;
+                cutting();
+            }
         }
     }
 }
@@ -530,4 +536,68 @@ void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
     }
 
 }
+
+template<class DataTypes>
+void VolumeTearingEngine<DataTypes>::cutting()
+{
+    if (indexTetraMaxStress < m_topology->getNbTetrahedra()+1)
+    {
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(indexTetraMaxStress);
+        helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
+        TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
+        std::cout << "  index max tetra="<<indexTetraMaxStress << std::endl;
+        
+        Index a = t[0];
+        Index b = t[1];
+        Index c = t[2];
+        Index d = t[3];
+        Coord pa = x[a];
+        Coord pb = x[b];
+        Coord pc = x[c];
+        Coord pd = x[d];
+
+        Coord center = (pa + pb + pc + pd) / 4;
+
+        Coord dir1 = tetrahedronInfo->principalStressDirection1;
+        Coord dir2 = tetrahedronInfo->principalStressDirection2;
+        Coord dir3 = tetrahedronInfo->principalStressDirection3;      
+
+        
+        fixed_array<Vec3, 4> m_planPositions;
+        Real factor=1;
+        if (maxCrackLength < 1)
+            factor = maxCrackLength;
+        m_planPositions[0] = center + factor * dir2;
+        m_planPositions[1] = center + factor * dir3;
+        m_planPositions[2] = center - factor * dir3;
+        m_planPositions[3] = center - factor * dir2;
+
+        Real thickness = 0;
+        if (maxCrackLength > 1)
+        {
+            Real Delta_dir2 = 0;
+            Real Delta_dir3 = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                if (helper::rabs(dir2[i]) > Delta_dir2)
+                    Delta_dir2 = helper::rabs(dir2[i]);
+
+                if (helper::rabs(dir3[i]) > Delta_dir3)
+                    Delta_dir3 = helper::rabs(dir3[i]);
+            }
+            thickness = (maxCrackLength - 1) / 2 * helper::rmax(Delta_dir2, Delta_dir3);
+        }
+
+
+        m_tetraCuttingMgr->createCutPath(m_planPositions, dir1, thickness);
+        m_tetraCuttingMgr->processCut();
+
+        m_tetraCuttingMgr->m_planNormal.clear();
+        m_tetraCuttingMgr->m_planPositions.empty();
+        
+
+    }
+}
+
 } //namespace sofa::component::engine

@@ -115,6 +115,8 @@ namespace sofa::component::engine
 		bool drawIgnoredTetraAtStart;
 		void computeTetraToSkip();
 
+		void cutting();
+		Real maxCrackLength;
 	protected:
 		/// Pointer to the current topology
 		sofa::core::topology::BaseMeshTopology* m_topology;
