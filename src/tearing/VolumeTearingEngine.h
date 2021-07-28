@@ -117,6 +117,7 @@ namespace sofa::component::engine
 
 		void cutting();
 		Real maxCrackLength;
+		bool cuttingKeyPressed;
 	protected:
 		/// Pointer to the current topology
 		sofa::core::topology::BaseMeshTopology* m_topology;

@@ -7,6 +7,9 @@
 #include <sofa/helper/ColorMap.h>
 #include <SofaBaseTopology/TetrahedronSetTopologyContainer.h>
 
+#include <sofa/core/objectmodel/KeypressedEvent.h>
+#include <sofa/core/objectmodel/KeyreleasedEvent.h>
+
 namespace sofa::component::engine
 {
 template <class DataTypes>
@@ -47,6 +50,7 @@ void VolumeTearingEngine<DataTypes>::init()
 {
     this->f_listening.setValue(true);
     maxCrackLength = 3;
+    cuttingKeyPressed = false;
 
     if (l_topology.empty())
     {
@@ -368,8 +372,21 @@ void VolumeTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event*
             {
                 std::cout << "  compute plan" << std::endl;
                 cutting();
+                if (cuttingKeyPressed == true)
+                {
+                    m_tetraCuttingMgr->processCut();
+                    cuttingKeyPressed = false;
+                }
             }
         }
+    }
+
+    if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
+    {
+        dmsg_info() << "GET KEY " << ev->getKey();
+        if (ev->getKey() == 'D')
+            cuttingKeyPressed = true;
+            
     }
 }
 
@@ -591,12 +608,9 @@ void VolumeTearingEngine<DataTypes>::cutting()
 
 
         m_tetraCuttingMgr->createCutPath(m_planPositions, dir1, thickness);
-        m_tetraCuttingMgr->processCut();
+        //m_tetraCuttingMgr->processCut();
         d_fractureNumber.setValue(d_fractureNumber.getValue()+1);
-        doUpdate();
-        //m_tetraCuttingMgr->m_planNormal.clear();
-        //m_tetraCuttingMgr->m_planPositions.empty();
-        
+        doUpdate();      
 
     }
 }
