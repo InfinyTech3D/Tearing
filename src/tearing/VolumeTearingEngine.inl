@@ -25,7 +25,7 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
     , d_step(initData(&d_step, 50, "step", "step size"))
     , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
-    , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
+    , d_nbFractureMax(initData(&d_nbFractureMax, 2, "nbFractureMax", "number of fracture max done by the algorithm"))
     , d_seuilVonMises(initData(&d_seuilVonMises, 280.0, "seuilVonMises", "threshold value for VM stress"))
     , showSeuil(initData(&showSeuil, true, "showSeuil", "plot candidate"))
     , showVonmises(initData(&showVonmises, false, "showVonmises", "plot candidateVonMises"))
@@ -46,7 +46,7 @@ template <class DataTypes>
 void VolumeTearingEngine<DataTypes>::init()
 {
     this->f_listening.setValue(true);
-    maxCrackLength = 1.5;
+    maxCrackLength = 3;
 
     if (l_topology.empty())
     {
@@ -592,9 +592,10 @@ void VolumeTearingEngine<DataTypes>::cutting()
 
         m_tetraCuttingMgr->createCutPath(m_planPositions, dir1, thickness);
         m_tetraCuttingMgr->processCut();
-
-        m_tetraCuttingMgr->m_planNormal.clear();
-        m_tetraCuttingMgr->m_planPositions.empty();
+        d_fractureNumber.setValue(d_fractureNumber.getValue()+1);
+        doUpdate();
+        //m_tetraCuttingMgr->m_planNormal.clear();
+        //m_tetraCuttingMgr->m_planPositions.empty();
         
 
     }
