@@ -33,6 +33,7 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     , showSeuil(initData(&showSeuil, true, "showSeuil", "plot candidate"))
     , showVonmises(initData(&showVonmises, false, "showVonmises", "plot candidateVonMises"))
     , ignoreTetraAtStart(initData(&ignoreTetraAtStart, true, "ignoreTetraAtStart", "option to ignore some tetrahedra at start of the tearing algo"))
+    , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
     , m_modifier(nullptr)
     , m_tetraGeo(nullptr)
     , m_volumeTearingAlgo(nullptr)
@@ -41,6 +42,7 @@ VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
     addInput(&d_seuilPrincipalStress);
     addInput(&d_step);
     addInput(&d_seuilVonMises);
+    addInput(&d_scenario);
     addOutput(&d_tetraOverThresholdList);
     addOutput(&d_fractureNumber);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
@@ -557,55 +559,83 @@ void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
 template<class DataTypes>
 void VolumeTearingEngine<DataTypes>::cutting()
 {
-    if (indexTetraMaxStress < m_topology->getNbTetrahedra()+1)
+    //start with specific scenario
+    int choice;
+    if (d_fractureNumber.getValue() == 0)
+    {
+        choice = d_scenario.getValue();
+    }
+    else
+    {
+        choice = 0;
+    }
+
+    if (indexTetraMaxStress < m_topology->getNbTetrahedra()+1 || choice)
     {
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(indexTetraMaxStress);
         helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
-        TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
-        std::cout << "  index max tetra="<<indexTetraMaxStress << std::endl;
-        
-        Index a = t[0];
-        Index b = t[1];
-        Index c = t[2];
-        Index d = t[3];
-        Coord pa = x[a];
-        Coord pb = x[b];
-        Coord pc = x[c];
-        Coord pd = x[d];
-
-        Coord center = (pa + pb + pc + pd) / 4;
-
-        Coord dir1 = tetrahedronInfo->principalStressDirection1;
-        Coord dir2 = tetrahedronInfo->principalStressDirection2;
-        Coord dir3 = tetrahedronInfo->principalStressDirection3;      
-
-        
+        core::topology::BaseMeshTopology::Tetrahedron t;
         fixed_array<Vec3, 4> m_planPositions;
-        Real factor=1;
-        if (maxCrackLength < 1)
-            factor = maxCrackLength;
-        m_planPositions[0] = center + factor * dir2;
-        m_planPositions[1] = center + factor * dir3;
-        m_planPositions[2] = center - factor * dir3;
-        m_planPositions[3] = center - factor * dir2;
-
+        Coord dir1;
         Real thickness = 0;
-        if (maxCrackLength > 1)
+
+        switch (choice)
         {
-            Real Delta_dir2 = 0;
-            Real Delta_dir3 = 0;
-            for (int i = 0; i < 3; i++)
+        default:
+            if (true)
             {
-                if (helper::rabs(dir2[i]) > Delta_dir2)
-                    Delta_dir2 = helper::rabs(dir2[i]);
+                t = m_topology->getTetrahedron(indexTetraMaxStress);
+                TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
+                std::cout << "  index max tetra=" << indexTetraMaxStress << std::endl;
 
-                if (helper::rabs(dir3[i]) > Delta_dir3)
-                    Delta_dir3 = helper::rabs(dir3[i]);
+                Index a = t[0];
+                Index b = t[1];
+                Index c = t[2];
+                Index d = t[3];
+                Coord pa = x[a];
+                Coord pb = x[b];
+                Coord pc = x[c];
+                Coord pd = x[d];
+
+                Coord center = (pa + pb + pc + pd) / 4;
+
+                dir1 = tetrahedronInfo->principalStressDirection1;
+                Coord dir2 = tetrahedronInfo->principalStressDirection2;
+                Coord dir3 = tetrahedronInfo->principalStressDirection3;
+
+                Real factor = 1;
+                if (maxCrackLength < 1)
+                    factor = maxCrackLength;
+                m_planPositions[0] = center + factor * dir2;
+                m_planPositions[1] = center + factor * dir3;
+                m_planPositions[2] = center - factor * dir3;
+                m_planPositions[3] = center - factor * dir2;
+
+
+                if (maxCrackLength > 1)
+                {
+                    Real Delta_dir2 = 0;
+                    Real Delta_dir3 = 0;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (helper::rabs(dir2[i]) > Delta_dir2)
+                            Delta_dir2 = helper::rabs(dir2[i]);
+
+                        if (helper::rabs(dir3[i]) > Delta_dir3)
+                            Delta_dir3 = helper::rabs(dir3[i]);
+                    }
+                    thickness = (maxCrackLength - 1) / 2 * helper::rmax(Delta_dir2, Delta_dir3);
+                }
             }
-            thickness = (maxCrackLength - 1) / 2 * helper::rmax(Delta_dir2, Delta_dir3);
-        }
+            break;
 
+        case 1:
+            //choisir un tetra
+            //choisir un plan de coupe - m_planPositions
+            //calculer sa normale - dir1
+            //calcul epaisseur boundingBox - thickness
+            break;
+        }
 
         m_tetraCuttingMgr->createCutPath(m_planPositions, dir1, thickness);
         //m_tetraCuttingMgr->processCut();
