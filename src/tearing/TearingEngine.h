@@ -86,14 +86,14 @@ public:
 	/// </summary>
 	void triangleOverThresholdPrincipalStress();
 	
-	struct TriangleInformation
+	struct TriangleTearingInformation
 	{
 		//Real area;
 		type::Vec<3, Real> stress;
 		Real maxStress;
 		Coord principalStressDirection;
 	};
-	vector<TriangleInformation> m_triangleInfoTearing;
+	vector<TriangleTearingInformation> m_triangleInfoTearing;
 
 	/// <summary>
 	/// update d_triangleInfoTearing with value from d_triangleFEMInfo

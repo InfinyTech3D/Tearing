@@ -79,6 +79,7 @@ void TearingEngine<DataTypes>::init()
     m_topology->getContext()->get(m_triangularFEM);
     if (!m_triangularFEM)
     {
+        msg_warning() << "Not using TriangularFEMForceField component";
         //msg_error() << "Missing component: Unable to get TriangularFEMForceField from the current context.";
         //sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         //return;
@@ -88,6 +89,7 @@ void TearingEngine<DataTypes>::init()
     m_topology->getContext()->get(m_triangularFEMOptim);
     if (!m_triangularFEMOptim)
     {
+        msg_warning() << "Not using TriangularFEMForceField Optim component";
         //msg_error() << "Missing component: Unable to get TriangularFEMForceFieldOptim from the current context.";
         //sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         //return;
@@ -178,7 +180,8 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     {
         if (std::find(triangleToSkip.begin(), triangleToSkip.end(), i) == triangleToSkip.end())
         {
-            TriangleInformation& tinfo = m_triangleInfoTearing[i];
+            TriangleTearingInformation& tinfo = m_triangleInfoTearing[i];
+            
             if (tinfo.maxStress >= threshold)
             {
                 candidate.push_back(i);
@@ -190,13 +193,14 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             }
         }
     }
+
     if (candidate.size())
     {
         Index& indexVertexMaxStress = *(d_indexVertexMaxStress.beginEdit());
-        TriangleInformation& tinfo = m_triangleInfoTearing[indexTriangleMaxStress];
+        TriangleTearingInformation& tinfo = m_triangleInfoTearing[indexTriangleMaxStress];
         Index k = (tinfo.stress[0] > tinfo.stress[1]) ? 0 : 1;
         k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
-        indexVertexMaxStress = triangleList[indexTriangleMaxStress][k];      
+        indexVertexMaxStress = triangleList[indexTriangleMaxStress][k];
         d_step.setValue(0);
         d_indexVertexMaxStress.endEdit();
     }
@@ -223,7 +227,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
 
         if (triangleFEMInf.size() != triangleList.size())
         {
-            msg_warning() << "VecTriangleFEMInformation is not the same size as le list of triangles";
+            msg_warning() << "VecTriangleFEMInformation of size: " << triangleFEMInf.size() << " is not the same size as le list of triangles: " << triangleList.size();
             return;
         }
 
@@ -232,7 +236,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
         {
             TriangleFEMInformation tFEMinfo = triangleFEMInf[i];
             m_triangleInfoTearing[i].stress = tFEMinfo.stress;
-            m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress;
+            m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress * tFEMinfo.area;
             m_triangleInfoTearing[i].principalStressDirection = tFEMinfo.principalStressDirection;
         }
     }
@@ -240,21 +244,26 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
     {
         typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::TriangleState TriangleState;
         typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::VecTriangleState VecTriangleState;
-
+        typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::TriangleInfo TriangleInfo;
+        typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::VecTriangleInfo VecTriangleInfo;
+        
         // Access list of triangularFEM info per triangle
-        helper::ReadAccessor< Data<VecTriangleState> > triangleFEMInf(m_triangularFEMOptim->d_triangleState);
+        helper::ReadAccessor< Data<VecTriangleState> > triangleFEMState(m_triangularFEMOptim->d_triangleState);
+        helper::ReadAccessor< Data<VecTriangleInfo> > triangleFEMInf(m_triangularFEMOptim->d_triangleInfo);
         if (triangleFEMInf.size() != triangleList.size())
         {
-            msg_warning() << "VecTriangleFEMInformation is not the same size as le list of triangles";
+            msg_warning() << "VecTriangleFEMInformation of size: " << triangleFEMInf.size() << " is not the same size as le list of triangles: " << triangleList.size();
             return;
         }
 
         m_triangleInfoTearing.resize(triangleList.size());
         for (unsigned int i = 0; i < triangleList.size(); i++)
         {
-            TriangleState tFEMinfo = triangleFEMInf[i];
-            m_triangleInfoTearing[i].stress = tFEMinfo.stress;
+            TriangleState tState = triangleFEMState[i];
+            TriangleInfo tInfo = triangleFEMInf[i];
+            m_triangleInfoTearing[i].stress = tState.stress;
             m_triangularFEMOptim->getTrianglePrincipalStress(i, m_triangleInfoTearing[i].maxStress, m_triangleInfoTearing[i].principalStressDirection);
+            m_triangleInfoTearing[i].maxStress /= tInfo.ss_factor;
         }
     }
 }
