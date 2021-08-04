@@ -21,8 +21,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
-    , d_manualInteraction(initData(&d_manualInteraction, true, "manualInteraction", "option to not launch "))
-    , d_step(initData(&d_step, -1, "step", "step size"))
+    , d_step(initData(&d_step, 20, "step", "step size"))
     , m_counter(0)
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
@@ -122,7 +121,6 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
 {
     m_counter++;
-    //std::cout << "counter=" << d_counter.getValue() << std::endl;
 
     if (ignoreTriangleAtStart.getValue())
     {
@@ -201,7 +199,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
         Index k = (tinfo.stress[0] > tinfo.stress[1]) ? 0 : 1;
         k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
         indexVertexMaxStress = triangleList[indexTriangleMaxStress][k];
-        d_step.setValue(0);
+        //d_step.setValue(0);
         d_indexVertexMaxStress.endEdit();
     }
     d_maxStress.endEdit();
@@ -224,7 +222,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
     {
         // Access list of triangularFEM info per triangle
         helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
-
+        //const VecTriangleFEMInformation& triangleFEMInf = m_triangularFEM->triangleInfo.getValue();
         if (triangleFEMInf.size() != triangleList.size())
         {
             msg_warning() << "VecTriangleFEMInformation of size: " << triangleFEMInf.size() << " is not the same size as le list of triangles: " << triangleList.size();
@@ -234,7 +232,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
         m_triangleInfoTearing.resize(triangleList.size());
         for (unsigned int i = 0; i < triangleList.size(); i++)
         {
-            TriangleFEMInformation tFEMinfo = triangleFEMInf[i];
+            const TriangleFEMInformation& tFEMinfo = triangleFEMInf[i];
             m_triangleInfoTearing[i].stress = tFEMinfo.stress;
             m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress * tFEMinfo.area;
             m_triangleInfoTearing[i].principalStressDirection = tFEMinfo.principalStressDirection;
@@ -434,6 +432,8 @@ void TearingEngine<DataTypes>::algoFracturePath()
         }
 
         m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, d_indexTriangleMaxStress.getValue(), principalStressDirection, input_position.getValue());
+        if (d_step.getValue() == 0) // reset to 0
+            m_counter = 0;
     }
 }
 
@@ -481,30 +481,17 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 {
     if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateEndEvent::checkEventType(event))
     {
-        if (d_manualInteraction.getValue())
+        int step = d_step.getValue();
+        if (step == 0) // interactive version
         {
-            if (d_step.getValue() == 0 && m_counter > 20 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
-            {
+            if (m_counter > 20 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
                 algoFracturePath();
-            }
         }
-        else
+        else if (((m_counter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
         {
-            if (((m_counter % d_step.getValue()) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
-            {
-                if (m_counter > d_step.getValue())
-                    algoFracturePath();
-            }
+            if (m_counter > d_step.getValue())
+                algoFracturePath();
         }
-        
-    }
-
-    if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
-    {
-        dmsg_info() << "GET KEY " << ev->getKey();
-        //if (ev->getKey() == 'D')
-        //    cuttingKeyPressed = true;
-
     }
 
 }
