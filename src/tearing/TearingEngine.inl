@@ -16,15 +16,14 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 55.0, "seuilStress", "threshold value for stress"))
     , d_triangleOverThresholdList(initData(&d_triangleOverThresholdList, "triangleOverThresholdList", "triangles with maxStress over threshold value"))
     , d_triangleToIgnoreList(initData(&d_triangleToIgnoreList, "triangleToIgnoreList", "triangles that can't be choosen as starting fracture point"))
-    , showChangedTriangle(initData(&showChangedTriangle, false,"showChangedTriangle", "Flag activating rendering of changed triangle"))
     , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
     , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
-    , d_step(initData(&d_step, 20, "step", "step size"))
-    , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
     , d_manualInteraction(initData(&d_manualInteraction, true, "manualInteraction", "option to not launch "))
+    , d_step(initData(&d_step, -1, "step", "step size"))
+    , m_counter(0)
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
@@ -106,7 +105,6 @@ void TearingEngine<DataTypes>::init()
         computeTriangleToSkip();
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
-    d_counter.setValue(0);
     
     if (m_tearingAlgo == nullptr)
         m_tearingAlgo = new TearingAlgorithms<DataTypes>(m_topology, m_modifier, m_triangleGeo);
@@ -121,8 +119,8 @@ void TearingEngine<DataTypes>::reinit()
 template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
 {
-    d_counter.setValue(d_counter.getValue() + 1);
-    std::cout << "counter=" << d_counter.getValue() << std::endl;
+    m_counter++;
+    //std::cout << "counter=" << d_counter.getValue() << std::endl;
 
     if (ignoreTriangleAtStart.getValue())
     {
@@ -199,6 +197,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
         Index k = (tinfo.stress[0] > tinfo.stress[1]) ? 0 : 1;
         k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
         indexVertexMaxStress = triangleList[indexTriangleMaxStress][k];      
+        d_step.setValue(0);
         d_indexVertexMaxStress.endEdit();
     }
     d_maxStress.endEdit();
