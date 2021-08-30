@@ -339,7 +339,7 @@ bool TearingAlgorithms<DataTypes>::computeSegmentMeshIntersection(
             return PATH_IS_OK;
         }
 
-        //check if we are not all ready pass in this triangle
+        //check if we are not already pass in this triangle
         for (unsigned int i = 0; i < triangle_list.size(); i++)
         {
             if (next_triangle == triangle_list[i])
