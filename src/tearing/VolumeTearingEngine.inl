@@ -2,7 +2,7 @@
 #include "VolumeTearingEngine.h"
 
 #include <sofa/core/visual/VisualParams.h>
-#include <sofa/helper/types/RGBAColor.h>
+#include <sofa/type/RGBAColor.h>
 #include <sofa/simulation/Simulation.h>
 #include <sofa/helper/ColorMap.h>
 #include <SofaBaseTopology/TetrahedronSetTopologyContainer.h>
@@ -150,7 +150,8 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         std::vector< Vec3 > points[4];
 
-        if (showSeuil.getValue())
+        // TODO: restore that later
+        /*if (showSeuil.getValue())
         {
             for (Size i = 0; i < candidate.size(); ++i)
             {
@@ -203,10 +204,10 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     TetraMaxStressPoints[3].push_back(pa);
                     TetraMaxStressPoints[3].push_back(pb);
 
-                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[0], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[0], sofa::type::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::type::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::type::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::type::RGBAColor(0, 1, 0, 1));
 
                     helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
                     TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[candidate[i]];
@@ -222,8 +223,8 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     planePoints[1].push_back(center - maxCrackLength*vec_P1M);
                     planePoints[1].push_back(center - maxCrackLength*vec_P2M);
 
-                    vparams->drawTool()->drawTriangles(planePoints[0], sofa::helper::types::RGBAColor(1, 1, 1, 1));
-                    vparams->drawTool()->drawTriangles(planePoints[1], sofa::helper::types::RGBAColor(1, 1, 1, 1));
+                    vparams->drawTool()->drawTriangles(planePoints[0], sofa::type::RGBAColor(1, 1, 1, 1));
+                    vparams->drawTool()->drawTriangles(planePoints[1], sofa::type::RGBAColor(1, 1, 1, 1));
 
                     Coord direction = center + tetrahedronInfo->principalStressDirection;
                     Coord direction2 = center + 2 * tetrahedronInfo->principalStressDirection2;
@@ -245,11 +246,11 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     m_tetraCuttingMgr->drawCut(vparams);
                 }
             }
-            vparams->drawTool()->drawTriangles(points[0], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
-            vparams->drawTool()->drawTriangles(points[1], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
-            vparams->drawTool()->drawTriangles(points[2], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
-            vparams->drawTool()->drawTriangles(points[3], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
-        }
+            vparams->drawTool()->drawTriangles(points[0], sofa::type::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(points[1], sofa::type::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(points[2], sofa::type::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(points[3], sofa::type::RGBAColor(1, 0, 1, 0.2));
+        }*/
 
         if (showVonmises.getValue())
         {
@@ -305,17 +306,17 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                     TetraMaxStressPoints[3].push_back(pa);
                     TetraMaxStressPoints[3].push_back(pb);
 
-                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[0], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::helper::types::RGBAColor(0, 1, 0, 1));
-                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[0], sofa::type::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[1], sofa::type::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[2], sofa::type::RGBAColor(0, 1, 0, 1));
+                    vparams->drawTool()->drawTriangles(TetraMaxStressPoints[3], sofa::type::RGBAColor(0, 1, 0, 1));
                 }
 
             }
-            vparams->drawTool()->drawTriangles(pointsVonMises[0], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
-            vparams->drawTool()->drawTriangles(pointsVonMises[1], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
-            vparams->drawTool()->drawTriangles(pointsVonMises[2], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
-            vparams->drawTool()->drawTriangles(pointsVonMises[3], sofa::helper::types::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(pointsVonMises[0], sofa::type::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(pointsVonMises[1], sofa::type::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(pointsVonMises[2], sofa::type::RGBAColor(1, 0, 1, 0.2));
+            vparams->drawTool()->drawTriangles(pointsVonMises[3], sofa::type::RGBAColor(1, 0, 1, 0.2));
             
         }
     }             
@@ -355,10 +356,10 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
             points_skip[3].push_back(pa);
             points_skip[3].push_back(pb);
         }
-        vparams->drawTool()->drawTriangles(points_skip[0], sofa::helper::types::RGBAColor(0, 0, 1, 0.1));
-        vparams->drawTool()->drawTriangles(points_skip[1], sofa::helper::types::RGBAColor(0, 0, 1, 0.1));
-        vparams->drawTool()->drawTriangles(points_skip[2], sofa::helper::types::RGBAColor(0, 0, 1, 0.1));
-        vparams->drawTool()->drawTriangles(points_skip[3], sofa::helper::types::RGBAColor(0, 0, 1, 0.1));
+        vparams->drawTool()->drawTriangles(points_skip[0], sofa::type::RGBAColor(0, 0, 1, 0.1));
+        vparams->drawTool()->drawTriangles(points_skip[1], sofa::type::RGBAColor(0, 0, 1, 0.1));
+        vparams->drawTool()->drawTriangles(points_skip[2], sofa::type::RGBAColor(0, 0, 1, 0.1));
+        vparams->drawTool()->drawTriangles(points_skip[3], sofa::type::RGBAColor(0, 0, 1, 0.1));
     }
 }
 
@@ -434,15 +435,16 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
         {
             TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[i];
 
-            if (tetrahedronInfo->maxStress >= threshold)
-            {
-               candidate.push_back(i);
-               if (tetrahedronInfo->maxStress >= maxStress)
-               {
-                   indexTetraMaxStress = i;
-                   maxStress = tetrahedronInfo->maxStress;
-               }
-            }
+            // TODO: restore that later
+            //if (tetrahedronInfo->maxStress >= threshold)
+            //{
+            //   candidate.push_back(i);
+            //   if (tetrahedronInfo->maxStress >= maxStress)
+            //   {
+            //       indexTetraMaxStress = i;
+            //       maxStress = tetrahedronInfo->maxStress;
+            //   }
+            //}
         
             //if (tetrahedronInfo->vonMisesStress >= d_seuilVonMises.getValue())
             //{
@@ -473,7 +475,8 @@ void VolumeTearingEngine<DataTypes>::computePlane(Coord& vec_P1M, Coord& vec_P2M
         TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
 
         //principalStressDirection vec_n=(A,B,C)
-        Coord vec_n = tetrahedronInfo->principalStressDirection1;
+        //TODO restore that
+        Coord vec_n;// = tetrahedronInfo->principalStressDirection1;
 
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(indexTetraMaxStress);
@@ -599,7 +602,8 @@ void VolumeTearingEngine<DataTypes>::cutting()
 
                 Coord center = (pa + pb + pc + pd) / 4;
 
-                dir1 = tetrahedronInfo->principalStressDirection1;
+                // TODO restore that
+                /*dir1 = tetrahedronInfo->principalStressDirection1;
                 Coord dir2 = tetrahedronInfo->principalStressDirection2;
                 Coord dir3 = tetrahedronInfo->principalStressDirection3;
 
@@ -625,7 +629,7 @@ void VolumeTearingEngine<DataTypes>::cutting()
                             Delta_dir3 = helper::rabs(dir3[i]);
                     }
                     thickness = (maxCrackLength - 1) / 2 * helper::rmax(Delta_dir2, Delta_dir3);
-                }
+                }*/
             }
             break;
 
