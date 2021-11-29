@@ -641,10 +641,10 @@ void VolumeTearingEngine<DataTypes>::cutting()
             break;
         }
 
-        m_tetraCuttingMgr->createCutPath(m_planPositions, dir1, thickness);
+        m_tetraCuttingMgr->createCutPlanPath(m_planPositions, dir1, thickness);
         //m_tetraCuttingMgr->processCut();
         d_fractureNumber.setValue(d_fractureNumber.getValue()+1);
-        doUpdate();      
+        doUpdate();
 
     }
 }

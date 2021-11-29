@@ -15,7 +15,7 @@
 #include <SofaBoundaryCondition/FixedConstraint.h>
 #include <MeshRefinement/TetrahedronCuttingManager.h>
 
-using sofa::component::collision::TetrahedronCuttingManager;
+using sofa::meshrefinement::TetrahedronCuttingManager;
 
 namespace sofa::helper
 {
@@ -128,7 +128,7 @@ namespace sofa::component::engine
 		sofa::component::topology::TetrahedronSetTopologyModifier* m_modifier;
 		sofa::component::topology::TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;
 
-		TetrahedronCuttingManager* m_tetraCuttingMgr;
+		sofa::meshrefinement::TetrahedronCuttingManager* m_tetraCuttingMgr;
 	private:
 		sofa::helper::ColorMap* p_drawColorMap;
 		VolumeTearingAlgorithms<DataTypes>* m_volumeTearingAlgo;
