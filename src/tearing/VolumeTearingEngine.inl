@@ -107,7 +107,7 @@ void VolumeTearingEngine<DataTypes>::init()
 
     sofa::component::topology::TetrahedronSetTopologyContainer* m_topoCon = dynamic_cast <sofa::component::topology::TetrahedronSetTopologyContainer*>(m_topology);
 
-    m_tetraCuttingMgr = new TetrahedronCuttingManager();
+    m_tetraCuttingMgr = new TetrahedronCuttingManager<defaulttype::Vec3Types>();
     if(m_topoCon==nullptr)
         msg_error() << "m_topoCon empty pointer";
     else
@@ -377,7 +377,7 @@ void VolumeTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event*
                 cutting();
                 if (cuttingKeyPressed == true)
                 {
-                    m_tetraCuttingMgr->processCut();
+                    m_tetraCuttingMgr->processCut(false);
                     cuttingKeyPressed = false;
                 }
             }

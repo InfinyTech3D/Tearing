@@ -128,7 +128,7 @@ namespace sofa::component::engine
 		sofa::component::topology::TetrahedronSetTopologyModifier* m_modifier;
 		sofa::component::topology::TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;
 
-		sofa::meshrefinement::TetrahedronCuttingManager* m_tetraCuttingMgr;
+		sofa::meshrefinement::TetrahedronCuttingManager<defaulttype::Vec3Types>* m_tetraCuttingMgr;
 	private:
 		sofa::helper::ColorMap* p_drawColorMap;
 		VolumeTearingAlgorithms<DataTypes>* m_volumeTearingAlgo;
