@@ -2,7 +2,7 @@
 #include "TearingEngine.h"
 
 #include <sofa/core/visual/VisualParams.h>
-#include <sofa/helper/types/RGBAColor.h>
+#include <sofa/type/RGBAColor.h>
 #include <sofa/helper/ColorMap.h>
 #include <SofaBaseTopology/TopologyData.inl>
 #include <sofa/simulation/Simulation.h>
@@ -505,9 +505,9 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         std::vector<Vec3> vertices;
-        sofa::helper::types::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
+        sofa::type::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
         std::vector<Vec3> tearTriangleVertices;
-        sofa::helper::types::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
+        sofa::type::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
         if (candidate.size() > 0)
         {
             for (unsigned int i = 0; i < candidate.size(); i++)
@@ -540,14 +540,14 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 
             vecteur.push_back(Pa);
             vecteur.push_back(Pa + principalStressDirection);
-            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+            vparams->drawTool()->drawLines(vecteur, 1, sofa::type::RGBAColor(0, 1, 0, 1));
             vecteur.clear();
             Coord fractureDirection;
             fractureDirection[0] = -principalStressDirection[1];
             fractureDirection[1] = principalStressDirection[0];
             vecteur.push_back(Pa);
             vecteur.push_back(Pa + fractureDirection);
-            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1.0, 0.65, 0.0, 1.0));
+            vparams->drawTool()->drawLines(vecteur, 1, sofa::type::RGBAColor(1.0, 0.65, 0.0, 1.0));
             vecteur.clear();
         }
     }
@@ -570,13 +570,13 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
             points.push_back(Pc);
-            vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::helper::types::RGBAColor(1, 0.5, 0, 1));
+            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(1, 0.5, 0.5, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));
             points.clear();
 
             const vector<Coord>& path = m_tearingAlgo->getFracturePath();
             if (!path.empty())
-                vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+                vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 1, 0, 1));
         }
     }
 }
