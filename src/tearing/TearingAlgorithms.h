@@ -2,12 +2,14 @@
 
 #include <tearing/config.h>
 #include <sofa/defaulttype/VecTypes.h>
-#include <SofaBaseTopology/TriangleSetTopologyContainer.h>
-#include <SofaBaseTopology/TriangleSetTopologyModifier.h>
-#include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
+#include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
+#include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
+#include <sofa/component/topology/container/dynamic/TriangleSetGeometryAlgorithms.h>
 
 namespace sofa::component
 {
+using sofa::component::topology::container::dynamic::TriangleSetTopologyModifier;
+using sofa::component::topology::container::dynamic::TriangleSetGeometryAlgorithms;
 
 template <class DataTypes>
 class TearingAlgorithms
@@ -24,8 +26,8 @@ public:
 	typedef sofa::type::Vec<3, double> Vec3;
 
 	TearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
-		sofa::component::topology::TriangleSetTopologyModifier* _modifier,
-		sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo);
+		TriangleSetTopologyModifier* _modifier,
+		TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo);
 
 	virtual ~TearingAlgorithms();
 	
@@ -126,8 +128,8 @@ protected:
 	sofa::type::vector<Coord> m_fracturePath;
 
 	sofa::core::topology::BaseMeshTopology* m_topology;
-	sofa::component::topology::TriangleSetTopologyModifier* m_modifier;
-	sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
+	TriangleSetTopologyModifier* m_modifier;
+	TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
 };
 
 	

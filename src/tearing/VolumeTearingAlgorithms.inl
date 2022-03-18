@@ -9,8 +9,8 @@ using namespace sofa::core::topology;
 
 template <class DataTypes>
 VolumeTearingAlgorithms<DataTypes>::VolumeTearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
-    sofa::component::topology::TetrahedronSetTopologyModifier* _modifier,
-    sofa::component::topology::TetrahedronSetGeometryAlgorithms<DataTypes>* _tetraGeo)
+    TetrahedronSetTopologyModifier* _modifier,
+    TetrahedronSetGeometryAlgorithms<DataTypes>* _tetraGeo)
     : m_topology(_topology)
     , m_modifier(_modifier)
     , m_tetraGeo(_tetraGeo)

@@ -125,8 +125,8 @@ namespace sofa::component::engine
 		sofa::core::topology::BaseMeshTopology* m_topology;
 		sofa::component::forcefield::TetrahedralCorotationalFEMForceField<DataTypes>* m_tetraFEM;
 	
-		sofa::component::topology::TetrahedronSetTopologyModifier* m_modifier;
-		sofa::component::topology::TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;
+		TetrahedronSetTopologyModifier* m_modifier;
+		TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;
 
 		sofa::meshrefinement::TetrahedronCuttingManager<defaulttype::Vec3Types>* m_tetraCuttingMgr;
 	private:

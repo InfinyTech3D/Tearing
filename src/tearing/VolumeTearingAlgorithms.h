@@ -2,12 +2,14 @@
 
 #include <tearing/config.h>
 #include <sofa/defaulttype/VecTypes.h>
-#include <SofaBaseTopology/TetrahedronSetTopologyContainer.h>
-#include <SofaBaseTopology/TetrahedronSetTopologyModifier.h>
-#include <SofaBaseTopology/TetrahedronSetGeometryAlgorithms.h>
+#include <sofa/component/topology/container/dynamic/TetrahedronSetTopologyContainer.h>
+#include <sofa/component/topology/container/dynamic/TetrahedronSetTopologyModifier.h>
+#include <sofa/component/topology/container/dynamic/TetrahedronSetGeometryAlgorithms.h>
 
 namespace sofa::component
 {
+
+using namespace sofa::component::topology::container::dynamic;
 
 template <class DataTypes>
 class VolumeTearingAlgorithms
@@ -27,8 +29,8 @@ public :
 	typedef sofa::type::Vec<3, double> Vec3;
 
 	VolumeTearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
-		sofa::component::topology::TetrahedronSetTopologyModifier* _modifier,
-		sofa::component::topology::TetrahedronSetGeometryAlgorithms<DataTypes>* _tetraGeo);
+		TetrahedronSetTopologyModifier* _modifier,
+		TetrahedronSetGeometryAlgorithms<DataTypes>* _tetraGeo);
 
 	virtual ~VolumeTearingAlgorithms();
 
@@ -38,8 +40,8 @@ protected:
 	int m_fractureNumber;
 
 	sofa::core::topology::BaseMeshTopology* m_topology;
-	sofa::component::topology::TetrahedronSetTopologyModifier* m_modifier;
-	sofa::component::topology::TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;
+	TetrahedronSetTopologyModifier* m_modifier;
+	TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;
 };
 
 

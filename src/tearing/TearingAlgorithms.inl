@@ -9,8 +9,8 @@ using namespace sofa::core::topology;
 
 template <class DataTypes>
 TearingAlgorithms<DataTypes>::TearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
-    sofa::component::topology::TriangleSetTopologyModifier* _modifier,
-    sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo)
+    TriangleSetTopologyModifier* _modifier,
+    TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo)
     : m_topology(_topology)
     , m_modifier(_modifier)
     , m_triangleGeo(_triangleGeo)

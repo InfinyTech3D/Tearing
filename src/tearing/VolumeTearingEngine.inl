@@ -5,7 +5,7 @@
 #include <sofa/type/RGBAColor.h>
 #include <sofa/simulation/Simulation.h>
 #include <sofa/helper/ColorMap.h>
-#include <SofaBaseTopology/TetrahedronSetTopologyContainer.h>
+#include <sofa/component/topology/container/dynamic/TetrahedronSetTopologyContainer.h>
 
 #include <sofa/core/objectmodel/KeypressedEvent.h>
 #include <sofa/core/objectmodel/KeyreleasedEvent.h>
@@ -105,7 +105,7 @@ void VolumeTearingEngine<DataTypes>::init()
     if (m_volumeTearingAlgo == nullptr)
         m_volumeTearingAlgo = new VolumeTearingAlgorithms<DataTypes>(m_topology, m_modifier, m_tetraGeo);
 
-    sofa::component::topology::TetrahedronSetTopologyContainer* m_topoCon = dynamic_cast <sofa::component::topology::TetrahedronSetTopologyContainer*>(m_topology);
+    TetrahedronSetTopologyContainer* m_topoCon = dynamic_cast <TetrahedronSetTopologyContainer*>(m_topology);
 
     m_tetraCuttingMgr = new TetrahedronCuttingManager<defaulttype::Vec3Types>();
     if(m_topoCon==nullptr)

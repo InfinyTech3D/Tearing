@@ -8,12 +8,13 @@
 #include <sofa/defaulttype/VecTypes.h>
 #include <sofa/core/topology/BaseMeshTopology.h>
 
-#include <SofaBaseTopology/TopologyData.h>
-#include <SofaBaseTopology/TriangleSetTopologyContainer.h>
-#include <SofaBaseTopology/TriangleSetGeometryAlgorithms.h>
+#include <sofa/core/topology/TopologyData.h>
+#include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
+#include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
+#include <sofa/component/topology/container/dynamic/TriangleSetGeometryAlgorithms.h>
+
 #include <SofaMiscFem/TriangularFEMForceField.h>
 #include <SofaGeneralSimpleFem/TriangularFEMForceFieldOptim.h>
-#include <SofaBaseTopology/TriangleSetTopologyModifier.h>
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
 
@@ -131,10 +132,10 @@ public:
 protected:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology;
-	sofa::component::topology::TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
+	TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
 	sofa::component::forcefield::TriangularFEMForceField<DataTypes>* m_triangularFEM;
 	sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim;	
-	sofa::component::topology::TriangleSetTopologyModifier* m_modifier;
+	TriangleSetTopologyModifier* m_modifier;
 private:
 	sofa::helper::ColorMap* p_drawColorMap;
 
