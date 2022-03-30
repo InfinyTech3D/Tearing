@@ -16,7 +16,7 @@ On fixe un coté et nous tirons de façon uniforme de plus en plus fort du côt�
     <VisualStyle displayFlags="showVisual showBehaviorModels showForceFields" />
     <DefaultPipeline verbose="0" />
     <BruteForceDetection name="N2" />
-    <DefaultContactManager response="default" />
+    <DefaultContactManager response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
 	
 	

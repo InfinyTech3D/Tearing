@@ -13,11 +13,11 @@
 	
 	<RequiredPlugin name='tearing'/>
 	
-    <DefaultPipeline name="default21" verbose="0" />
+    <DefaultPipeline name="PenalityContactForceField21" verbose="0" />
     <BruteForceDetection name="N2" />
-    <DefaultContactManager name="default22" response="default" />
+    <DefaultContactManager name="PenalityContactForceField22" response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
-    <DefaultCollisionGroupManager name="default23" />
+    <DefaultCollisionGroupManager name="PenalityContactForceField23" />
     
     
     <Node name="Model">
@@ -39,12 +39,12 @@
         <TetrahedronSetTopologyModifier name="Modifier" />
         <TetrahedronSetGeometryAlgorithms template="Vec3d" name="GeomAlgo" />
         
-        <!--UniformMass template="Vec3d,double" name="default25" vertexMass="0.25" /-->
+        <!--UniformMass template="Vec3d,double" name="PenalityContactForceField25" vertexMass="0.25" /-->
 		<DiagonalMass template="Vec3d,double" name="mass" massDensity="1.0" />
         <TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" />
         
         <BoxROI template="Vec3d" name="box_roi" box="-0.5 9.5 -0.5 10.5 10.5 1.5" indices="0" drawSize="1"  drawBoxes="1"/>
-        <FixedConstraint template="Vec3d" name="default27" indices="@box_roi.indices" drawSize="0" />
+        <FixedConstraint template="Vec3d" name="PenalityContactForceField27" indices="@box_roi.indices" drawSize="0" />
 		
 		<BoxROI template="Vec3d" name="PulledSide" box="4.5 -0.5 0.45 5.5 0.5 0.55" drawSize="1" drawBoxes="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -300 0" showArrowSize=".01" />
@@ -55,12 +55,12 @@
             <TriangleSetTopologyContainer name="Triangle_topo" />
             <TriangleSetTopologyModifier name="Modifier" />
             <TriangleSetGeometryAlgorithms template="Vec3d" name="GeomAlgo" />
-            <Tetra2TriangleTopologicalMapping name="default29" input="@../Tetra_topo" output="@Triangle_topo" />
+            <Tetra2TriangleTopologicalMapping name="PenalityContactForceField29" input="@../Tetra_topo" output="@Triangle_topo" />
 
-            <TriangleCollisionModel name="default30" />
+            <TriangleCollisionModel name="PenalityContactForceField30" />
             <Node name="Visu" gravity="0 -9.81 0">
                 <OglModel template="Vec3d" name="Visual" material="Default Diffuse 1 1 0 0 1 Ambient 1 0.2 0 0 1 Specular 0 1 0 0 1 Emissive 0 1 0 0 1 Shininess 0 45" />
-                <IdentityMapping template="Vec3d,Vec3d" name="default33" input="@.." output="@Visual" />
+                <IdentityMapping template="Vec3d,Vec3d" name="PenalityContactForceField33" input="@.." output="@Visual" />
             </Node>
 
         </Node>

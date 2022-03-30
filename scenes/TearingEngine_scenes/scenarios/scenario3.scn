@@ -16,7 +16,7 @@ Nous tirons de chaque côté avec une force équivalente-->
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
     <DefaultPipeline verbose="0" />
     <BruteForceDetection name="N2" />
-    <DefaultContactManager response="default" />
+    <DefaultContactManager response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
 	
 	
