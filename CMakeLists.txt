@@ -11,7 +11,6 @@ set(TEARING_SRC_DIR src/tearing)
 # Our nice new SOFA Components
 set(HEADER_FILES
     ${TEARING_SRC_DIR}/config.h.in
-    ${TEARING_SRC_DIR}/StressDetector.h
     ${TEARING_SRC_DIR}/TearingAlgorithms.h
     ${TEARING_SRC_DIR}/TearingAlgorithms.inl
     ${TEARING_SRC_DIR}/VolumeTearingAlgorithms.h
@@ -26,7 +25,6 @@ set(HEADER_FILES
 
 set(SOURCE_FILES
     ${TEARING_SRC_DIR}/inittearing.cpp
-    ${TEARING_SRC_DIR}/StressDetector.cpp
     ${TEARING_SRC_DIR}/TearingAlgorithms.cpp
     ${TEARING_SRC_DIR}/VolumeTearingAlgorithms.cpp
     
