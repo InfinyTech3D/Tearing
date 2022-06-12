@@ -426,7 +426,7 @@ void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
     vector<sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>*> m_FixedConstraint;
     this->getContext()->get<sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>>(&m_FixedConstraint, sofa::core::objectmodel::BaseContext::SearchUp);
 
-    for each (sofa::component::forcefield::ConstantForceField<DataTypes>*cff_i in m_ConstantForceFields)
+    for (sofa::component::forcefield::ConstantForceField<DataTypes>*cff_i : m_ConstantForceFields)
     {
         vector<Index> vertexToSkip = cff_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)
@@ -440,7 +440,7 @@ void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
         }
     }
 
-    for each (sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>*fc_i in m_FixedConstraint)
+    for (sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>*fc_i : m_FixedConstraint)
     {
         vector<Index> vertexToSkip = fc_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)

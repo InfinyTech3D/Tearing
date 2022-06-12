@@ -459,7 +459,7 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
     vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
     this->getContext()->get< sofa::component::forcefield::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
 
-    for each (sofa::component::forcefield::ConstantForceField<DataTypes>* cff_i in m_ConstantForceFields)
+    for (sofa::component::forcefield::ConstantForceField<DataTypes>* cff_i : m_ConstantForceFields)
     {
         vector<Index> vertexToSkip = cff_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)

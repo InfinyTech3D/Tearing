@@ -48,8 +48,6 @@ public:
 	typedef sofa::type::Vec<3, double> Vec3;
 	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
 	typedef type::Mat<6, 3, Real> StrainDisplacement;				    ///< the strain-displacement matrix
-	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
-
 
 	typedef typename sofa::component::forcefield::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
 	typedef sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;

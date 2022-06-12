@@ -21,8 +21,7 @@ public:
 
 	typedef sofa::core::topology::BaseMeshTopology::Index Index;
 	typedef sofa::core::topology::BaseMeshTopology::Edge Edge;	
-	typedef sofa::core::topology::BaseMeshTopology::Triangle Triangle;
-	typedef sofa::core::topology::BaseMeshTopology::Triangle Triangle;
+    typedef sofa::core::topology::BaseMeshTopology::Triangle Triangle;
 	typedef sofa::type::Vec<3, double> Vec3;
 
 	TearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
