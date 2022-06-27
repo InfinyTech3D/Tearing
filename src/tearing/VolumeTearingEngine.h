@@ -9,10 +9,10 @@
 #include <sofa/core/topology/BaseMeshTopology.h>
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
-//#include <SofaSimpleFem/TetrahedronFEMForceField.h>
-#include <SofaGeneralSimpleFem/TetrahedralCorotationalFEMForceField.h>
-#include <SofaBoundaryCondition/ConstantForceField.h>
-#include <SofaBoundaryCondition/FixedConstraint.h>
+//#include <sofa/component/solidmechanics/fem/elastic/TetrahedronFEMForceField.h>
+#include <sofa/component/solidmechanics/fem/elastic/TetrahedralCorotationalFEMForceField.h>
+#include <sofa/component/mechanicalload/ConstantForceField.h>
+#include <sofa/component/constraint/projective/FixedConstraint.h>
 #include <MeshRefinement/TetrahedronCuttingManager.h>
 
 using sofa::meshrefinement::TetrahedronCuttingManager;
@@ -45,7 +45,7 @@ namespace sofa::component::engine
 		typedef sofa::core::topology::BaseMeshTopology::SeqEdges VecEdges;
 		typedef sofa::type::Vec<3, double> Vec3;
 
-		typedef typename sofa::component::forcefield::TetrahedralCorotationalFEMForceField<DataTypes>::TetrahedronInformation TetrahedronFEMInformation;
+		typedef typename sofa::component::solidmechanics::fem::elastic::TetrahedralCorotationalFEMForceField<DataTypes>::TetrahedronInformation TetrahedronFEMInformation;
 		typedef vector<TetrahedronFEMInformation> VecTetrahedronFEMInformation;
 
 	protected:
@@ -123,7 +123,7 @@ namespace sofa::component::engine
 	protected:
 		/// Pointer to the current topology
 		sofa::core::topology::BaseMeshTopology* m_topology;
-		sofa::component::forcefield::TetrahedralCorotationalFEMForceField<DataTypes>* m_tetraFEM;
+		sofa::component::solidmechanics::fem::elastic::TetrahedralCorotationalFEMForceField<DataTypes>* m_tetraFEM;
 	
 		TetrahedronSetTopologyModifier* m_modifier;
 		TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;

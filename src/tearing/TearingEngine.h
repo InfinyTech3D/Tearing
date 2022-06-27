@@ -13,12 +13,12 @@
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetGeometryAlgorithms.h>
 
-#include <SofaMiscFem/TriangularFEMForceField.h>
-#include <SofaGeneralSimpleFem/TriangularFEMForceFieldOptim.h>
+#include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceField.h>
+#include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceFieldOptim.h>
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
 
-#include <SofaBoundaryCondition/ConstantForceField.h>
+#include <sofa/component/mechanicalload/ConstantForceField.h>
 
 namespace sofa::helper
 {
@@ -49,7 +49,7 @@ public:
 	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
 	typedef type::Mat<6, 3, Real> StrainDisplacement;				    ///< the strain-displacement matrix
 
-	typedef typename sofa::component::forcefield::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
+	typedef typename sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
 	typedef sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;
 
 protected:
@@ -131,8 +131,8 @@ protected:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology;
 	TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
-	sofa::component::forcefield::TriangularFEMForceField<DataTypes>* m_triangularFEM;
-	sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim;	
+	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM;
+	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim;
 	TriangleSetTopologyModifier* m_modifier;
 private:
 	sofa::helper::ColorMap* p_drawColorMap;

@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.12)
 project(tearing VERSION 1.0)
 
 # SOFA packages containing our dependencies
-find_package(SofaFramework REQUIRED) # Needed to use SofaCore, SofaHelper and SofaDefaultType
-find_package(SofaGeneral REQUIRED) # Needed to use SofaBaseTopology
 find_package(MeshRefinement REQUIRED) # Needed to use MeshRefinement
+find_package(Sofa.Component.SolidMechanics.FEM.Elastic REQUIRED)
+find_package(Sofa.Component.MechanicalLoad REQUIRED)
 
 set(TEARING_SRC_DIR src/tearing)
 
@@ -37,14 +37,6 @@ add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
 
 # Dependencies
 target_link_libraries(${PROJECT_NAME} PUBLIC
-    SofaCore
-    SofaHelper
-    SofaDefaultType
-    SofaBaseTopology
-    SofaMiscFem
-    SofaBoundaryCondition
-    SofaLoader
-    SofaGeneralSimpleFem
     MeshRefinement
     )
 

@@ -420,13 +420,13 @@ template<class DataTypes>
 void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
 {
     helper::WriteAccessor< Data<vector<Index>> >tetraToSkip(d_tetraToIgnoreList);
-    vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
-    this->getContext()->get< sofa::component::forcefield::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
+    vector<sofa::component::mechanicalload::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
+    this->getContext()->get< sofa::component::mechanicalload::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
     
-    vector<sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>*> m_FixedConstraint;
-    this->getContext()->get<sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>>(&m_FixedConstraint, sofa::core::objectmodel::BaseContext::SearchUp);
+    vector<sofa::component::constraint::projective::FixedConstraint<DataTypes>*> m_FixedConstraint;
+    this->getContext()->get<sofa::component::constraint::projective::FixedConstraint<DataTypes>>(&m_FixedConstraint, sofa::core::objectmodel::BaseContext::SearchUp);
 
-    for (sofa::component::forcefield::ConstantForceField<DataTypes>*cff_i : m_ConstantForceFields)
+    for (sofa::component::mechanicalload::ConstantForceField<DataTypes>*cff_i : m_ConstantForceFields)
     {
         vector<Index> vertexToSkip = cff_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)
@@ -440,7 +440,7 @@ void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
         }
     }
 
-    for (sofa::component::projectiveconstraintset::FixedConstraint<DataTypes>*fc_i : m_FixedConstraint)
+    for (sofa::component::constraint::projective::FixedConstraint<DataTypes>*fc_i : m_FixedConstraint)
     {
         vector<Index> vertexToSkip = fc_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)

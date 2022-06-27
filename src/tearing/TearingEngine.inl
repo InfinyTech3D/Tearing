@@ -240,10 +240,10 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
     }
     else // m_triangularFEMOptim
     {
-        typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::TriangleState TriangleState;
-        typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::VecTriangleState VecTriangleState;
-        typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::TriangleInfo TriangleInfo;
-        typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::VecTriangleInfo VecTriangleInfo;
+        typedef typename sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>::TriangleState TriangleState;
+        typedef typename sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>::VecTriangleState VecTriangleState;
+        typedef typename sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>::TriangleInfo TriangleInfo;
+        typedef typename sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>::VecTriangleInfo VecTriangleInfo;
         
         // Access list of triangularFEM info per triangle
         helper::ReadAccessor< Data<VecTriangleState> > triangleFEMState(m_triangularFEMOptim->d_triangleState);
@@ -456,10 +456,10 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
-    vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
-    this->getContext()->get< sofa::component::forcefield::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
+    vector<sofa::component::mechanicalload::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
+    this->getContext()->get< sofa::component::mechanicalload::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
 
-    for (sofa::component::forcefield::ConstantForceField<DataTypes>* cff_i : m_ConstantForceFields)
+    for (sofa::component::mechanicalload::ConstantForceField<DataTypes>* cff_i : m_ConstantForceFields)
     {
         vector<Index> vertexToSkip = cff_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)
