@@ -302,7 +302,17 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
     helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
-    if (candidate.size())
+    int choice;
+    if (d_fractureNumber.getValue() == 0)
+    {
+        choice = d_scenario.getValue();
+    }
+    else
+    {
+        choice = 0;
+    }
+
+    if (candidate.size() || choice)
     {
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         helper::WriteAccessor< Data<vector<Coord>> > path(d_fracturePath);
@@ -316,19 +326,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
         Coord Pa;
         Coord principalStressDirection;
         Coord Pb;
-        Coord Pc;
-
-        int choice;
+        Coord Pc; 
         Coord dir;
         double alpha;
-        if (d_fractureNumber.getValue() == 0)
-        {
-            choice = d_scenario.getValue();
-        }
-        else
-        {
-            choice = 0;
-        }
         
         switch (choice)
         {
@@ -1065,17 +1065,23 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
-    vector<Index> vertexToSkip = m_CFF->d_indices.getValue();
 
-    for (unsigned int i = 0; i < vertexToSkip.size(); i++)
+    sofa::helper::vector<sofa::component::forcefield::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
+    this->getContext()->get< sofa::component::forcefield::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
+    std::cout << "CFFs=" << m_ConstantForceFields.size()<<std::endl;
+
+    for each (sofa::component::forcefield::ConstantForceField<DataTypes>* cff_i in m_ConstantForceFields)
     {
-        vector<Index> triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vertexToSkip[i]);
-        for (unsigned int j = 0; j < triangleAroundVertex_i.size(); j++)
+        vector<Index> vertexToSkip = cff_i->d_indices.getValue();
+        for (unsigned int i = 0; i < vertexToSkip.size(); i++)
         {
-            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), triangleAroundVertex_i[j]) == triangleToSkip.end())
-                triangleToSkip.push_back(triangleAroundVertex_i[j]);
+            vector<Index> triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vertexToSkip[i]);
+            for (unsigned int j = 0; j < triangleAroundVertex_i.size(); j++)
+            {
+                if (std::find(triangleToSkip.begin(), triangleToSkip.end(), triangleAroundVertex_i[j]) == triangleToSkip.end())
+                    triangleToSkip.push_back(triangleAroundVertex_i[j]);
+            }
         }
-    }
+    }   
 }
-
 } //namespace sofa::component::engine
