@@ -31,11 +31,11 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
-    , d_step(initData(&d_step, 100, "step", "step size"))
+    , d_step(initData(&d_step, 20, "step", "step size"))
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
 
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
-    , d_fractureMaxLength(initData(&d_fractureMaxLength, 2.0, "fractureMaxLength", "fracture max length by time step"))
+    , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
     , d_fracturePath(initData(&d_fracturePath,"d_fracturePath","path created by algoFracturePath"))
 {
     addInput(&input_position);
