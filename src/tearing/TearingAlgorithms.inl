@@ -4,7 +4,7 @@
 namespace sofa::component
 {
 
-using helper::vector;
+using type::vector;
 using namespace sofa::core::topology;
 
 template <class DataTypes>
@@ -48,8 +48,8 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
 
     bool pointC_inTriangle = false;
     Index triangleC = -1;
-    sofa::helper::vector<Index> edges_listC;
-    sofa::helper::vector< double > coordsEdge_listC;
+    vector<Index> edges_listC;
+    vector< double > coordsEdge_listC;
     bool PATH_C_IS_OK = false;
     if (sideC_resumed)
         PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC, input_position);
@@ -68,8 +68,8 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
 
     bool pointB_inTriangle = false;
     Index triangleB = -1;
-    sofa::helper::vector<Index> edges_listB;
-    sofa::helper::vector< double > coordsEdge_listB;
+    vector<Index> edges_listB;
+    vector< double > coordsEdge_listB;
     bool PATH_B_IS_OK = false;
     if (sideB_resumed)
         PATH_B_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pb, pointB_inTriangle, triangleB, edges_listB, coordsEdge_listB, input_position);
@@ -78,9 +78,9 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     //intersections with the mesh exists 
     if (PATH_C_IS_OK || PATH_B_IS_OK)
     {
-        sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list;
-        sofa::helper::vector<Index> indices_list;
-        sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list;
+        vector< sofa::core::topology::TopologyElementType> topoPath_list;
+        vector<Index> indices_list;
+        vector< Vec3 > coords_list;
         int sizeB, sizeC;
 
         //convert path through different element
@@ -96,15 +96,15 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
             //split along path
             int snapingValue = 20;
             int snapingBorderValue = 0;
-            sofa::helper::vector< Index > new_edges;
+            vector< Index > new_edges;
             int result;
             result = splitting(snapingValue, snapingBorderValue, Pa, Pb, Pc, sizeB, sizeC, topoPath_list, indices_list, coords_list, new_edges);
 
             if (result > 0)
             {
                 //incise along new_edges
-                sofa::helper::vector<Index> new_points;
-                sofa::helper::vector<Index> end_points;
+                vector<Index> new_points;
+                vector<Index> end_points;
                 bool reachBorder = false;
                 bool incision_ok = m_triangleGeo->InciseAlongEdgeList(new_edges, new_points, end_points, reachBorder);
                 if (!incision_ok)
@@ -124,9 +124,9 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     //there is no intersection with the mesh,either in direction of Pb or Pc, we have to see if it is a T-junction or a X-junction in point Pa
     else if (!triangleInDirectionB && !triangleInDirectionC && m_topology->getTrianglesAroundVertex(indexA).size() > 1)
     {
-        sofa::helper::vector<Index> indexTriangleList = m_topology->getTrianglesAroundVertex(indexA);
-        sofa::helper::vector<Index> indexTriangleListSide1;
-        sofa::helper::vector<Index> indexTriangleListSide2;
+        vector<Index> indexTriangleList = m_topology->getTrianglesAroundVertex(indexA);
+        vector<Index> indexTriangleListSide1;
+        vector<Index> indexTriangleListSide2;
         BaseMeshTopology::SeqTriangles triangleList2;
 
         indexTriangleListSide1.push_back(indexTriangleMaxStress);
@@ -170,21 +170,21 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
             Index indexNewPoint = m_topology->getNbPoints();
             Index indexNewTriangle = m_topology->getNbTriangles();
 
-            sofa::helper::vector<Index> indexs_ancestor;
+            vector<Index> indexs_ancestor;
             indexs_ancestor.push_back(indexA);
-            sofa::helper::vector< sofa::helper::vector<Index> > ancestors;
+            vector< vector<Index> > ancestors;
             ancestors.push_back(indexs_ancestor);
-            sofa::helper::vector<double> barycoefs;
+            vector<double> barycoefs;
             barycoefs.push_back(1.0);
-            sofa::helper::vector< sofa::helper::vector<double> > coefs;
+            vector< vector<double> > coefs;
             coefs.push_back(barycoefs);
             m_modifier->addPoints(1, ancestors, coefs);
 
 
-            sofa::helper::vector< Triangle > triangles2Add;
-            sofa::helper::vector< Index > trianglesIndex2Add;
-            sofa::helper::vector< sofa::helper::vector< Index > > triangles_ancestors;
-            sofa::helper::vector< sofa::helper::vector< SReal > > triangles_baryCoefs;
+            vector< Triangle > triangles2Add;
+            vector< Index > trianglesIndex2Add;
+            vector< vector< Index > > triangles_ancestors;
+            vector< vector< SReal > > triangles_baryCoefs;
             barycoefs.clear();
             barycoefs.push_back(1.0);
             barycoefs.push_back(1.0);
@@ -232,13 +232,13 @@ bool TearingAlgorithms<DataTypes>::computeSegmentMeshIntersection(
     Coord endPoint,
     bool& endPoint_inTriangle,
     Index& endPointTriangle,
-    sofa::helper::vector<Index>& edges_list,
-    sofa::helper::vector<double>& coordsEdge_list,
+    vector<Index>& edges_list,
+    vector<double>& coordsEdge_list,
     const VecCoord& input_position)
 {
     bool PATH_IS_OK = false;
     double EPS = 1e-8;
-    sofa::helper::vector<Index> triangle_list;
+    vector<Index> triangle_list;
 
     bool resume = true;
     Coord current_point = Pa;
@@ -251,9 +251,9 @@ bool TearingAlgorithms<DataTypes>::computeSegmentMeshIntersection(
     //loop start
     while (resume)
     {
-        sofa::helper::vector<Index> candidateIndice;
-        sofa::helper::vector<double> candidateBarycoef;
-        sofa::helper::vector<double> candidateCoordKmin;
+        vector<Index> candidateIndice;
+        vector<double> candidateBarycoef;
+        vector<double> candidateCoordKmin;
         bool intersection_exist = m_triangleGeo->computeIntersectionsLineTriangle(false, current_point, endPoint, current_triangle, candidateIndice, candidateBarycoef, candidateCoordKmin);
         if (intersection_exist == false)
         {
@@ -313,7 +313,7 @@ bool TearingAlgorithms<DataTypes>::computeSegmentMeshIntersection(
         {
             //next_point is on an edge
             Index next_point_edgeId = m_topology->getEdgeIndex(candidateIndice[2 * j], candidateIndice[2 * j + 1]);
-            sofa::helper::vector<Index>next_triangle_candidate = m_topology->getTrianglesAroundEdge(next_point_edgeId);
+            vector<Index>next_triangle_candidate = m_topology->getTrianglesAroundEdge(next_point_edgeId);
 
             if (next_triangle_candidate.size() > 1)
                 next_triangle = (current_triangle == next_triangle_candidate[0]) ? next_triangle_candidate[1] : next_triangle_candidate[0];
@@ -372,14 +372,14 @@ bool TearingAlgorithms<DataTypes>::computeSegmentMeshIntersection(
 template <class DataTypes>
 void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     double EPS,
-    bool pointB_inTriangle, Index triangleB, Coord Pb, sofa::helper::vector<Index> edges_listB, sofa::helper::vector<double> coordsEdge_listB, int& sizeB,
+    bool pointB_inTriangle, Index triangleB, Coord Pb, vector<Index> edges_listB, vector<double> coordsEdge_listB, int& sizeB,
     Coord Pa, Index indexA,
-    bool pointC_inTriangle, Index triangleC, Coord Pc, sofa::helper::vector<Index> edges_listC, sofa::helper::vector<double> coordsEdge_listC, int& sizeC,
-    sofa::helper::vector< sofa::core::topology::TopologyElementType>& topoPath_list,
-    sofa::helper::vector<Index>& indices_list,
-    sofa::helper::vector< sofa::defaulttype::Vec<3, double> >& coords_list)
+    bool pointC_inTriangle, Index triangleC, Coord Pc, vector<Index> edges_listC, vector<double> coordsEdge_listC, int& sizeC,
+    vector< sofa::core::topology::TopologyElementType>& topoPath_list,
+    vector<Index>& indices_list,
+    vector< Vec3 >& coords_list)
 {
-    sofa::defaulttype::Vec<3, double> baryCoords;
+    Vec3 baryCoords;
     //equivalent STEP 4
     sizeB = edges_listB.size();
     sizeC = edges_listC.size();
@@ -389,7 +389,7 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     if (pointB_inTriangle)
     {
         //compute barycoef of Pb in triangleB
-        sofa::helper::vector< double > coefs_b = m_triangleGeo->computeTriangleBarycoefs(triangleB, Pb);
+        vector< double > coefs_b = m_triangleGeo->computeTriangleBarycoefs(triangleB, Pb);
 
         //Pb is on an vertex ? 
         bool B_isOnVertex = false;
@@ -458,7 +458,7 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     if (pointC_inTriangle)
     {
         //compute barycoef of Pc in triangleC
-        sofa::helper::vector< double > coefs_c = m_triangleGeo->computeTriangleBarycoefs(triangleC, Pc);
+        vector< double > coefs_c = m_triangleGeo->computeTriangleBarycoefs(triangleC, Pc);
 
         //Pc is on an vertex ? 
         bool C_isOnVertex = false;
@@ -501,10 +501,10 @@ int TearingAlgorithms<DataTypes>::splitting(
     int snapingValue, int snapingBorderValue,
     Coord Pa, Coord Pb, Coord Pc,
     int sizeB, int sizeC,
-    sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list,
-    sofa::helper::vector<Index> indices_list,
-    sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list,
-    sofa::helper::vector< Index >& new_edges)
+    vector< sofa::core::topology::TopologyElementType> topoPath_list,
+    vector<Index> indices_list,
+    vector< Vec3 > coords_list,
+    vector< Index >& new_edges)
 {
 
     // Snaping value: input are percentages, we need to transform it as real epsilon value;

@@ -27,7 +27,7 @@ namespace sofa::component::engine
 {
 
 	using core::DataEngine;
-	using helper::vector;
+	using type::vector;
 
 template <class DataTypes>
 class TearingEngine : public core::DataEngine
@@ -43,16 +43,17 @@ public:
 	typedef sofa::core::topology::BaseMeshTopology::Index Index;
 	typedef sofa::core::topology::BaseMeshTopology::Triangle Element;
 	typedef sofa::core::topology::BaseMeshTopology::SeqTriangles VecElement;
+	typedef sofa::type::Vec<3, double> Vec3;
 
 	typedef typename sofa::component::forcefield::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
-	typedef sofa::helper::vector<TriangleFEMInformation> VecTriangleFEMInformation;
+	typedef sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;
 
 protected:
 	TearingEngine();
 	~TearingEngine() override {}
-	typedef defaulttype::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
-	typedef defaulttype::Mat<6, 3, Real> StrainDisplacement;				    ///< the strain-displacement matrix
-	typedef defaulttype::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
+	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
+	typedef type::Mat<6, 3, Real> StrainDisplacement;				    ///< the strain-displacement matrix
+	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
 
 public:
 	void init() override;
@@ -86,7 +87,7 @@ public:
 	{
 	public:
 		//Real area;
-		defaulttype::Vec<3, Real> stress;
+		type::Vec<3, Real> stress;
 		Real maxStress;
 
 		TriangleInformation() { }

@@ -101,7 +101,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
     {
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_tetraOverThresholdList);
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        std::vector< defaulttype::Vector3 > points[4];
+        std::vector< Vec3 > points[4];
 
         if (showSeuil.getValue())
         {

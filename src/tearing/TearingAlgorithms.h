@@ -20,6 +20,8 @@ public:
 	typedef sofa::core::topology::BaseMeshTopology::Index Index;
 	typedef sofa::core::topology::BaseMeshTopology::Edge Edge;	
 	typedef sofa::core::topology::BaseMeshTopology::Triangle Triangle;
+	typedef sofa::core::topology::BaseMeshTopology::Triangle Triangle;
+	typedef sofa::type::Vec<3, double> Vec3;
 
 	TearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
 		sofa::component::topology::TriangleSetTopologyModifier* _modifier,
@@ -41,9 +43,9 @@ public:
 
 	int getFractureNumber() const { return m_fractureNumber; }
 
-	const sofa::helper::vector< sofa::helper::vector<int> >& getTjunctionTriangles() const { return m_TjunctionTriangle; }
+	const sofa::type::vector< sofa::type::vector<int> >& getTjunctionTriangles() const { return m_TjunctionTriangle; }
 
-	const sofa::helper::vector<Coord>& getFracturePath() const { return m_fracturePath; }
+	const sofa::type::vector<Coord>& getFracturePath() const { return m_fracturePath; }
 
 protected:
 	/// <summary>
@@ -57,8 +59,8 @@ protected:
 	/// @param edges_list - list of edges intersect by the segment
 	/// @param coordsEdge_list - list of baryCoef for intersected edges
 	bool computeSegmentMeshIntersection(Coord Pa, Index indexA, Coord endPoint, bool& endPoint_inTriangle, 
-		Index& endPointTriangle, sofa::helper::vector<Index>& edges_list, 
-		sofa::helper::vector<double>& coordsEdge_list, const VecCoord& input_position);
+		Index& endPointTriangle, sofa::type::vector<Index>& edges_list, 
+		sofa::type::vector<double>& coordsEdge_list, const VecCoord& input_position);
 
 	/// <summary>
 	/// creating path through different element POINT or EDGE or TRIANGLE
@@ -83,12 +85,12 @@ protected:
 	/// @return coords_list - List of barycentric coordinate defining the position of the intersection in each object
 	void pathAdaptationObject(
 		double EPS,
-		bool pointB_inTriangle, Index triangleB, Coord Pb, sofa::helper::vector<Index> edges_listB, sofa::helper::vector<double> coordsEdge_listB, int& sizeB,
+		bool pointB_inTriangle, Index triangleB, Coord Pb, sofa::type::vector<Index> edges_listB, sofa::type::vector<double> coordsEdge_listB, int& sizeB,
 		Coord Pa, Index indexA,
-		bool pointC_inTriangle, Index triangleC, Coord Pc, sofa::helper::vector<Index> edges_listC, sofa::helper::vector<double> coordsEdge_listC, int& sizeC,
-		sofa::helper::vector< sofa::core::topology::TopologyElementType>& topoPath_list,
-		sofa::helper::vector<Index>& indices_list,
-		sofa::helper::vector< sofa::defaulttype::Vec<3, double> >& coords_list);
+		bool pointC_inTriangle, Index triangleC, Coord Pc, sofa::type::vector<Index> edges_listC, sofa::type::vector<double> coordsEdge_listC, int& sizeC,
+		sofa::type::vector< sofa::core::topology::TopologyElementType>& topoPath_list,
+		sofa::type::vector<Index>& indices_list,
+		sofa::type::vector< sofa::type::Vec<3, double> >& coords_list);
 
 	/// <summary>
 	/// Split triangles to create edges along a path given as a the list of existing edges and triangles crossed by it
@@ -108,20 +110,20 @@ protected:
 		int snapingValue, int snapingBorderValue,
 		Coord Pa, Coord Pb, Coord Pc,
 		int sizeB, int sizeC,
-		sofa::helper::vector< sofa::core::topology::TopologyElementType> topoPath_list,
-		sofa::helper::vector<Index> indices_list,
-		sofa::helper::vector< sofa::defaulttype::Vec<3, double> > coords_list,
-		sofa::helper::vector< Index >& new_edges);
+		sofa::type::vector< sofa::core::topology::TopologyElementType> topoPath_list,
+		sofa::type::vector<Index> indices_list,
+		sofa::type::vector< sofa::type::Vec<3, double> > coords_list,
+		sofa::type::vector< Index >& new_edges);
 
 protected:
 	/// number of fracture done by the algorithm
 	int m_fractureNumber;
 	
 	/// list of triangle where a T junction is blocking the algorithm
-	sofa::helper::vector< sofa::helper::vector<int> > m_TjunctionTriangle;
+	sofa::type::vector< sofa::type::vector<int> > m_TjunctionTriangle;
 
 	/// path created by algoFracturePath
-	sofa::helper::vector<Coord> m_fracturePath;
+	sofa::type::vector<Coord> m_fracturePath;
 
 	sofa::core::topology::BaseMeshTopology* m_topology;
 	sofa::component::topology::TriangleSetTopologyModifier* m_modifier;
