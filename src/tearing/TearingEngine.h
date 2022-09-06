@@ -75,7 +75,7 @@ public:
 	Data<bool> showTearableTriangle;
 	Data<bool> stepByStep;
 	Data<int> d_step;
-	Data<int> d_counter;
+	int m_counter;
 	Data<double> d_fractureMaxLength;
 	Data<vector<Index>> d_triangleToIgnoreList;
 	Data<bool> ignoreTriangleAtStart;
@@ -85,14 +85,14 @@ public:
 	/// </summary>
 	void triangleOverThresholdPrincipalStress();
 	
-	struct TriangleInformation
+	struct TriangleTearingInformation
 	{
 		//Real area;
 		type::Vec<3, Real> stress;
 		Real maxStress;
 		Coord principalStressDirection;
 	};
-	vector<TriangleInformation> m_triangleInfoTearing;
+	vector<TriangleTearingInformation> m_triangleInfoTearing;
 
 	/// <summary>
 	/// update d_triangleInfoTearing with value from d_triangleFEMInfo

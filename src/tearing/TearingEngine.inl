@@ -16,14 +16,13 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 55.0, "seuilStress", "threshold value for stress"))
     , d_triangleOverThresholdList(initData(&d_triangleOverThresholdList, "triangleOverThresholdList", "triangles with maxStress over threshold value"))
     , d_triangleToIgnoreList(initData(&d_triangleToIgnoreList, "triangleToIgnoreList", "triangles that can't be choosen as starting fracture point"))
-    , showChangedTriangle(initData(&showChangedTriangle, false,"showChangedTriangle", "Flag activating rendering of changed triangle"))
     , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
     , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
     , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
     , d_step(initData(&d_step, 20, "step", "step size"))
-    , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
+    , m_counter(0)
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
@@ -79,6 +78,7 @@ void TearingEngine<DataTypes>::init()
     m_topology->getContext()->get(m_triangularFEM);
     if (!m_triangularFEM)
     {
+        msg_warning() << "Not using TriangularFEMForceField component";
         //msg_error() << "Missing component: Unable to get TriangularFEMForceField from the current context.";
         //sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         //return;
@@ -88,6 +88,7 @@ void TearingEngine<DataTypes>::init()
     m_topology->getContext()->get(m_triangularFEMOptim);
     if (!m_triangularFEMOptim)
     {
+        msg_warning() << "Not using TriangularFEMForceField Optim component";
         //msg_error() << "Missing component: Unable to get TriangularFEMForceFieldOptim from the current context.";
         //sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         //return;
@@ -105,7 +106,6 @@ void TearingEngine<DataTypes>::init()
         computeTriangleToSkip();
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
-    d_counter.setValue(0);
     
     if (m_tearingAlgo == nullptr)
         m_tearingAlgo = new TearingAlgorithms<DataTypes>(m_topology, m_modifier, m_triangleGeo);
@@ -120,8 +120,7 @@ void TearingEngine<DataTypes>::reinit()
 template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
 {
-    d_counter.setValue(d_counter.getValue() + 1);
-    std::cout << "counter=" << d_counter.getValue() << std::endl;
+    m_counter++;
 
     if (ignoreTriangleAtStart.getValue())
     {
@@ -153,107 +152,6 @@ void TearingEngine<DataTypes>::doUpdate()
 }
 
 
-template <class DataTypes>
-void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
-{
- 
-
-    if (showTearableTriangle.getValue())
-    {
-        VecElement triangleList = m_topology->getTriangles();
-        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
-        helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        std::vector<Vec3> vertices;
-        sofa::helper::types::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
-        std::vector<Vec3> tearTriangleVertices;
-        sofa::helper::types::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
-        if (candidate.size() > 0)
-        {
-            for (unsigned int i = 0; i < candidate.size(); i++)
-            {
-                if(candidate[i]!= d_indexTriangleMaxStress.getValue())
-                {
-                Coord Pa = x[triangleList[candidate[i]][0]];
-                Coord Pb = x[triangleList[candidate[i]][1]];
-                Coord Pc = x[triangleList[candidate[i]][2]];
-                vertices.push_back(Pa);
-                vertices.push_back(Pb);
-                vertices.push_back(Pc);
-                }
-                else
-                {
-                    Coord Pa = x[triangleList[candidate[i]][0]];
-                    Coord Pb = x[triangleList[candidate[i]][1]];
-                    Coord Pc = x[triangleList[candidate[i]][2]];
-                    tearTriangleVertices.push_back(Pa);
-                    tearTriangleVertices.push_back(Pb);
-                    tearTriangleVertices.push_back(Pc);
-                }
-            }
-            vparams->drawTool()->drawTriangles(vertices, color);
-            vparams->drawTool()->drawTriangles(tearTriangleVertices, color2);
-
-            std::vector<Vec3> vecteur;
-            Coord principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-            Coord Pa = x[d_indexVertexMaxStress.getValue()];
-
-            vecteur.push_back(Pa);
-            vecteur.push_back(Pa + principalStressDirection);
-            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(0, 1, 0, 1));
-            vecteur.clear();
-            Coord fractureDirection;
-            fractureDirection[0] = -principalStressDirection[1];
-            fractureDirection[1] = principalStressDirection[0];
-            vecteur.push_back(Pa);
-            vecteur.push_back(Pa + fractureDirection);
-            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1.0, 0.65, 0.0, 1.0));
-            vecteur.clear();
-        }
-    }
-
-    if (showFracturePath.getValue())
-    {
-        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
-        if (candidate.size() > 0)
-        {
-            helper::ReadAccessor< Data<VecCoord> > x(input_position);
-            Coord principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-            Coord Pa = x[d_indexVertexMaxStress.getValue()];
-            Coord fractureDirection;
-            fractureDirection[0] = -principalStressDirection[1];
-            fractureDirection[1] = principalStressDirection[0];
-
-            vector<Coord> points;
-            Real norm_fractureDirection = fractureDirection.norm();
-            Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            points.push_back(Pb);
-            points.push_back(Pc);
-            vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::helper::types::RGBAColor(1, 0.5, 0, 1));
-            points.clear();
-
-            const vector<Coord>& path = m_tearingAlgo->getFracturePath();
-            if (!path.empty())
-                vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
-        }
-    }
-}
-
-template <class DataTypes>
-void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
-{
-    if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateBeginEvent::checkEventType(event))
-    {
-        if ( ((d_counter.getValue() % d_step.getValue()) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
-        {
-            if(d_counter.getValue()>d_step.getValue())
-                algoFracturePath();
-        }
-    }
-}
-
-
 
 // --------------------------------------------------------------------------------------
 // --- Computation methods
@@ -280,7 +178,8 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     {
         if (std::find(triangleToSkip.begin(), triangleToSkip.end(), i) == triangleToSkip.end())
         {
-            TriangleInformation& tinfo = m_triangleInfoTearing[i];
+            TriangleTearingInformation& tinfo = m_triangleInfoTearing[i];
+            
             if (tinfo.maxStress >= threshold)
             {
                 candidate.push_back(i);
@@ -292,13 +191,15 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             }
         }
     }
+
     if (candidate.size())
     {
         Index& indexVertexMaxStress = *(d_indexVertexMaxStress.beginEdit());
-        TriangleInformation& tinfo = m_triangleInfoTearing[indexTriangleMaxStress];
+        TriangleTearingInformation& tinfo = m_triangleInfoTearing[indexTriangleMaxStress];
         Index k = (tinfo.stress[0] > tinfo.stress[1]) ? 0 : 1;
         k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
-        indexVertexMaxStress = triangleList[indexTriangleMaxStress][k];      
+        indexVertexMaxStress = triangleList[indexTriangleMaxStress][k];
+        //d_step.setValue(0);
         d_indexVertexMaxStress.endEdit();
     }
     d_maxStress.endEdit();
@@ -321,19 +222,19 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
     {
         // Access list of triangularFEM info per triangle
         helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
-
+        //const VecTriangleFEMInformation& triangleFEMInf = m_triangularFEM->triangleInfo.getValue();
         if (triangleFEMInf.size() != triangleList.size())
         {
-            msg_warning() << "VecTriangleFEMInformation is not the same size as le list of triangles";
+            msg_warning() << "VecTriangleFEMInformation of size: " << triangleFEMInf.size() << " is not the same size as le list of triangles: " << triangleList.size();
             return;
         }
 
         m_triangleInfoTearing.resize(triangleList.size());
         for (unsigned int i = 0; i < triangleList.size(); i++)
         {
-            TriangleFEMInformation tFEMinfo = triangleFEMInf[i];
+            const TriangleFEMInformation& tFEMinfo = triangleFEMInf[i];
             m_triangleInfoTearing[i].stress = tFEMinfo.stress;
-            m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress;
+            m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress * tFEMinfo.area;
             m_triangleInfoTearing[i].principalStressDirection = tFEMinfo.principalStressDirection;
         }
     }
@@ -341,21 +242,26 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
     {
         typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::TriangleState TriangleState;
         typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::VecTriangleState VecTriangleState;
-
+        typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::TriangleInfo TriangleInfo;
+        typedef typename sofa::component::forcefield::TriangularFEMForceFieldOptim<DataTypes>::VecTriangleInfo VecTriangleInfo;
+        
         // Access list of triangularFEM info per triangle
-        helper::ReadAccessor< Data<VecTriangleState> > triangleFEMInf(m_triangularFEMOptim->d_triangleState);
+        helper::ReadAccessor< Data<VecTriangleState> > triangleFEMState(m_triangularFEMOptim->d_triangleState);
+        helper::ReadAccessor< Data<VecTriangleInfo> > triangleFEMInf(m_triangularFEMOptim->d_triangleInfo);
         if (triangleFEMInf.size() != triangleList.size())
         {
-            msg_warning() << "VecTriangleFEMInformation is not the same size as le list of triangles";
+            msg_warning() << "VecTriangleFEMInformation of size: " << triangleFEMInf.size() << " is not the same size as le list of triangles: " << triangleList.size();
             return;
         }
 
         m_triangleInfoTearing.resize(triangleList.size());
         for (unsigned int i = 0; i < triangleList.size(); i++)
         {
-            TriangleState tFEMinfo = triangleFEMInf[i];
-            m_triangleInfoTearing[i].stress = tFEMinfo.stress;
+            TriangleState tState = triangleFEMState[i];
+            TriangleInfo tInfo = triangleFEMInf[i];
+            m_triangleInfoTearing[i].stress = tState.stress;
             m_triangularFEMOptim->getTrianglePrincipalStress(i, m_triangleInfoTearing[i].maxStress, m_triangleInfoTearing[i].principalStressDirection);
+            m_triangleInfoTearing[i].maxStress /= tInfo.ss_factor;
         }
     }
 }
@@ -526,6 +432,8 @@ void TearingEngine<DataTypes>::algoFracturePath()
         }
 
         m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, d_indexTriangleMaxStress.getValue(), principalStressDirection, input_position.getValue());
+        if (d_step.getValue() == 0) // reset to 0
+            m_counter = 0;
     }
 }
 
@@ -564,6 +472,113 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
             }
         }
     }   
+}
+
+
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
+{
+    if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateEndEvent::checkEventType(event))
+    {
+        int step = d_step.getValue();
+        if (step == 0) // interactive version
+        {
+            if (m_counter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
+                algoFracturePath();
+        }
+        else if (((m_counter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
+        {
+            if (m_counter > d_step.getValue())
+                algoFracturePath();
+        }
+    }
+
+}
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
+{    
+    if (showTearableTriangle.getValue())
+    {
+        VecElement triangleList = m_topology->getTriangles();
+        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
+        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        std::vector<Vec3> vertices;
+        sofa::helper::types::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
+        std::vector<Vec3> tearTriangleVertices;
+        sofa::helper::types::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
+        if (candidate.size() > 0)
+        {
+            for (unsigned int i = 0; i < candidate.size(); i++)
+            {
+                if (candidate[i] != d_indexTriangleMaxStress.getValue())
+                {
+                    Coord Pa = x[triangleList[candidate[i]][0]];
+                    Coord Pb = x[triangleList[candidate[i]][1]];
+                    Coord Pc = x[triangleList[candidate[i]][2]];
+                    vertices.push_back(Pa);
+                    vertices.push_back(Pb);
+                    vertices.push_back(Pc);
+                }
+                else
+                {
+                    Coord Pa = x[triangleList[candidate[i]][0]];
+                    Coord Pb = x[triangleList[candidate[i]][1]];
+                    Coord Pc = x[triangleList[candidate[i]][2]];
+                    tearTriangleVertices.push_back(Pa);
+                    tearTriangleVertices.push_back(Pb);
+                    tearTriangleVertices.push_back(Pc);
+                }
+            }
+            vparams->drawTool()->drawTriangles(vertices, color);
+            vparams->drawTool()->drawTriangles(tearTriangleVertices, color2);
+
+            std::vector<Vec3> vecteur;
+            Coord principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+            Coord Pa = x[d_indexVertexMaxStress.getValue()];
+
+            vecteur.push_back(Pa);
+            vecteur.push_back(Pa + principalStressDirection);
+            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+            vecteur.clear();
+            Coord fractureDirection;
+            fractureDirection[0] = -principalStressDirection[1];
+            fractureDirection[1] = principalStressDirection[0];
+            vecteur.push_back(Pa);
+            vecteur.push_back(Pa + fractureDirection);
+            vparams->drawTool()->drawLines(vecteur, 1, sofa::helper::types::RGBAColor(1.0, 0.65, 0.0, 1.0));
+            vecteur.clear();
+        }
+    }
+
+    if (showFracturePath.getValue())
+    {
+        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
+        if (candidate.size() > 0)
+        {
+            helper::ReadAccessor< Data<VecCoord> > x(input_position);
+            Coord principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+            Coord Pa = x[d_indexVertexMaxStress.getValue()];
+            Coord fractureDirection;
+            fractureDirection[0] = -principalStressDirection[1];
+            fractureDirection[1] = principalStressDirection[0];
+
+            vector<Coord> points;
+            Real norm_fractureDirection = fractureDirection.norm();
+            Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            points.push_back(Pb);
+            points.push_back(Pc);
+            vparams->drawTool()->drawPoints(points, 10, sofa::helper::types::RGBAColor(1, 0.5, 0.5, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::helper::types::RGBAColor(1, 0.5, 0, 1));
+            points.clear();
+
+            const vector<Coord>& path = m_tearingAlgo->getFracturePath();
+            if (!path.empty())
+                vparams->drawTool()->drawPoints(path, 10, sofa::helper::types::RGBAColor(0, 1, 0, 1));
+        }
+    }
 }
 
 } //namespace sofa::component::engine
