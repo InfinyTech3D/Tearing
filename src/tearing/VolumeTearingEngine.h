@@ -11,8 +11,6 @@
 #include <sofa/simulation/AnimateEndEvent.h>
 //#include <sofa/component/solidmechanics/fem/elastic/TetrahedronFEMForceField.h>
 #include <sofa/component/solidmechanics/fem/elastic/TetrahedralCorotationalFEMForceField.h>
-#include <sofa/component/mechanicalload/ConstantForceField.h>
-#include <sofa/component/constraint/projective/FixedConstraint.h>
 #include <MeshRefinement/TetrahedronCuttingManager.h>
 
 using sofa::meshrefinement::TetrahedronCuttingManager;
