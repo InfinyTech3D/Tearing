@@ -25,13 +25,13 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
     <RequiredPlugin name="tearing"/>	
 
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
+
+    <DefaultAnimationLoop />
     <DefaultPipeline verbose="0" />
-    <BruteForceDetection name="N2" />
+    <BruteForceBroadPhase/>
+    <BVHNarrowPhase/>
     <DefaultContactManager response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
-
-		
-	
 	
     <Node name="SquareGravity">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
@@ -46,8 +46,6 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="0.15" />
 		
-		<StressDetector name='StressDetector'/>
-		
 		<!--Modification de la fixed constraint pour y mettre une Box constraint-->
 		<!--FixedConstraint indices="0 1" /-->
 		<BoxROI name="FixedSide" box="-5.1 9.9 0.1 5.1 10.1 -0.1" drawBoxes="1" />              <!--box="x1 y1 z1 x2 y2 z2"-->
@@ -56,15 +54,12 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
 		<BoxROI template="Vec3d" name="PulledSide" box="-5.1 0.1 0.1  5.1 -0.1 -0.1" drawBoxes="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -100 0" showArrowSize=".01" />
 		
-		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" seuilStress="0.9" step="0" nbFractureMax="100"/>
 
-		
-		
-		
         <Node >
             <OglModel name="Visual" color="red" />
             <IdentityMapping input="@.." output="@Visual" />

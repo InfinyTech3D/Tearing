@@ -23,14 +23,14 @@ Nous tirons de chaque côté avec une force équivalente-->
     <RequiredPlugin name="Sofa.Component.Collision.Detection.Algorithm"/> <!-- Needed to use components [BVHNarrowPhase, BruteForceBroadPhase, BruteForceDetection, DefaultPipeline] -->  
     <RequiredPlugin name="tearing"/>
     
-	
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
+
+    <DefaultAnimationLoop />
     <DefaultPipeline verbose="0" />
-    <BruteForceDetection name="N2" />
+    <BruteForceBroadPhase/>
+    <BVHNarrowPhase/>
     <DefaultContactManager response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
-	
-	
 	
     <Node name="SquareGravity">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
@@ -52,14 +52,12 @@ Nous tirons de chaque côté avec une force équivalente-->
 
 		<BoxROI template="Vec3d" name="PulledSide2" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
 		<ConstantForceField name="CFF2" indices="@PulledSide2.indices" force="0 -100 0" showArrowSize=".01" />
-		
-		<TearingEngine name="TearingEngine" input_position="@Mo.position"/>
+				
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		
-		
-		
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" seuilStress="0.2" step="0" nbFractureMax="100"/>
         <Node >
             <OglModel name="Visual" color="red" />
             <IdentityMapping input="@.." output="@Visual" />
