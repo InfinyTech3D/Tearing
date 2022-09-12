@@ -19,10 +19,10 @@ public:
 	typedef typename DataTypes::Coord Coord;
 	typedef typename DataTypes::VecCoord VecCoord;
 
-	typedef sofa::core::topology::BaseMeshTopology::Index Index;
-	typedef sofa::core::topology::BaseMeshTopology::Edge Edge;	
-    typedef sofa::core::topology::BaseMeshTopology::Triangle Triangle;
-	typedef sofa::type::Vec<3, double> Vec3;
+	using Index = sofa::core::topology::BaseMeshTopology::Index;
+	using Edge = sofa::core::topology::BaseMeshTopology::Edge;
+	using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
+	using VecIds = sofa::type::vector<Index>;
 
 	TearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
 		TriangleSetTopologyModifier* _modifier,
@@ -60,7 +60,7 @@ protected:
 	/// @param edges_list - list of edges intersect by the segment
 	/// @param coordsEdge_list - list of baryCoef for intersected edges
 	bool computeSegmentMeshIntersection(Coord Pa, Index indexA, Coord endPoint, bool& endPoint_inTriangle, 
-		Index& endPointTriangle, sofa::type::vector<Index>& edges_list, 
+		Index& endPointTriangle, VecIds& edges_list, 
 		sofa::type::vector<double>& coordsEdge_list, const VecCoord& input_position);
 
 	/// <summary>
@@ -86,11 +86,11 @@ protected:
 	/// @return coords_list - List of barycentric coordinate defining the position of the intersection in each object
 	void pathAdaptationObject(
 		double EPS,
-		bool pointB_inTriangle, Index triangleB, Coord Pb, sofa::type::vector<Index> edges_listB, sofa::type::vector<double> coordsEdge_listB, int& sizeB,
+		bool pointB_inTriangle, Index triangleB, Coord Pb, VecIds edges_listB, sofa::type::vector<double> coordsEdge_listB, int& sizeB,
 		Coord Pa, Index indexA,
-		bool pointC_inTriangle, Index triangleC, Coord Pc, sofa::type::vector<Index> edges_listC, sofa::type::vector<double> coordsEdge_listC, int& sizeC,
+		bool pointC_inTriangle, Index triangleC, Coord Pc, VecIds edges_listC, sofa::type::vector<double> coordsEdge_listC, int& sizeC,
 		sofa::type::vector< sofa::core::topology::TopologyElementType>& topoPath_list,
-		sofa::type::vector<Index>& indices_list,
+		VecIds& indices_list,
 		sofa::type::vector< sofa::type::Vec<3, double> >& coords_list);
 
 	/// <summary>
@@ -112,11 +112,11 @@ protected:
 		Coord Pa, Coord Pb, Coord Pc,
 		int sizeB, int sizeC,
 		sofa::type::vector< sofa::core::topology::TopologyElementType> topoPath_list,
-		sofa::type::vector<Index> indices_list,
+		VecIds indices_list,
 		sofa::type::vector< sofa::type::Vec<3, double> > coords_list,
 		sofa::type::vector< Index >& new_edges);
 
-protected:
+private:
 	/// number of fracture done by the algorithm
 	int m_fractureNumber;
 	

@@ -1,5 +1,5 @@
 #pragma once
-#include "TearingEngine.h"
+#include <tearing/TearingEngine.h>
 
 #include <sofa/core/visual/VisualParams.h>
 #include <sofa/type/RGBAColor.h>
@@ -10,6 +10,9 @@
 
 namespace sofa::component::engine
 {
+
+using sofa::type::Vec3;
+
 template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
     : input_position(initData(&input_position, "input_position", "Input position"))
@@ -161,12 +164,12 @@ void TearingEngine<DataTypes>::doUpdate()
 template <class DataTypes>
 void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
 {
-    VecElement triangleList = m_topology->getTriangles();
+    const VecTriangles& triangleList = m_topology->getTriangles();
 
     if (m_triangleInfoTearing.size() != triangleList.size()) // not ready
         return;
 
-    helper::ReadAccessor< Data<double> > threshold(d_seuilPrincipalStress);
+    double threshold = d_seuilPrincipalStress.getValue();
     helper::WriteAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
     Real& maxStress = *(d_maxStress.beginEdit());
     Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
@@ -216,13 +219,12 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
         return;
 
     // Access list of triangles
-    VecElement triangleList = m_topology->getTriangles();
+    const VecTriangles& triangleList = m_topology->getTriangles();
 
     if (m_triangularFEM)
     {
         // Access list of triangularFEM info per triangle
         helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
-        //const VecTriangleFEMInformation& triangleFEMInf = m_triangularFEM->triangleInfo.getValue();
         if (triangleFEMInf.size() != triangleList.size())
         {
             msg_warning() << "VecTriangleFEMInformation of size: " << triangleFEMInf.size() << " is not the same size as le list of triangles: " << triangleList.size();
@@ -452,6 +454,7 @@ void TearingEngine<DataTypes>::computeEndPoints(
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 }
 
+
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
@@ -461,10 +464,10 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
 
     for (sofa::component::mechanicalload::ConstantForceField<DataTypes>* cff_i : m_ConstantForceFields)
     {
-        vector<Index> vertexToSkip = cff_i->d_indices.getValue();
+        const vector<Index>& vertexToSkip = cff_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)
         {
-            vector<Index> triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vertexToSkip[i]);
+            const vector<Index>& triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vertexToSkip[i]);
             for (unsigned int j = 0; j < triangleAroundVertex_i.size(); j++)
             {
                 if (std::find(triangleToSkip.begin(), triangleToSkip.end(), triangleAroundVertex_i[j]) == triangleToSkip.end())
@@ -501,7 +504,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 {    
     if (showTearableTriangle.getValue())
     {
-        VecElement triangleList = m_topology->getTriangles();
+        VecTriangles triangleList = m_topology->getTriangles();
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         std::vector<Vec3> vertices;

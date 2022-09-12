@@ -40,15 +40,13 @@ public:
 	typedef typename DataTypes::Coord Coord;
 	typedef typename DataTypes::VecCoord VecCoord;
 
-	typedef sofa::core::topology::BaseMeshTopology::Index Index;
-	typedef sofa::core::topology::BaseMeshTopology::Edge Edge;
-	typedef sofa::core::topology::BaseMeshTopology::Triangle Element;
-	typedef sofa::core::topology::BaseMeshTopology::SeqTriangles VecElement;
+	using Index = sofa::core::topology::BaseMeshTopology::Index;
+	using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
+	using VecTriangles = sofa::core::topology::BaseMeshTopology::SeqTriangles;
 	
-	typedef sofa::type::Vec<3, double> Vec3;
-	typedef type::Mat<3, 3, Real > Transformation;				    ///< matrix for rigid transformations like rotations
-	typedef type::Mat<6, 3, Real> StrainDisplacement;				    ///< the strain-displacement matrix
-
+	using Transformation = type::Mat3x3;                 ///< matrix for rigid transformations like rotations
+	using StrainDisplacement = type::Mat<6, 3, Real>;    ///< the strain-displacement matrix
+	
 	typedef typename sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
 	typedef sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;
 
@@ -129,11 +127,13 @@ public:
 
 protected:
 	/// Pointer to the current topology
-	sofa::core::topology::BaseMeshTopology* m_topology;
-	TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
+	sofa::core::topology::BaseMeshTopology* m_topology = nullptr;
+	TriangleSetTopologyModifier* m_modifier = nullptr;
+	TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo = nullptr;
+
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM;
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim;
-	TriangleSetTopologyModifier* m_modifier;
+	
 private:
 	sofa::helper::ColorMap* p_drawColorMap;
 
