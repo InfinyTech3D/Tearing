@@ -67,6 +67,34 @@ jobs:
           name: Tearing_${{ steps.sofa.outputs.run_branch }}_for-SOFA-${{ steps.sofa.outputs.sofa_version }}_${{ runner.os }}
           path: ${{ env.WORKSPACE_ARTIFACT_PATH }}
 
+      - name: Set env vars for tests
+        shell: bash
+        run: |
+          # Set env vars for tests
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            echo "$WORKSPACE_ARTIFACT_PATH/lib" >> $GITHUB_PATH
+            echo "$WORKSPACE_ARTIFACT_PATH/bin" >> $GITHUB_PATH
+            echo "SOFA_PLUGIN_PATH=$WORKSPACE_ARTIFACT_PATH/bin" | tee -a $GITHUB_ENV
+          else
+            echo "SOFA_PLUGIN_PATH=$WORKSPACE_ARTIFACT_PATH/lib" | tee -a $GITHUB_ENV
+          fi
+
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            echo "DYLD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$DYLD_LIBRARY_PATH" | tee -a $GITHUB_ENV
+          fi
+
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            echo "LD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$LD_LIBRARY_PATH" | tee -a $GITHUB_ENV
+          fi
+
+      - name: Run Tearing_test
+        if: always()
+        shell: bash
+        run: |
+          chmod +x $WORKSPACE_BUILD_PATH/bin/Tearing_test${{ steps.sofa.outputs.exe }}
+          cd $WORKSPACE_BUILD_PATH
+          ./bin/Tearing_test${{ steps.sofa.outputs.exe }}
+
   deploy:
     name: Deploy artifacts
     if: always() && startsWith(github.ref, 'refs/heads/') # we are on a branch (not a PR)
