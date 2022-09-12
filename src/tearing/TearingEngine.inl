@@ -70,33 +70,6 @@ void TearingEngine<DataTypes>::init()
         return;
     }
 
-    m_topology->getContext()->get(m_triangleGeo);
-    if (!m_triangleGeo)
-    {
-        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
-        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
-        return;
-    }
-
-    m_topology->getContext()->get(m_triangularFEM);
-    if (!m_triangularFEM)
-    {
-        msg_warning() << "Not using TriangularFEMForceField component";
-        //msg_error() << "Missing component: Unable to get TriangularFEMForceField from the current context.";
-        //sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
-        //return;
-    }
-
-
-    m_topology->getContext()->get(m_triangularFEMOptim);
-    if (!m_triangularFEMOptim)
-    {
-        msg_warning() << "Not using TriangularFEMForceField Optim component";
-        //msg_error() << "Missing component: Unable to get TriangularFEMForceFieldOptim from the current context.";
-        //sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
-        //return;
-    }
-
     m_topology->getContext()->get(m_modifier);
     if (!m_modifier)
     {
@@ -105,8 +78,39 @@ void TearingEngine<DataTypes>::init()
         return;
     }
 
+    m_topology->getContext()->get(m_triangleGeo);
+    if (!m_triangleGeo)
+    {
+        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+        return;
+    }
+
+
+    m_topology->getContext()->get(m_triangularFEM);
+    if (m_triangularFEM)
+    {
+        msg_info() << "Using TriangularFEMForceField component";
+    }
+    else
+    {
+        m_topology->getContext()->get(m_triangularFEMOptim);
+        if (m_triangularFEMOptim)
+        {
+            msg_info() << "Using TriangularFEMForceFieldOptim component";
+        }
+        else
+        {
+            msg_error() << "Missing component: Unable to get TriangularFEMForceField or TriangularFEMForceFieldOptim from the current context.";
+            sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+            return;
+        }
+    }
+    
+
     if (ignoreTriangleAtStart.getValue())
         computeTriangleToSkip();
+
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
     
@@ -181,16 +185,18 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     {
         if (std::find(triangleToSkip.begin(), triangleToSkip.end(), i) == triangleToSkip.end())
         {
-            TriangleTearingInformation& tinfo = m_triangleInfoTearing[i];
             
+            TriangleTearingInformation& tinfo = m_triangleInfoTearing[i];
+           
             if (tinfo.maxStress >= threshold)
             {
                 candidate.push_back(i);
-                if (tinfo.maxStress > maxStress)
-                {
-                    indexTriangleMaxStress = i;
-                    maxStress = tinfo.maxStress;
-                }
+            }
+
+            if (tinfo.maxStress > maxStress)
+            {
+                indexTriangleMaxStress = i;
+                maxStress = tinfo.maxStress;
             }
         }
     }
