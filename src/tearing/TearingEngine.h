@@ -1,7 +1,7 @@
 #pragma once
 
-#include <tearing/config.h>
-#include <tearing/TearingAlgorithms.h>
+#include <Tearing/config.h>
+#include <Tearing/TearingAlgorithms.h>
 
 #include <sofa/core/DataEngine.h>
 #include <sofa/core/objectmodel/BaseObject.h>

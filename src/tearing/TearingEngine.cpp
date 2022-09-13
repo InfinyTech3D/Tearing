@@ -1,5 +1,5 @@
 #define SOFA_COMPONENT_ENGINE_TEARINGENGINE_CPP
-#include <tearing/TearingEngine.inl>
+#include <Tearing/TearingEngine.inl>
 #include <sofa/core/ObjectFactory.h>
 #include <sofa/defaulttype/VecTypes.h>
 

@@ -1,5 +1,5 @@
 #define SOFA_TEARING_ALGORITHMS_CPP
-#include <tearing/TearingAlgorithms.inl>
+#include <Tearing/TearingAlgorithms.inl>
 #include <sofa/defaulttype/VecTypes.h>
 
 namespace sofa::component
