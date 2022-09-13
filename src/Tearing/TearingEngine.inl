@@ -1,5 +1,5 @@
 #pragma once
-#include <tearing/TearingEngine.h>
+#include <Tearing/TearingEngine.h>
 
 #include <sofa/core/visual/VisualParams.h>
 #include <sofa/type/RGBAColor.h>

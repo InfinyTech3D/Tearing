@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(tearing VERSION 1.0)
+project(Tearing VERSION 1.0)
 
 # SOFA packages containing our dependencies
 find_package(Sofa.Component.Topology.Container.Dynamic REQUIRED)
@@ -7,7 +7,7 @@ find_package(Sofa.Component.SolidMechanics.FEM.Elastic REQUIRED)
 find_package(Sofa.Component.MechanicalLoad REQUIRED)
 
 
-set(TEARING_SRC_DIR src/tearing)
+set(TEARING_SRC_DIR src/Tearing)
 
 # Our nice new SOFA Components
 set(HEADER_FILES
@@ -55,6 +55,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE "-DSOFA_BUILD_TEARING_PLUGIN"
 target_link_libraries(${PROJECT_NAME} Sofa.Component.Topology.Container.Dynamic 
     Sofa.Core Sofa.Component.SolidMechanics.FEM.Elastic 
     Sofa.Component.MechanicalLoad)
+
+target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
+target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>")
+target_include_directories(${PROJECT_NAME} PUBLIC "$<INSTALL_INTERFACE:include>")
 
 # Dependencies
 if (MeshRefinement_FOUND)

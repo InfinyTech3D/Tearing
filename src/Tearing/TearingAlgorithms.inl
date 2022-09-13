@@ -1,5 +1,5 @@
 #pragma once
-#include <tearing/TearingAlgorithms.h>
+#include <Tearing/TearingAlgorithms.h>
 
 namespace sofa::component
 {

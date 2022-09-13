@@ -1,6 +1,6 @@
 #pragma once
 
-#include <tearing/config.h>
+#include <Tearing/config.h>
 #include <sofa/defaulttype/VecTypes.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
