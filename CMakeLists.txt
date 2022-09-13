@@ -77,7 +77,11 @@ sofa_create_package_with_targets(
     EXAMPLE_INSTALL_DIR "scenes"
     RELOCATABLE "plugins"
     )
-    
+
+
+if(SOFA_BUILD_TESTS)
+    add_subdirectory(Tearing_test)
+endif()
 
 # Organize projects into folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
