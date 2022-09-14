@@ -22,7 +22,7 @@ jobs:
         with:
           sofa_root: ${{ github.workspace }}/sofa
           sofa_version: ${{ matrix.sofa_branch }}
-          sofa_scope: 'full'
+          sofa_scope: 'standard'
       
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -95,4 +95,7 @@ jobs:
           tag_name: release-${{ github.ref_name }}
           fail_on_unmatched_files: true
           files: |
-            artifacts/Tearing*_Windows.zip
+            artifacts/Tearing_*_Linux.zip
+            artifacts/Tearing_*_Windows.zip
+            artifacts/Tearing_*_macOS.zip
+
