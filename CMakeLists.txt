@@ -80,10 +80,10 @@ sofa_create_package_with_targets(
 
 # If SOFA_BUILD_TESTS exists and is OFF, then these tests will be auto-disabled
 cmake_dependent_option(TEARING_BUILD_TESTS "Compile the automatic tests" ON "SOFA_BUILD_TESTS OR NOT DEFINED SOFA_BUILD_TESTS" OFF)
-if(TEARING_BUILD_TESTS)
+#if(TEARING_BUILD_TESTS)
     enable_testing()
     add_subdirectory(Tearing_test)
-endif()
+#endif()
 
 # Organize projects into folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
