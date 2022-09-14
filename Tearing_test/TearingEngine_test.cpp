@@ -74,7 +74,7 @@ protected:
             return nullptr;
         }
 
-        return topoCon
+        return topoCon;
     }
 
 
