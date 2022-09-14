@@ -1,8 +1,11 @@
 //#include "TopologySceneLoader.h"
 #include <sofa/testing/BaseSimulationTest.h>
+
+#include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
 #include <sofa/helper/system/FileRepository.h>
 
 using namespace sofa::testing;
+using namespace sofa::component::topology::container::dynamic;
 
 class TearingEngine_test : public BaseSimulationTest
 {
@@ -47,8 +50,33 @@ public:
     }
 
 protected:
-    /// Internal Method to load a scene to be tested given its filename
-    bool loadScene(const std::string& filename);
+    TriangleSetTopologyContainer* getTopology()
+    {
+        Node::SPtr root = m_instance.root;
+
+        if (!root)
+        {
+            ADD_FAILURE() << "Error while loading the scene: " << m_fileName << std::endl;
+            return nullptr;
+        }
+
+        Node::SPtr nodeTopo = root.get()->getChild("SquareGravity");
+        if (!nodeTopo)
+        {
+            ADD_FAILURE() << "Error 'SquareGravity' Node not found in scene: " << m_fileName << std::endl;
+            return nullptr;
+        }
+
+        TriangleSetTopologyContainer* topoCon = dynamic_cast<TriangleSetTopologyContainer*>(nodeTopo->getMeshTopology());
+        if (topoCon == nullptr)
+        {
+            ADD_FAILURE() << "Error: TriangleSetTopologyContainer not found in 'SquareGravity' Node, in scene: " << m_fileName << std::endl;
+            return nullptr;
+        }
+
+        return topoCon
+    }
+
 
 private:
     /// pointer to the topology scene
@@ -60,40 +88,49 @@ private:
 };
 
 
-bool TearingEngine_test::loadScene(const std::string& filename)
-{
-    // Create and test scene
-    //m_scene = new TopologySceneLoader(filename, sofa::core::topology::TopologyElementType::TETRAHEDRON);
-    //if (m_scene == nullptr)
-    //    return false;
-
-    //m_simulation = m_scene->getSimulation();
-    //if (m_simulation == nullptr)
-    //{
-    //    return false;
-    //}
-
-
-    return true;
-}
-
-
 
 
 struct TearingEngine_Case1 : public TearingEngine_test
 {
     TearingEngine_Case1() : TearingEngine_test()
     {
-        m_fileName = "TearingEngine_scenes/CasTest1.scn";
+        m_fileName = "TearingEngine_scenes/scenarios/scenario1.scn";
     }
 
     bool testInit() override
     {
+        TriangleSetTopologyContainer* topoCon = this->getTopology();
+        if (topoCon == nullptr)
+        {
+            return false;
+        }
+
+        // check topology at start
+        EXPECT_EQ(topoCon->getNbTriangles(), 1450);
+        EXPECT_EQ(topoCon->getNbEdges(), 2223);
+        EXPECT_EQ(topoCon->getNbPoints(), 774);
+
         return true;
     }
 
     bool testTearing()
     {
+        TriangleSetTopologyContainer* topoCon = this->getTopology();
+        if (topoCon == nullptr)
+        {
+            return false;
+        }
+
+        // to test incise animates the scene at least 1.2s
+        for (int i = 0; i < 100; i++)
+        {
+            m_instance.simulate(0.05);
+        }
+
+        EXPECT_EQ(topoCon->getNbTriangles(), 1450);
+        EXPECT_EQ(topoCon->getNbEdges(), 2223);
+        EXPECT_EQ(topoCon->getNbPoints(), 774);
+
         return true;
     }
 };
