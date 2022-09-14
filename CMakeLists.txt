@@ -74,6 +74,11 @@ sofa_create_package_with_targets(
     TARGETS ${PROJECT_NAME} AUTO_SET_TARGET_PROPERTIES
     INCLUDE_SOURCE_DIR "src"
     INCLUDE_INSTALL_DIR ${PROJECT_NAME}
+    EXAMPLE_INSTALL_DIR "scenes"
     RELOCATABLE "plugins"
     )
     
+
+# Organize projects into folders
+SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
+SET_PROPERTY(TARGET ${PROJECT_NAME} PROPERTY FOLDER "plugins")

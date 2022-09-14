@@ -19,7 +19,7 @@
 *                                                                             *
 * Contact information: contact@sofa-framework.org                             *
 ******************************************************************************/
-#include <tearing/config.h>
+#include <Tearing/config.h>
 
 namespace sofa
 {
