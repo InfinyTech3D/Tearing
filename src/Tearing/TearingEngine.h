@@ -50,6 +50,8 @@ public:
 	typedef typename sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
 	typedef sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;
 
+	typedef typename sofa::component::mechanicalload::ConstantForceField<DataTypes> T_ConstantForceField;
+
 protected:
 	TearingEngine();
 	~TearingEngine() override {}

@@ -465,10 +465,10 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
-    vector<sofa::component::mechanicalload::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
-    this->getContext()->get< sofa::component::mechanicalload::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
+    vector<T_ConstantForceField*>  m_ConstantForceFields;
+    this->getContext()->get< T_ConstantForceField >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
 
-    for (sofa::component::mechanicalload::ConstantForceField<DataTypes>* cff_i : m_ConstantForceFields)
+    for (T_ConstantForceField* cff_i : m_ConstantForceFields)
     {
         const vector<Index>& vertexToSkip = cff_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)
