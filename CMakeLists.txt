@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(Tearing VERSION 1.0)
 
+include(cmake/environment.cmake)
+
 # SOFA packages containing our dependencies
 find_package(Sofa.Component.Topology.Container.Dynamic REQUIRED)
 find_package(Sofa.Component.SolidMechanics.FEM.Elastic REQUIRED)
@@ -52,10 +54,10 @@ add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES} ${README_FILE
 target_compile_definitions(${PROJECT_NAME} PRIVATE "-DSOFA_BUILD_TEARING_PLUGIN")
 
 # Link the plugin library to its dependencies (other libraries).
-target_link_libraries(${PROJECT_NAME} Sofa.Component.Topology.Container.Dynamic 
-    Sofa.Core Sofa.Component.SolidMechanics.FEM.Elastic 
-    Sofa.Component.MechanicalLoad)
-
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.Topology.Container.Dynamic)
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Core Sofa.Component.SolidMechanics.FEM.Elastic)
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.MechanicalLoad)
+     
 target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
 target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>")
 target_include_directories(${PROJECT_NAME} PUBLIC "$<INSTALL_INTERFACE:include>")
@@ -80,10 +82,10 @@ sofa_create_package_with_targets(
 
 # If SOFA_BUILD_TESTS exists and is OFF, then these tests will be auto-disabled
 cmake_dependent_option(TEARING_BUILD_TESTS "Compile the automatic tests" ON "SOFA_BUILD_TESTS OR NOT DEFINED SOFA_BUILD_TESTS" OFF)
-#if(TEARING_BUILD_TESTS)
+if(TEARING_BUILD_TESTS)
     enable_testing()
     add_subdirectory(Tearing_test)
-#endif()
+endif()
 
 # Organize projects into folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
