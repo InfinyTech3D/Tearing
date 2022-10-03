@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(Tearing VERSION 1.0)
 
-include(cmake/environment.cmake)
-
 # SOFA packages containing our dependencies
 find_package(Sofa.Component.Topology.Container.Dynamic REQUIRED)
 find_package(Sofa.Component.SolidMechanics.FEM.Elastic REQUIRED)
@@ -90,5 +88,3 @@ endif()
 # Organize projects into folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 SET_PROPERTY(TARGET ${PROJECT_NAME} PROPERTY FOLDER "plugins")
-
-include(cmake/packaging.cmake)
