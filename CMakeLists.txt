@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(Tearing VERSION 1.0)
 
+include(cmake/environment.cmake)
+
 # SOFA packages containing our dependencies
 find_package(Sofa.Component.Topology.Container.Dynamic REQUIRED)
 find_package(Sofa.Component.SolidMechanics.FEM.Elastic REQUIRED)
