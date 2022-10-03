@@ -24,12 +24,12 @@ Nous tirons de chaque côté avec une force équivalente-->
     <RequiredPlugin name="tearing"/>
 	
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
+    <DefaultAnimationLoop />
     <DefaultPipeline verbose="0" />
-    <BruteForceDetection name="N2" />
+    <BruteForceBroadPhase/>
+    <BVHNarrowPhase/>
     <DefaultContactManager response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
-	
-	
 	
     <Node name="SquareGravity">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />

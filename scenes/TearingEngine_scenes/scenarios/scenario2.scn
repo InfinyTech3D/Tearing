@@ -25,13 +25,12 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
     <RequiredPlugin name="tearing"/>	
 
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
+    <DefaultAnimationLoop />
     <DefaultPipeline verbose="0" />
-    <BruteForceDetection name="N2" />
+    <BruteForceBroadPhase/>
+    <BVHNarrowPhase/>
     <DefaultContactManager response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
-
-		
-	
 	
     <Node name="SquareGravity">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
@@ -44,8 +43,6 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
 		
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="0.15" />
-		
-		<StressDetector name='StressDetector'/>
 		
 		<!--Modification de la fixed constraint pour y mettre une Box constraint-->
 		<!--FixedConstraint indices="0 1" /-->
