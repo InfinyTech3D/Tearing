@@ -6,6 +6,8 @@
 #include <sofa/simulation/Simulation.h>
 #include <sofa/helper/ColorMap.h>
 #include <sofa/component/topology/container/dynamic/TetrahedronSetTopologyContainer.h>
+#include <sofa/component/mechanicalload/ConstantForceField.h>
+#include <sofa/component/constraint/projective/FixedConstraint.h>
 
 #include <sofa/core/objectmodel/KeypressedEvent.h>
 #include <sofa/core/objectmodel/KeyreleasedEvent.h>
