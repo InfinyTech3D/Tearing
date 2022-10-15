@@ -64,16 +64,16 @@ public:
 	Data<bool> showChangedTriangle;
 
 	//Looking for triangle will tear first
-	Data<double> d_seuilPrincipalStress; ///< threshold value for principal stress
+	Data<Real> d_seuilPrincipalStress; ///< threshold value for principal stress
 	Data<vector<Index>> d_triangleOverThresholdList;
-	Data<double> d_maxStress;
+	Data<Real> d_maxStress;
 	Data<Index> d_indexTriangleMaxStress;
 	Data<Index> d_indexVertexMaxStress;
 	Data<bool> showTearableTriangle;
 	Data<bool> stepByStep;
 	Data<int> d_step;
 	int m_counter;
-	Data<double> d_fractureMaxLength;
+	Data<Real> d_fractureMaxLength;
 	Data<vector<Index>> d_triangleToIgnoreList;
 	Data<bool> ignoreTriangleAtStart;
 

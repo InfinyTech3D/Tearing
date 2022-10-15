@@ -423,7 +423,7 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     //intersection between B and A
     if (sizeB > 0)
     {
-        for (unsigned int i = 0; i < sizeB; i++)
+        for (auto i = 0; i < sizeB; i++)
         {
             topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
             indices_list.push_back(edges_listB[sizeB - 1 - i]);
@@ -442,7 +442,7 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     //intersection between A and C
     if (sizeC > 0)
     {
-        for (unsigned int i = 0; i < sizeC; i++)
+        for (auto i = 0; i < sizeC; i++)
         {
             topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
             indices_list.push_back(edges_listC[i]);

@@ -173,7 +173,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     if (m_triangleInfoTearing.size() != triangleList.size()) // not ready
         return;
 
-    double threshold = d_seuilPrincipalStress.getValue();
+    Real threshold = d_seuilPrincipalStress.getValue();
     helper::WriteAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
     Real& maxStress = *(d_maxStress.beginEdit());
     Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
