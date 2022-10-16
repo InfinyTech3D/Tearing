@@ -29,7 +29,9 @@ TearingEngine<DataTypes>::TearingEngine()
     , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
-    , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
+    , d_startVertexId(initData(&d_startVertexId, int(-1), "startVertexId", "choose scenario, zero is default"))
+    , d_startDirection(initData(&d_startDirection, "startDirection", "choose scenario, zero is default"))
+    , d_startLength(initData(&d_startLength, "startLength", "choose scenario, zero is default"))
     , ignoreTriangleAtStart(initData(&ignoreTriangleAtStart, true, "ignoreTriangleAtStart","option to ignore some triangles at start of the tearing algo"))
     , l_topology(initLink("topology", "link to the topology container"))
     , m_topology(nullptr)
@@ -43,7 +45,9 @@ TearingEngine<DataTypes>::TearingEngine()
     addInput(&d_seuilPrincipalStress);
     addInput(&d_fractureMaxLength);
     addInput(&d_step);
-    addInput(&d_scenario);
+    addInput(&d_startVertexId);
+    addInput(&d_startDirection);
+    addInput(&d_startLength);
     addOutput(&d_triangleOverThresholdList);
     addOutput(&d_maxStress);
     addOutput(&d_indexVertexMaxStress);
@@ -279,170 +283,53 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
     helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
-    int choice;
+    int scenarioIdStart = -1;
 
     //start with specific scenario
-    if (m_tearingAlgo->getFractureNumber() == 0)
+    if (m_tearingAlgo->getFractureNumber() == 0) // first fracture of the scene
     {
-        choice = d_scenario.getValue();
+        scenarioIdStart = d_startVertexId.getValue(); // -1 by default for no scenario
+    }
+
+    if (scenarioIdStart == -1 && candidate.empty())
+        return;
+
+
+    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    double EPS = 1e-8;
+    bool PATH_IS_OK = false;
+
+    //Calculate fracture starting point (Pa)
+    int indexA;
+    Coord Pa;
+    Coord principalStressDirection;
+    //Calculate fracture end points (Pb and Pc)
+    Coord Pb;
+    Coord Pc;
+    
+    if (scenarioIdStart == -1)
+    {
+        indexA = d_indexVertexMaxStress.getValue();
+        Pa = x[indexA];
+        principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+        computeEndPoints(Pa, principalStressDirection, Pb, Pc);
     }
     else
     {
-        choice = 0;
+        indexA = scenarioIdStart;
+
+        const Vec3& dir = d_startDirection.getValue();
+        const Real& alpha = d_startLength.getValue();
+
+        Pa = x[indexA];
+        Pb = Pa + alpha * dir;
+        Pc = Pa - alpha * dir;
     }
 
-    //if no candidate available we don't call intersection process
-    if (candidate.size() || choice)
-    {
-        helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        double EPS = 1e-8;
-        bool PATH_IS_OK = false;
 
-        //Calculate fracture starting point (Pa)
-        int indexA;
-        Coord Pa;
-        Coord principalStressDirection;
-        //Calculate fracture end points (Pb and Pc)
-        Coord Pb;
-        Coord Pc;
-        Coord dir;
-        double alpha;
-
-        //scenario with specific starting point and specific direction
-        switch (choice)
-        {
-        default:
-            indexA = d_indexVertexMaxStress.getValue();
-            Pa = x[indexA];
-            principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-            computeEndPoints(Pa, principalStressDirection, Pb, Pc);
-            break;
-
-        case 1:
-            //CasTest1-1
-            indexA = 421;
-            Pa = x[indexA];
-            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
-            alpha = 2.5;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - alpha * dir;
-            break;
-
-        case 2:
-            //CasTest1-2
-            indexA = 1;
-            Pa = x[indexA];
-            dir[0] = 0.707; dir[1] = 0.707; dir[2] = 0.0;
-            alpha = 3.5;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - alpha * dir;
-            break;
-
-        case 3:
-            //CasTest2-1
-            indexA = 470;
-            Pa = x[indexA];
-            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
-            alpha = 4.0;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - alpha * dir;
-            break;
-
-        case 4:
-            //CasTest2-2
-            indexA = 84;
-            Pa = x[indexA];
-            dir[0] = 0.707; dir[1] = 0.707; dir[2] = 0.0;
-            alpha = 3.5;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - alpha * dir;
-            break;
-
-        case 5:
-            //CasTest4-1
-            indexA = 45;
-            Pa = x[indexA];
-            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
-            alpha = 2.0;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - alpha * dir;
-            break;
-
-        case 6:
-            //CasTest4-1
-            indexA = 51;
-            Pa = x[indexA];
-            dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
-            alpha = 5.0;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - alpha * dir;
-            break;
-
-        case 7:
-            //CasTest5_holeCircular-1
-            indexA = 318;
-            Pa = x[indexA];
-            dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
-            alpha = 2.5;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - alpha * dir;
-            break;
-
-        case 8:
-            //CasTest5_holeCircular-2
-            indexA = 282;
-            Pa = x[indexA];
-            dir[0] = 0.707; dir[1] = -0.707; dir[2] = 0.0;
-            alpha = 2.0;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - alpha * dir;
-            break;
-
-        case 9:
-            //CasTest5_holeSquare
-            indexA = 231;
-            Pa = x[indexA];
-            dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
-            alpha = 5.0;
-            Pb = Pa + alpha * dir;
-            Pc = Pa - dir;
-            break;
-
-        case 10:
-            //CasTest5_holeSquareVertical
-            indexA = 229;
-            Pa = x[indexA];
-            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
-            alpha = 2.0;
-            Pb = Pa - alpha * dir;
-            Pc = Pa + dir;
-            break;
-
-        case 11:
-            //CasTest5_incision-1
-            indexA = 179;
-            Pa = x[indexA];
-            dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
-            alpha = 2.0;
-            Pb = Pa - alpha * dir;
-            Pc = Pa + alpha * dir;
-            break;
-
-        case 12:
-            //CasTest5_incision-2
-            indexA = 188;
-            Pa = x[indexA];
-            dir[0] = 0.0; dir[1] = 1.0; dir[2] = 0.0;
-            alpha = 5.0;
-            Pb = Pa;
-            Pc = Pa - alpha * dir;
-            break;
-        }
-
-        m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, d_indexTriangleMaxStress.getValue(), principalStressDirection, input_position.getValue());
-        if (d_step.getValue() == 0) // reset to 0
-            m_counter = 0;
-    }
+    m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, d_indexTriangleMaxStress.getValue(), principalStressDirection, input_position.getValue());
+    if (d_step.getValue() == 0) // reset to 0
+        m_counter = 0;
 }
 
 

@@ -44,6 +44,7 @@ public:
 	using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
 	using VecTriangles = sofa::core::topology::BaseMeshTopology::SeqTriangles;
 	
+	using Vec3 = sofa::type::Vec3;
 	using Transformation = type::Mat3x3;                 ///< matrix for rigid transformations like rotations
 	using StrainDisplacement = type::Mat<6, 3, Real>;    ///< the strain-displacement matrix
 	
@@ -118,7 +119,9 @@ public:
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
 
-	Data<int> d_scenario;
+	Data<int> d_startVertexId;
+	Data <Vec3> d_startDirection;
+	Data <Real> d_startLength;
 
 	/// <summary>
 	/// compute ignored triangle at start of the tearing algo
