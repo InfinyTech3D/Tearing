@@ -4,21 +4,11 @@
 #include <Tearing/TearingAlgorithms.h>
 
 #include <sofa/core/DataEngine.h>
-#include <sofa/core/objectmodel/BaseObject.h>
-#include <sofa/defaulttype/VecTypes.h>
-#include <sofa/core/topology/BaseMeshTopology.h>
-
-#include <sofa/core/topology/TopologyData.h>
-#include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
-#include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
-#include <sofa/component/topology/container/dynamic/TriangleSetGeometryAlgorithms.h>
+#include <sofa/core/visual/VisualParams.h>
 
 #include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceField.h>
 #include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceFieldOptim.h>
-#include <sofa/simulation/AnimateBeginEvent.h>
-#include <sofa/simulation/AnimateEndEvent.h>
 
-#include <sofa/component/mechanicalload/ConstantForceField.h>
 
 namespace sofa::helper
 {
@@ -131,8 +121,6 @@ public:
 protected:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology = nullptr;
-	TriangleSetTopologyModifier* m_modifier = nullptr;
-	TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo = nullptr;
 
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM;
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim;
