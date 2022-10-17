@@ -1,11 +1,12 @@
 #pragma once
 #include <Tearing/TearingEngine.h>
 
-#include <sofa/core/visual/VisualParams.h>
-#include <sofa/type/RGBAColor.h>
 #include <sofa/helper/ColorMap.h>
-#include <sofa/core/topology/TopologyData.inl>
-#include <sofa/simulation/Simulation.h>
+#include <sofa/simulation/AnimateBeginEvent.h>
+#include <sofa/simulation/AnimateEndEvent.h>
+#include <sofa/core/objectmodel/KeypressedEvent.h>
+
+#include <sofa/component/mechanicalload/ConstantForceField.h>
 
 
 namespace sofa::component::engine
@@ -35,10 +36,8 @@ TearingEngine<DataTypes>::TearingEngine()
     , ignoreTriangleAtStart(initData(&ignoreTriangleAtStart, true, "ignoreTriangleAtStart","option to ignore some triangles at start of the tearing algo"))
     , l_topology(initLink("topology", "link to the topology container"))
     , m_topology(nullptr)
-    , m_triangleGeo(nullptr)
     , m_triangularFEM(nullptr)
     , m_triangularFEMOptim(nullptr)
-    , m_modifier(nullptr)
     , m_tearingAlgo(nullptr)
 {
     addInput(&input_position);
@@ -58,6 +57,8 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::init()
 {
     this->f_listening.setValue(true);
+
+    // Get topology container
     if (l_topology.empty())
     {
         msg_info() << "link to Topology container should be set to ensure right behavior. First Topology found in current context will be used.";
@@ -74,16 +75,20 @@ void TearingEngine<DataTypes>::init()
         return;
     }
 
-    m_topology->getContext()->get(m_modifier);
-    if (!m_modifier)
+    // Get Topology Modifier
+    TriangleSetTopologyModifier* _modifier = nullptr;
+    m_topology->getContext()->get(_modifier);
+    if (!_modifier)
     {
         msg_error() << "Missing component: Unable to get TriangleSetTopologyModifier from the current context.";
         sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
         return;
     }
 
-    m_topology->getContext()->get(m_triangleGeo);
-    if (!m_triangleGeo)
+    // Get Geometry Algorithm
+    TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo = nullptr;
+    m_topology->getContext()->get(_triangleGeo);
+    if (!_triangleGeo)
     {
         msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
         sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
@@ -119,7 +124,7 @@ void TearingEngine<DataTypes>::init()
     triangleOverThresholdPrincipalStress();
     
     if (m_tearingAlgo == nullptr)
-        m_tearingAlgo = new TearingAlgorithms<DataTypes>(m_topology, m_modifier, m_triangleGeo);
+        m_tearingAlgo = new TearingAlgorithms<DataTypes>(m_topology, _modifier, _triangleGeo);
 }
 
 template <class DataTypes>
