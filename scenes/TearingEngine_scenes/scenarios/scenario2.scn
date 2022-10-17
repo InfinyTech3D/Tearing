@@ -52,15 +52,13 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
 		<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -100 0" showArrowSize=".01" />
 		
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" scenario="2"/>
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" 
+			startVertexId="1" startDirection="0.707 0.707 0.0" startLength="3.5"/>
+		
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
-        <TriangleCollisionModel />
-		
+        <TriangleCollisionModel />		
 
-		
-		
-		
         <Node >
             <OglModel name="Visual" color="red" />
             <IdentityMapping input="@.." output="@Visual" />
