@@ -16,40 +16,37 @@ using sofa::type::Vec3;
 
 template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
-    : input_position(initData(&input_position, "input_position", "Input position"))
-    , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 55.0, "seuilStress", "threshold value for stress"))
-    , d_triangleOverThresholdList(initData(&d_triangleOverThresholdList, "triangleOverThresholdList", "triangles with maxStress over threshold value"))
-    , d_triangleToIgnoreList(initData(&d_triangleToIgnoreList, "triangleToIgnoreList", "triangles that can't be choosen as starting fracture point"))
-    , showTearableTriangle(initData(&showTearableTriangle, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
-    , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
-    , d_indexTriangleMaxStress(initData(&d_indexTriangleMaxStress, "indexTriangleMaxStress", "index of triangle where the principal stress is maximum"))
-    , d_indexVertexMaxStress(initData(&d_indexVertexMaxStress, "indexVertexMaxStress", "index of vertex where the stress is maximum"))
-    , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
-    , d_step(initData(&d_step, 20, "step", "step size"))
-    , m_counter(0)
-    , showFracturePath(initData(&showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
-    , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by time step"))
+    : d_input_positions(initData(&d_input_positions, "input_position", "Input position"))
+    , d_stressThreshold(initData(&d_stressThreshold, 55.0, "stressThreshold", "threshold value for stress"))
+    , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by occurence"))
+
+    , d_ignoreTriangles(initData(&d_ignoreTriangles, true, "ignoreTriangles", "option to ignore some triangles from the tearing algo"))
+    , d_trianglesToIgnore(initData(&d_trianglesToIgnore, "trianglesToIgnore", "triangles that can't be choosen as starting fracture point"))
+    , d_stepModulo(initData(&d_stepModulo, 20, "step", "step size"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
+
     , d_startVertexId(initData(&d_startVertexId, int(-1), "startVertexId", "Vertex ID to start a given tearing scenario, -1 if none"))
     , d_startDirection(initData(&d_startDirection, Vec3(1.0, 0.0, 0.0), "startDirection", "If startVertexId is set, define the direction of the tearing scenario. x direction by default"))
     , d_startLength(initData(&d_startLength, Real(1.0), "startLength", "If startVertexId is set, define the length of the tearing, to be combined with startDirection"))
-    , ignoreTriangleAtStart(initData(&ignoreTriangleAtStart, true, "ignoreTriangleAtStart","option to ignore some triangles at start of the tearing algo"))
+
+    , d_showTearableCandidates(initData(&d_showTearableCandidates, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
+    , d_showFracturePath(initData(&d_showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
+    , d_triangleIdsOverThreshold(initData(&d_triangleIdsOverThreshold, "triangleIdsOverThreshold", "triangles with maxStress over threshold value"))
+    , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
     , l_topology(initLink("topology", "link to the topology container"))
-    , m_topology(nullptr)
-    , m_triangularFEM(nullptr)
-    , m_triangularFEMOptim(nullptr)
-    , m_tearingAlgo(nullptr)
 {
-    addInput(&input_position);
-    addInput(&d_seuilPrincipalStress);
+    addInput(&d_input_positions);
+    addInput(&d_stressThreshold);
     addInput(&d_fractureMaxLength);
-    addInput(&d_step);
+
+    addInput(&d_ignoreTriangles);
+    addAlias(&d_ignoreTriangles, "ignoreTriangleAtStart");
+
     addInput(&d_startVertexId);
     addInput(&d_startDirection);
     addInput(&d_startLength);
-    addOutput(&d_triangleOverThresholdList);
+    addOutput(&d_triangleIdsOverThreshold);
     addOutput(&d_maxStress);
-    addOutput(&d_indexVertexMaxStress);
     p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
 }
 
@@ -117,7 +114,7 @@ void TearingEngine<DataTypes>::init()
     }
     
 
-    if (ignoreTriangleAtStart.getValue())
+    if (d_ignoreTriangles.getValue())
         computeTriangleToSkip();
 
     updateTriangleInformation();
@@ -125,6 +122,8 @@ void TearingEngine<DataTypes>::init()
     
     if (m_tearingAlgo == nullptr)
         m_tearingAlgo = new TearingAlgorithms<DataTypes>(m_topology, _modifier, _triangleGeo);
+
+    sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Valid);
 }
 
 template <class DataTypes>
@@ -136,9 +135,9 @@ void TearingEngine<DataTypes>::reinit()
 template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
 {
-    m_counter++;
+    m_stepCounter++;
 
-    if (ignoreTriangleAtStart.getValue())
+    if (d_ignoreTriangles.getValue())
     {
         if(m_tearingAlgo!= nullptr && m_tearingAlgo->getFractureNumber() == 0)
             computeTriangleToSkip();
@@ -146,13 +145,13 @@ void TearingEngine<DataTypes>::doUpdate()
     else
     {
         vector<Index> emptyIndexList;
-        d_triangleToIgnoreList.setValue(emptyIndexList);
+        d_trianglesToIgnore.setValue(emptyIndexList);
     }
 
     if (m_tearingAlgo != nullptr)
     {
         const vector< vector<int> >& TjunctionTriangle = m_tearingAlgo->getTjunctionTriangles();
-        helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
+        helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
         for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
         {
             if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
@@ -182,13 +181,12 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     if (m_triangleInfoTearing.size() != triangleList.size()) // not ready
         return;
 
-    Real threshold = d_seuilPrincipalStress.getValue();
-    helper::WriteAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
+    Real threshold = d_stressThreshold.getValue();
+    helper::WriteAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
     Real& maxStress = *(d_maxStress.beginEdit());
-    Index& indexTriangleMaxStress = *(d_indexTriangleMaxStress.beginEdit());
     candidate.clear();
     maxStress = 0;
-    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
 
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
@@ -204,7 +202,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
 
             if (tinfo.maxStress > maxStress)
             {
-                indexTriangleMaxStress = i;
+                m_maxStressTriangleIndex = i;
                 maxStress = tinfo.maxStress;
             }
         }
@@ -212,16 +210,13 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
 
     if (candidate.size())
     {
-        Index& indexVertexMaxStress = *(d_indexVertexMaxStress.beginEdit());
-        TriangleTearingInformation& tinfo = m_triangleInfoTearing[indexTriangleMaxStress];
+        TriangleTearingInformation& tinfo = m_triangleInfoTearing[m_maxStressTriangleIndex];
         Index k = (tinfo.stress[0] > tinfo.stress[1]) ? 0 : 1;
         k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
-        indexVertexMaxStress = triangleList[indexTriangleMaxStress][k];
-        //d_step.setValue(0);
-        d_indexVertexMaxStress.endEdit();
+        m_maxStressVertexIndex = triangleList[m_maxStressTriangleIndex][k];
+        //d_stepModulo.setValue(0);
     }
     d_maxStress.endEdit();
-    d_indexTriangleMaxStress.endEdit();
 }
 
 
@@ -287,7 +282,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
 template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
-    helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
+    helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
     int scenarioIdStart = -1;
 
     //start with specific scenario
@@ -300,7 +295,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         return;
 
 
-    helper::ReadAccessor< Data<VecCoord> > x(input_position);
+    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
     double EPS = 1e-8;
     bool PATH_IS_OK = false;
 
@@ -314,9 +309,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
     
     if (scenarioIdStart == -1)
     {
-        indexA = d_indexVertexMaxStress.getValue();
+        indexA = m_maxStressVertexIndex;
         Pa = x[indexA];
-        principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
+        principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
         computeEndPoints(Pa, principalStressDirection, Pb, Pc);
     }
     else
@@ -332,9 +327,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
     }
 
 
-    m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, d_indexTriangleMaxStress.getValue(), principalStressDirection, input_position.getValue());
-    if (d_step.getValue() == 0) // reset to 0
-        m_counter = 0;
+    m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
+    if (d_stepModulo.getValue() == 0) // reset to 0
+        m_stepCounter = 0;
 }
 
 
@@ -356,7 +351,7 @@ void TearingEngine<DataTypes>::computeEndPoints(
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
-    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_triangleToIgnoreList);
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
     vector<sofa::component::mechanicalload::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
 
     this->getContext()->template get< typename sofa::component::mechanicalload::ConstantForceField<DataTypes> >
@@ -384,15 +379,15 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 {
     if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateEndEvent::checkEventType(event))
     {
-        int step = d_step.getValue();
+        int step = d_stepModulo.getValue();
         if (step == 0) // interactive version
         {
-            if (m_counter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
+            if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
                 algoFracturePath();
         }
-        else if (((m_counter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
+        else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
         {
-            if (m_counter > d_step.getValue())
+            if (m_stepCounter > d_stepModulo.getValue())
                 algoFracturePath();
         }
     }
@@ -402,11 +397,11 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 template <class DataTypes>
 void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 {    
-    if (showTearableTriangle.getValue())
+    if (d_showTearableCandidates.getValue())
     {
         VecTriangles triangleList = m_topology->getTriangles();
-        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
-        helper::ReadAccessor< Data<VecCoord> > x(input_position);
+        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
+        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
         std::vector<Vec3> vertices;
         sofa::type::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
         std::vector<Vec3> tearTriangleVertices;
@@ -415,7 +410,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         {
             for (unsigned int i = 0; i < candidate.size(); i++)
             {
-                if (candidate[i] != d_indexTriangleMaxStress.getValue())
+                if (candidate[i] != m_maxStressTriangleIndex)
                 {
                     Coord Pa = x[triangleList[candidate[i]][0]];
                     Coord Pb = x[triangleList[candidate[i]][1]];
@@ -438,8 +433,8 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vparams->drawTool()->drawTriangles(tearTriangleVertices, color2);
 
             std::vector<Vec3> vecteur;
-            Coord principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-            Coord Pa = x[d_indexVertexMaxStress.getValue()];
+            Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
+            Coord Pa = x[m_maxStressVertexIndex];
 
             vecteur.push_back(Pa);
             vecteur.push_back(Pa + principalStressDirection);
@@ -450,19 +445,19 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             fractureDirection[1] = principalStressDirection[0];
             vecteur.push_back(Pa);
             vecteur.push_back(Pa + fractureDirection);
-            vparams->drawTool()->drawLines(vecteur, 1, sofa::type::RGBAColor(1.0, 0.65, 0.0, 1.0));
+            vparams->drawTool()->drawLines(vecteur, 2, sofa::type::RGBAColor(0.0, 1.0, 0.0, 1.0));
             vecteur.clear();
         }
     }
 
-    if (showFracturePath.getValue())
+    if (d_showFracturePath.getValue())
     {
-        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleOverThresholdList);
+        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
         if (candidate.size() > 0)
         {
-            helper::ReadAccessor< Data<VecCoord> > x(input_position);
-            Coord principalStressDirection = m_triangleInfoTearing[d_indexTriangleMaxStress.getValue()].principalStressDirection;
-            Coord Pa = x[d_indexVertexMaxStress.getValue()];
+            helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+            Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
+            Coord Pa = x[m_maxStressVertexIndex];
             Coord fractureDirection;
             fractureDirection[0] = -principalStressDirection[1];
             fractureDirection[1] = principalStressDirection[0];
