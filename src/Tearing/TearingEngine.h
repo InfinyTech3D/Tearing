@@ -10,16 +10,9 @@
 #include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceFieldOptim.h>
 
 
-namespace sofa::helper
-{
-	class ColorMap;
-}
-
 namespace sofa::component::engine
 {
-
-	using core::DataEngine;
-	using type::vector;
+using type::vector;
 
 template <class DataTypes>
 class TearingEngine : public core::DataEngine
@@ -127,8 +120,6 @@ private:
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM = nullptr;
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim = nullptr;
 	
-	sofa::helper::ColorMap* p_drawColorMap;
-
 	vector<TriangleTearingInformation> m_triangleInfoTearing; ///< vector of TriangleInfo from FEM
 	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
 	TriangleID m_maxStressTriangleIndex = 0; ///< Triangle ID of the triangle from filter candadites with the max stress

@@ -1,7 +1,6 @@
 #pragma once
 #include <Tearing/TearingEngine.h>
 
-#include <sofa/helper/ColorMap.h>
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
 #include <sofa/core/objectmodel/KeypressedEvent.h>
@@ -47,7 +46,6 @@ TearingEngine<DataTypes>::TearingEngine()
     addInput(&d_startLength);
     addOutput(&d_triangleIdsOverThreshold);
     addOutput(&d_maxStress);
-    p_drawColorMap = new helper::ColorMap(256, "Blue to Red");
 }
 
 template <class DataTypes>
