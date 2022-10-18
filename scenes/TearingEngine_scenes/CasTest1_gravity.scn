@@ -55,7 +55,7 @@ On fixe un coté et nous appliquons la gravité-->
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" seuilStress="5" step="0" nbFractureMax="100"/>
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="5" step="0" nbFractureMax="100"/>
         <Node >
             <OglModel name="Visual" color="red" />
             <IdentityMapping input="@.." output="@Visual" />

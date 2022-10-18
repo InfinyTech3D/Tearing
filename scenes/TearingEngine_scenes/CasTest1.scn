@@ -54,15 +54,15 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé-->
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -100 0" showArrowSize=".01" />
 		
         <!--
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" seuilStress="5" />
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="5" />
 		<TriangularFEMForceFieldOptim name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true" showStressVector="1"/>
         -->
         
         
         <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true" showStressVector="1"/>
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" seuilStress="0.1" />
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.1" />
         <!--
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" seuilStress="5" />
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="5" />
         <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true" showStressVector="1"/>
         -->
         
