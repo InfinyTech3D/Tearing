@@ -121,7 +121,7 @@ void TearingEngine<DataTypes>::init()
     triangleOverThresholdPrincipalStress();
     
     if (m_tearingAlgo == nullptr)
-        m_tearingAlgo = new TearingAlgorithms<DataTypes>(m_topology, _modifier, _triangleGeo);
+        m_tearingAlgo = std::make_unique<TearingAlgorithms<DataTypes> >(m_topology, _modifier, _triangleGeo);
 
     sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Valid);
 }
