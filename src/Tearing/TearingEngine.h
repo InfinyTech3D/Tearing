@@ -122,7 +122,7 @@ private:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology = nullptr;
 
-	TearingAlgorithms<DataTypes>* m_tearingAlgo = nullptr;
+	std::unique_ptr<TearingAlgorithms<DataTypes> > m_tearingAlgo = nullptr;
 	
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM = nullptr;
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim = nullptr;
