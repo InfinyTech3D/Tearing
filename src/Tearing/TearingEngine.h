@@ -31,7 +31,9 @@ public:
 	typedef typename DataTypes::VecCoord VecCoord;
 
 	using Index = sofa::core::topology::BaseMeshTopology::Index;
+	using VecIDs = type::vector<Index>;
 	using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
+	using TriangleID = sofa::core::topology::BaseMeshTopology::TriangleID;
 	using VecTriangles = sofa::core::topology::BaseMeshTopology::SeqTriangles;
 	
 	using Vec3 = sofa::type::Vec3;
@@ -50,28 +52,30 @@ public:
 	void reinit() override;
 	void doUpdate() override;
 	void draw(const core::visual::VisualParams* vparams) override;
+	void handleEvent(sofa::core::objectmodel::Event* event) override;
 
-	Data<VecCoord> input_position; ///< Input position
-	Data<bool> showChangedTriangle;
+	/// Input Data
+	Data<VecCoord> d_input_positions; ///< Input position
+	Data<Real> d_stressThreshold; ///< threshold value for principal stress
+	Data<Real> d_fractureMaxLength; ///< max length of a fracture
+	
+	Data<bool> d_ignoreTriangles; ///< option to ignore triangle at start
+	Data<VecIDs> d_trianglesToIgnore; ///< list of triangles to ignore at start
+	Data<int> d_stepModulo; ///< to define a number of step between 2 fractures
+	Data<int> d_nbFractureMax; ///< Maximum number of fracture
 
-	//Looking for triangle will tear first
-	Data<Real> d_seuilPrincipalStress; ///< threshold value for principal stress
-	Data<vector<Index>> d_triangleOverThresholdList;
-	Data<Real> d_maxStress;
-	Data<Index> d_indexTriangleMaxStress;
-	Data<Index> d_indexVertexMaxStress;
-	Data<bool> showTearableTriangle;
-	Data<bool> stepByStep;
-	Data<int> d_step;
-	int m_counter;
-	Data<Real> d_fractureMaxLength;
-	Data<vector<Index>> d_triangleToIgnoreList;
-	Data<bool> ignoreTriangleAtStart;
+	/// Parameters for predefined scenario
+	Data<int> d_startVertexId; ///< vertex ID to start algofracture (scenario case)
+	Data<Vec3> d_startDirection; ///< direction to start algofracture (scenario case)
+	Data<Real> d_startLength; ///< length of first fracture to start algofracture (scenario case)
 
-	/// <summary>
-	/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
-	/// </summary>
-	void triangleOverThresholdPrincipalStress();
+	/// Display parameters
+	Data<bool> d_showTearableCandidates; ///< option to activate display of triangles candidates
+	Data<bool> d_showFracturePath; ///< option to activate display of fracture path
+
+	/// Output Data
+	Data<VecIDs> d_triangleIdsOverThreshold; ///< output vector of triangles candidates from @sa triangleOverThresholdPrincipalStress
+	Data<Real> d_maxStress; ///< output of the maximum stress found
 	
 	struct TriangleTearingInformation
 	{
@@ -80,22 +84,22 @@ public:
 		Real maxStress;
 		Coord principalStressDirection;
 	};
-	vector<TriangleTearingInformation> m_triangleInfoTearing;
+
+protected:
+	/// <summary>
+	/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
+	/// </summary>
+	void triangleOverThresholdPrincipalStress();
 
 	/// <summary>
 	/// update d_triangleInfoTearing with value from d_triangleFEMInfo
 	/// </summary>
 	void updateTriangleInformation();
 
-	/// Test algoFracturePath
-	Data<int> d_nbFractureMax;
-
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
 	void algoFracturePath();
-
-	Data<bool> showFracturePath;
 
 	/// <summary>
 	/// compute extremities of fracture Pb and Pc from a start point Pa
@@ -109,29 +113,26 @@ public:
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
 
-	Data<int> d_startVertexId;
-	Data <Vec3> d_startDirection;
-	Data <Real> d_startLength;
-
 	/// <summary>
 	/// compute ignored triangle at start of the tearing algo
 	/// </summary>
 	void computeTriangleToSkip();
 
-protected:
+private:
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology = nullptr;
 
-	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM;
-	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim;
+	TearingAlgorithms<DataTypes>* m_tearingAlgo = nullptr;
 	
-private:
+	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM = nullptr;
+	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim = nullptr;
+	
 	sofa::helper::ColorMap* p_drawColorMap;
 
-	TearingAlgorithms<DataTypes>* m_tearingAlgo;
-public:
-	void handleEvent(sofa::core::objectmodel::Event* event) override;
-
+	vector<TriangleTearingInformation> m_triangleInfoTearing; ///< vector of TriangleInfo from FEM
+	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
+	TriangleID m_maxStressTriangleIndex = 0; ///< Triangle ID of the triangle from filter candadites with the max stress
+	Index m_maxStressVertexIndex = 0; ///< Global Vertex Id where the stress is maximum. Vertex is part of @sa m_maxStressTriangleIndex Triangle
 };
 	
 #if !defined(SOFA_COMPONENT_ENGINE_TEARINGENGINE_CPP)
