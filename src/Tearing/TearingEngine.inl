@@ -30,6 +30,8 @@ TearingEngine<DataTypes>::TearingEngine()
 
     , d_showTearableCandidates(initData(&d_showTearableCandidates, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_showFracturePath(initData(&d_showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
+    , d_showElongatedMap(initData(&d_showElongatedMap, true, "showElongatedMap", "Flag activating rendering of fracture path"))
+    
     , d_triangleIdsOverThreshold(initData(&d_triangleIdsOverThreshold, "triangleIdsOverThreshold", "triangles with maxStress over threshold value"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
     , l_topology(initLink("topology", "link to the topology container"))
@@ -133,6 +135,9 @@ void TearingEngine<DataTypes>::reinit()
 template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
 {
+    if (sofa::core::objectmodel::BaseObject::d_componentState.getValue() != sofa::core::objectmodel::ComponentState::Valid)
+        return;
+
     m_stepCounter++;
 
     if (d_ignoreTriangles.getValue())
@@ -221,8 +226,6 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
 template <class DataTypes>
 void TearingEngine<DataTypes>::updateTriangleInformation()
 {
-    m_triangleInfoTearing.clear();
-    
     if (m_triangularFEM == nullptr && m_triangularFEMOptim == nullptr)
         return;
 
@@ -239,12 +242,21 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
             return;
         }
 
+
+
         m_triangleInfoTearing.resize(triangleList.size());
         for (unsigned int i = 0; i < triangleList.size(); i++)
         {
             const TriangleFEMInformation& tFEMinfo = triangleFEMInf[i];
+
+            m_triangleInfoTearing[i].area = tFEMinfo.area;
+            if (m_triangleInfoTearing[i].restArea == 0)
+                m_triangleInfoTearing[i].restArea = tFEMinfo.area;
+
+            Real ratio = m_triangleInfoTearing[i].area / m_triangleInfoTearing[i].restArea;
+
             m_triangleInfoTearing[i].stress = tFEMinfo.stress;
-            m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress * tFEMinfo.area;
+            m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress* ratio;
             m_triangleInfoTearing[i].principalStressDirection = tFEMinfo.principalStressDirection;
         }
     }
@@ -390,6 +402,13 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
         }
     }
 
+    if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
+    {
+        if (ev->getKey() == 'C')
+        {
+            algoFracturePath();
+        }
+    }
 }
 
 template <class DataTypes>
@@ -466,14 +485,48 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
             points.push_back(Pc);
-            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(1, 0.5, 0.5, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));
+            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
             points.clear();
 
             const vector<Coord>& path = m_tearingAlgo->getFracturePath();
             if (!path.empty())
-                vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 1, 0, 1));
+                vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
         }
+    }
+
+    if (d_showElongatedMap.getValue())
+    {        
+        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+        const VecTriangles& triangleList = m_topology->getTriangles();
+        std::vector<Vec3> vertices;
+        std::vector<sofa::type::RGBAColor> colors;
+
+        int triCpt = 0;
+        for (auto tri : triangleList)
+        {
+            vertices.push_back(x[tri[0]]);
+            vertices.push_back(x[tri[1]]);
+            vertices.push_back(x[tri[2]]);
+            
+            Real ratio = m_triangleInfoTearing[triCpt].area / m_triangleInfoTearing[triCpt].restArea;
+
+            sofa::type::RGBAColor color;
+            if (ratio > 2.0)
+                color = sofa::type::RGBAColor(1.0f, 0.0f, 0.0f, 1.0f); // red
+            else if (ratio <1.0)
+                color = sofa::type::RGBAColor(0.0f, 0.0f, ratio, 1.0f); // blue gradiant
+            else // [1.0, 2.0]
+                color = sofa::type::RGBAColor(ratio - 1, 0.0f, 2 - ratio, 1.0f); // red gradiant
+
+            colors.push_back(color);
+            colors.push_back(color);
+            colors.push_back(color);
+
+            triCpt++;
+        }
+
+        vparams->drawTool()->drawTriangles(vertices, colors);
     }
 }
 

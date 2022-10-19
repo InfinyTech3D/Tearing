@@ -65,6 +65,8 @@ public:
 	/// Display parameters
 	Data<bool> d_showTearableCandidates; ///< option to activate display of triangles candidates
 	Data<bool> d_showFracturePath; ///< option to activate display of fracture path
+	Data<bool> d_showElongatedMap; ///< option to activate display of fracture path
+
 
 	/// Output Data
 	Data<VecIDs> d_triangleIdsOverThreshold; ///< output vector of triangles candidates from @sa triangleOverThresholdPrincipalStress
@@ -72,7 +74,8 @@ public:
 	
 	struct TriangleTearingInformation
 	{
-		//Real area;
+		Real restArea;
+		Real area;
 		type::Vec<3, Real> stress;
 		Real maxStress;
 		Coord principalStressDirection;
