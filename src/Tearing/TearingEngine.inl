@@ -6,6 +6,7 @@
 #include <sofa/core/objectmodel/KeypressedEvent.h>
 
 #include <sofa/component/mechanicalload/ConstantForceField.h>
+#include <sofa/component/constraint/projective/FixedConstraint.h>
 
 
 namespace sofa::component::engine
@@ -351,24 +352,44 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
 {
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-    vector<sofa::component::mechanicalload::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
 
-    this->getContext()->template get< typename sofa::component::mechanicalload::ConstantForceField<DataTypes> >
-        (&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
+    using constantFF = sofa::component::mechanicalload::ConstantForceField<DataTypes>;
+    using fixC = sofa::component::constraint::projective::FixedConstraint<DataTypes>;
+    
+    vector<constantFF*>  _constantForceFields;
+    this->getContext()->template get< constantFF >(&_constantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
 
-    for (sofa::component::mechanicalload::ConstantForceField<DataTypes>* cff_i : m_ConstantForceFields)
+    vector<fixC*> _fixConstraints;
+    this->getContext()->template get< fixC >(&_fixConstraints, sofa::core::objectmodel::BaseContext::SearchUp);
+
+    std::set<Index> vertexToSkip;
+    for (constantFF* compo : _constantForceFields)
     {
-        const vector<Index>& vertexToSkip = cff_i->d_indices.getValue();
-        for (unsigned int i = 0; i < vertexToSkip.size(); i++)
+        const vector<Index>& _indices = compo->d_indices.getValue();
+        for (Index vId : _indices)
         {
-            const vector<Index>& triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vertexToSkip[i]);
-            for (unsigned int j = 0; j < triangleAroundVertex_i.size(); j++)
-            {
-                if (std::find(triangleToSkip.begin(), triangleToSkip.end(), triangleAroundVertex_i[j]) == triangleToSkip.end())
-                    triangleToSkip.push_back(triangleAroundVertex_i[j]);
-            }
+            vertexToSkip.insert(vId);
         }
-    }   
+    }
+    
+    for (fixC* compo : _fixConstraints)
+    {
+        const vector<Index>& _indices = compo->d_indices.getValue();
+        for (Index vId : _indices)
+        {
+            vertexToSkip.insert(vId);
+        }
+    }
+
+    for (Index vId : vertexToSkip)
+    {
+        const vector<Index>& triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vId);
+        for (unsigned int j = 0; j < triangleAroundVertex_i.size(); j++)
+        {
+            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), triangleAroundVertex_i[j]) == triangleToSkip.end())
+                triangleToSkip.push_back(triangleAroundVertex_i[j]);
+        }
+    }        
 }
 
 

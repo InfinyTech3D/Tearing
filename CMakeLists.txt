@@ -7,7 +7,7 @@ include(cmake/environment.cmake)
 find_package(Sofa.Component.Topology.Container.Dynamic REQUIRED)
 find_package(Sofa.Component.SolidMechanics.FEM.Elastic REQUIRED)
 find_package(Sofa.Component.MechanicalLoad REQUIRED)
-
+find_package(Sofa.Component.Constraint REQUIRED)
 
 set(TEARING_SRC_DIR src/Tearing)
 
@@ -56,7 +56,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE "-DSOFA_BUILD_TEARING_PLUGIN"
 # Link the plugin library to its dependencies (other libraries).
 target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.Topology.Container.Dynamic)
 target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Core Sofa.Component.SolidMechanics.FEM.Elastic)
-target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.MechanicalLoad)
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.MechanicalLoad Sofa.Component.Constraint)
      
 target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
 target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>")
