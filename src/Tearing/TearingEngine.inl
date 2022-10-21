@@ -475,6 +475,20 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vparams->drawTool()->drawLines(vecteur, 2, sofa::type::RGBAColor(0.0, 1.0, 0.0, 1.0));
             vecteur.clear();
         }
+
+        const VecIDs& triIds = d_trianglesToIgnore.getValue();
+        std::vector<Vec3> verticesIgnore;
+        sofa::type::RGBAColor colorIgnore(1.0f, 0.0f, 0.0f, 1.0f);
+        for (auto triId : triIds)
+        {
+            Coord Pa = x[triangleList[triId][0]];
+            Coord Pb = x[triangleList[triId][1]];
+            Coord Pc = x[triangleList[triId][2]];
+            verticesIgnore.push_back(Pa);
+            verticesIgnore.push_back(Pb);
+            verticesIgnore.push_back(Pc);
+        }
+        vparams->drawTool()->drawTriangles(verticesIgnore, colorIgnore);
     }
 
     if (d_showFracturePath.getValue())
@@ -488,15 +502,23 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             Coord fractureDirection;
             fractureDirection[0] = -principalStressDirection[1];
             fractureDirection[1] = principalStressDirection[0];
-
+            
             vector<Coord> points;
             Real norm_fractureDirection = fractureDirection.norm();
             Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
+            points.push_back(Pa);
+            points.push_back(Pa);
             points.push_back(Pc);
             vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
             vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
+
+            vector<Coord> pointsDir;
+            pointsDir.push_back(Pa);
+            pointsDir.push_back(Pa + principalStressDirection);
+            vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1.0, 0, 1));
+            
             points.clear();
 
             const vector<Coord>& path = m_tearingAlgo->getFracturePath();
