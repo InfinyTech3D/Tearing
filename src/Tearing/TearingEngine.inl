@@ -29,9 +29,9 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_startDirection(initData(&d_startDirection, Vec3(1.0, 0.0, 0.0), "startDirection", "If startVertexId is set, define the direction of the tearing scenario. x direction by default"))
     , d_startLength(initData(&d_startLength, Real(1.0), "startLength", "If startVertexId is set, define the length of the tearing, to be combined with startDirection"))
 
-    , d_showTearableCandidates(initData(&d_showTearableCandidates, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
-    , d_showFracturePath(initData(&d_showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
-    , d_showElongatedMap(initData(&d_showElongatedMap, true, "showElongatedMap", "Flag activating rendering of fracture path"))
+    , d_showTearableCandidates(initData(&d_showTearableCandidates, false, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
+    , d_showFracturePath(initData(&d_showFracturePath, false, "showFracturePath", "Flag activating rendering of fracture path"))
+    , d_showElongatedMap(initData(&d_showElongatedMap, false, "showElongatedMap", "Flag activating rendering of fracture path"))
     
     , d_triangleIdsOverThreshold(initData(&d_triangleIdsOverThreshold, "triangleIdsOverThreshold", "triangles with maxStress over threshold value"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
