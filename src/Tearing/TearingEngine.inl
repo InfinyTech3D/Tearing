@@ -133,6 +133,9 @@ void TearingEngine<DataTypes>::reinit()
 template <class DataTypes>
 void TearingEngine<DataTypes>::doUpdate()
 {
+    if (sofa::core::objectmodel::BaseObject::d_componentState.getValue() != sofa::core::objectmodel::ComponentState::Valid)
+        return;
+
     m_stepCounter++;
 
     if (d_ignoreTriangles.getValue())
@@ -221,8 +224,6 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
 template <class DataTypes>
 void TearingEngine<DataTypes>::updateTriangleInformation()
 {
-    m_triangleInfoTearing.clear();
-    
     if (m_triangularFEM == nullptr && m_triangularFEMOptim == nullptr)
         return;
 
@@ -390,6 +391,13 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
         }
     }
 
+    if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
+    {
+        if (ev->getKey() == 'C')
+        {
+            algoFracturePath();
+        }
+    }
 }
 
 template <class DataTypes>
@@ -466,13 +474,13 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
             points.push_back(Pc);
-            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(1, 0.5, 0.5, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));
+            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
             points.clear();
 
             const vector<Coord>& path = m_tearingAlgo->getFracturePath();
             if (!path.empty())
-                vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 1, 0, 1));
+                vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
         }
     }
 }
