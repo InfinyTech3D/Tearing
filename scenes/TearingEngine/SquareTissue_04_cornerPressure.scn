@@ -55,8 +55,8 @@
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.2" step="0" nbFractureMax="100"/>
-		
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.2" 
+            step="20" nbFractureMax="40" showFracturePath="1"/>		
 		
         <Node >
             <OglModel name="Visual" color="red" />

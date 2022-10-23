@@ -44,19 +44,18 @@
 		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
 		
         <MechanicalObject name="Mo"/>
-        <DiagonalMass massDensity="0.15" />
-		
-		<BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
-		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
+        <DiagonalMass massDensity="10.0" />
+        
+        <BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
+        <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
-		<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -150 0" showArrowSize=".01" />
-		
-		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
-        <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
+        <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="1"/>
+        <TriangularBendingSprings name="FEM-Bend" stiffness="300" />
         <TriangleCollisionModel />
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.7" step="0" nbFractureMax="100"/>
-		
+        
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="1.0" 
+            step="30" nbFractureMax="40" showFracturePath="1"/>
+			
         <Node >
             <OglModel name="Visual" color="red" />
             <IdentityMapping input="@.." output="@Visual" />

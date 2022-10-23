@@ -53,8 +53,8 @@
         <ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -200 0" showArrowSize=".01" />
         
         <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true" showStressVector="1"/>
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="5"
-            step="10" nbFractureMax="40" showFracturePath="1"/>
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.3" 
+            step="20" nbFractureMax="40" showFracturePath="1"/>
         
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" showSprings="0" />
         <TriangleCollisionModel />

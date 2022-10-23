@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!--Test case 1: Upper border is fixed and only heavy gravity is applied -->
 
-<Node name="root" dt="0.01" showBoundingTree="0" gravity="0 -200 0">
+<Node name="root" dt="0.01" showBoundingTree="0" gravity="0 -10 0">
 	<Node name="RequiredPlugins">
 		<RequiredPlugin name="Sofa.Component.Collision.Detection.Algorithm"/> <!-- Needed to use components [BVHNarrowPhase, BruteForceBroadPhase, DefaultPipeline] -->
 		<RequiredPlugin name="Sofa.Component.Collision.Detection.Intersection"/> <!-- Needed to use components [MinProximityIntersection] -->
@@ -43,18 +43,18 @@
         <TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
         
         <MechanicalObject name="Mo"/>
-        <DiagonalMass massDensity="0.55" />
+        <DiagonalMass massDensity="10.0" />
         
         <BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
-        <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />        
-        
-        <TriangularFEMForceField name="FEM" youngModulus="1000" poissonRatio="0.3" method="large" 
-        computePrincipalStress="true" showStressVector="1"/>
-        <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" showSprings="0" />
-        <TriangleCollisionModel />
+        <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="50" 
-            step="10" nbFractureMax="40" showFracturePath="1"/>
+        <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="1"/>
+        <TriangularBendingSprings name="FEM-Bend" stiffness="300" />
+        <TriangleCollisionModel />
+        
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="1.0" 
+            step="30" nbFractureMax="40" showFracturePath="1"/>
+			
         <Node >
             <OglModel name="Visual" color="red" />
             <IdentityMapping input="@.." output="@Visual" />
