@@ -94,7 +94,7 @@ struct TearingEngine_Case1 : public TearingEngine_test
 {
     TearingEngine_Case1() : TearingEngine_test()
     {
-        m_fileName = "TearingEngine_scenes/scenarios/scenario1.scn";
+        m_fileName = "Benchmarks/Scenario-01_squareTissue_horizontal-cut.scn";
     }
 
     bool testInit() override
