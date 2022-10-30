@@ -1,5 +1,5 @@
 Authors
 -------
 
-- Bun San
-- Erik Pernod
+- Bun San (https://github.com/BunSan-Infinytech3d)
+- Erik Pernod (https://github.com/epernod)
