@@ -389,6 +389,8 @@ bool TearingAlgorithms<DataTypes>::computeSegmentMeshIntersection(
         candidateIndice.clear();
         candidateBarycoef.clear();
     }
+
+    return PATH_IS_OK;
 }
 
 
@@ -469,7 +471,6 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
         {
             topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
             indices_list.push_back(edges_listC[i]);
-            Edge e = m_topology->getEdge(edges_listC[i]);
             baryCoords[0] = coordsEdge_listC[i];
             baryCoords[1] = 0.0;
             baryCoords[2] = 0.0;

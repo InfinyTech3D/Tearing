@@ -319,8 +319,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
 
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-    double EPS = 1e-8;
-    bool PATH_IS_OK = false;
 
     //Calculate fracture starting point (Pa)
     int indexA;

@@ -140,6 +140,11 @@ protected:
 		sofa::type::vector< Index >& new_edges);
 
 private:
+    /// Pointers to the topology components
+    sofa::core::topology::BaseMeshTopology* m_topology;
+    TriangleSetTopologyModifier* m_modifier;
+    TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
+
 	/// number of fracture done by the algorithm
 	int m_fractureNumber;
 	
@@ -148,10 +153,6 @@ private:
 
 	/// path created by algoFracturePath
 	sofa::type::vector<Coord> m_fracturePath;
-
-	sofa::core::topology::BaseMeshTopology* m_topology;
-	TriangleSetTopologyModifier* m_modifier;
-	TriangleSetGeometryAlgorithms<DataTypes>* m_triangleGeo;
 };
 
 	
