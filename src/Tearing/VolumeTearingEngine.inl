@@ -42,24 +42,24 @@ template <class DataTypes>
 VolumeTearingEngine<DataTypes>::VolumeTearingEngine()
 	: input_position(initData(&input_position, "input_position", "Input position"))
     , l_topology(initLink("topology", "link to the topology container"))
-	, m_topology(nullptr)
-    , m_tetraFEM(nullptr)
     , d_tetrahedronInfoTearing(initData(&d_tetrahedronInfoTearing, "tetrahedronInfoTearing", "tetrahedron data use in VolumeTearingEngine"))
     , d_tetrahedronFEMInfo(initData(&d_tetrahedronFEMInfo, "tetrahedronFEMInfo", "tetrahedron data"))
     , d_seuilPrincipalStress(initData(&d_seuilPrincipalStress, 120.0, "seuilStress", "threshold value for stress"))
-    , d_tetraOverThresholdList(initData(&d_tetraOverThresholdList, "tetraOverThresholdList", "tetrahedral with maxStress over threshold value"))
+    , d_seuilVonMises(initData(&d_seuilVonMises, 280.0, "seuilVonMises", "threshold value for VM stress"))
+    , showSeuil(initData(&showSeuil, true, "showSeuil", "plot candidate"))
+    , showVonmises(initData(&showVonmises, false, "showVonmises", "plot candidateVonMises"))
     , d_tetraToIgnoreList(initData(&d_tetraToIgnoreList, "tetraToIgnoreList", "tetrahedral that can't be choosen as starting fracture point"))
+    , d_tetraOverThresholdList(initData(&d_tetraOverThresholdList, "tetraOverThresholdList", "tetrahedral with maxStress over threshold value"))
     , showTetraOverThreshold(initData(&showTetraOverThreshold, true, "showTetraOverThreshold", "Flag activating rendering of possible starting tetrahedron for fracture"))
     , d_counter(initData(&d_counter, 0, "counter", "counter for the step by step option"))
     , stepByStep(initData(&stepByStep, true, "stepByStep", "Flag activating step by step option for tearing"))
     , d_step(initData(&d_step, 50, "step", "step size"))
     , d_fractureNumber(initData(&d_fractureNumber, 0, "fractureNumber", "number of fracture done by the algorithm"))
-    , d_nbFractureMax(initData(&d_nbFractureMax, 2, "nbFractureMax", "number of fracture max done by the algorithm"))
-    , d_seuilVonMises(initData(&d_seuilVonMises, 280.0, "seuilVonMises", "threshold value for VM stress"))
-    , showSeuil(initData(&showSeuil, true, "showSeuil", "plot candidate"))
-    , showVonmises(initData(&showVonmises, false, "showVonmises", "plot candidateVonMises"))
+    , d_nbFractureMax(initData(&d_nbFractureMax, 2, "nbFractureMax", "number of fracture max done by the algorithm"))        
     , ignoreTetraAtStart(initData(&ignoreTetraAtStart, true, "ignoreTetraAtStart", "option to ignore some tetrahedra at start of the tearing algo"))
     , d_scenario(initData(&d_scenario, 0, "scenario", "choose scenario, zero is default"))
+    , m_topology(nullptr)
+    , m_tetraFEM(nullptr)
     , m_modifier(nullptr)
     , m_tetraGeo(nullptr)
     , m_volumeTearingAlgo(nullptr)
@@ -212,7 +212,7 @@ void VolumeTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vpar
                 }
                 else
                 {
-                    std::vector< type::Vector3 > TetraMaxStressPoints[4];
+                    std::vector< type::Vec3 > TetraMaxStressPoints[4];
 
                     TetraMaxStressPoints[0].push_back(pa);
                     TetraMaxStressPoints[0].push_back(pb);
@@ -292,7 +292,9 @@ void VolumeTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event*
 {
     if (simulation::AnimateBeginEvent::checkEventType(event))
     {
-        if (((d_counter.getValue() % d_step.getValue()) == 0) && (d_fractureNumber.getValue() < d_nbFractureMax.getValue()) || !stepByStep.getValue())
+        if ((((d_counter.getValue() % d_step.getValue()) == 0) &&
+                (d_fractureNumber.getValue() < d_nbFractureMax.getValue()))
+                || !stepByStep.getValue())
         {
             if (d_counter.getValue() > d_step.getValue())
             {
@@ -356,9 +358,9 @@ void VolumeTearingEngine<DataTypes>::computeTetraOverThresholdPrincipalStress()
     {
         if (std::find(tetraToSkip.begin(), tetraToSkip.end(), i) == tetraToSkip.end())
         {
-            TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[i];
-
             // TODO: restore that later
+            //TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[i];
+
             //if (tetrahedronInfo->maxStress >= threshold)
             //{
             //   candidate.push_back(i);
@@ -395,28 +397,28 @@ void VolumeTearingEngine<DataTypes>::computePlane(Coord& vec_P1M, Coord& vec_P2M
     if (candidateVonMises.size() > 0)
     {
         helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
-        TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
+        //TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
 
         //principalStressDirection vec_n=(A,B,C)
         //TODO restore that
         Coord vec_n;
 
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
-        const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(indexTetraMaxStress);
-        Index a = t[0];
-        Index b = t[1];
-        Index c = t[2];
-        Index d = t[3];
-        Coord pa = x[a];
-        Coord pb = x[b];
-        Coord pc = x[c];
-        Coord pd = x[d];
+//        const core::topology::BaseMeshTopology::Tetrahedron t = m_topology->getTetrahedron(indexTetraMaxStress);
+//        Index a = t[0];
+//        Index b = t[1];
+//        Index c = t[2];
+//        Index d = t[3];
+//        Coord pa = x[a];
+//        Coord pb = x[b];
+//        Coord pc = x[c];
+//        Coord pd = x[d];
         //barycentre M=(x_m,y_m,z_m)
-        Coord M = (pa + pb + pc + pd) / 4;
+        //Coord M = (pa + pb + pc + pd) / 4;
 
         // normal au plan + un point = def d'un plan
         // A*x_m + B*y_m + C*z_m + D =0
-        Real D = -vec_n[0] * M[0] - vec_n[1] * M[1] - vec_n[2] * M[2];
+        // Real D = -vec_n[0] * M[0] - vec_n[1] * M[1] - vec_n[2] * M[2];
 
         // P1 point appartenant au plan, produit vectoriel entre vec_n et vecteur(1,0,0)
         vec_P1M[0] = 0;
@@ -511,21 +513,22 @@ void VolumeTearingEngine<DataTypes>::cutting()
             if (true)
             {
                 t = m_topology->getTetrahedron(indexTetraMaxStress);
-                TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
+                // TetrahedronFEMInformation* tetrahedronInfo = &tetraFEMInf[indexTetraMaxStress];
                 std::cout << "  index max tetra=" << indexTetraMaxStress << std::endl;
 
-                Index a = t[0];
-                Index b = t[1];
-                Index c = t[2];
-                Index d = t[3];
-                Coord pa = x[a];
-                Coord pb = x[b];
-                Coord pc = x[c];
-                Coord pd = x[d];
-
-                Coord center = (pa + pb + pc + pd) / 4;
-
                 // TODO restore that
+
+//                Index a = t[0];
+//                Index b = t[1];
+//                Index c = t[2];
+//                Index d = t[3];
+//                Coord pa = x[a];
+//                Coord pb = x[b];
+//                Coord pc = x[c];
+//                Coord pd = x[d];
+
+                // Coord center = (pa + pb + pc + pd) / 4;
+
                 /*dir1 = tetrahedronInfo->principalStressDirection1;
                 Coord dir2 = tetrahedronInfo->principalStressDirection2;
                 Coord dir3 = tetrahedronInfo->principalStressDirection3;

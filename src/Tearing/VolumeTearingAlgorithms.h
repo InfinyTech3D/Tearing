@@ -59,12 +59,13 @@ public :
 
 
 protected:
-	/// number of fracture done by the algorithm
-	int m_fractureNumber;
-
+    /// Pointers to the topology components
 	sofa::core::topology::BaseMeshTopology* m_topology;
 	TetrahedronSetTopologyModifier* m_modifier;
 	TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;
+
+    /// number of fracture done by the algorithm
+    int m_fractureNumber;
 };
 
 

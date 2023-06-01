@@ -22,7 +22,7 @@
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
 #define SOFA_VOLUME_TEARING_ALGORITHMS_CPP
-#include "VolumeTearingAlgorithms.inl"
+#include <Tearing/VolumeTearingAlgorithms.inl>
 #include <sofa/defaulttype/VecTypes.h>
 
 namespace sofa::component

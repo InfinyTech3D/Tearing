@@ -22,7 +22,7 @@
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
 #define SOFA_COMPONENT_ENGINE_VOLUMETEARINGENGINE_CPP
-#include "VolumeTearingEngine.inl"
+#include <Tearing/VolumeTearingEngine.inl>
 #include <sofa/core/ObjectFactory.h>
 #include <sofa/defaulttype/VecTypes.h>
 
