@@ -22,7 +22,7 @@
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
 #pragma once
-#include "VolumeTearingAlgorithms.h"
+#include <Tearing/VolumeTearingAlgorithms.h>
 
 namespace sofa::component
 {

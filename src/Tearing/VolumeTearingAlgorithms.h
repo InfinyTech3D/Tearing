@@ -23,7 +23,7 @@
  ****************************************************************************/
 #pragma once
 
-#include <tearing/config.h>
+#include <Tearing/config.h>
 #include <sofa/defaulttype/VecTypes.h>
 #include <sofa/component/topology/container/dynamic/TetrahedronSetTopologyContainer.h>
 #include <sofa/component/topology/container/dynamic/TetrahedronSetTopologyModifier.h>

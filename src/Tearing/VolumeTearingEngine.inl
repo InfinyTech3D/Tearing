@@ -23,7 +23,7 @@
  ****************************************************************************/
 
 #pragma once
-#include "VolumeTearingEngine.h"
+#include <Tearing/VolumeTearingEngine.h>
 
 #include <sofa/core/visual/VisualParams.h>
 #include <sofa/type/RGBAColor.h>
