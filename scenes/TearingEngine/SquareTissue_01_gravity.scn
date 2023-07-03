@@ -33,7 +33,7 @@
     <DefaultContactManager response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
     
-    <Node name="SquareGravity">
+    <Node name="SquareGravity_FEM">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
         <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
@@ -45,14 +45,16 @@
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="10.0" />
         
-        <BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
+        <BoxROI name="FixedSide" box="-0.1 9.9 0.1  10.1 10.1 -0.1" drawBoxes="1" />
         <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
         <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="1"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" />
+        <PlaneForceField normal="0 1 0" d="-20" stiffness="100000" showPlane="1" showPlaneSize="20"/>
+        
         <TriangleCollisionModel />
         
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="1.0" 
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="10.0" 
             step="30" nbFractureMax="40" showFracturePath="1"/>
 			
         <Node >
@@ -60,4 +62,37 @@
             <IdentityMapping input="@.." output="@Visual" />
         </Node>
     </Node>
+    
+    <!--
+    <Node name="SquareGravity_FEM_optim">
+        <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
+        <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
+        <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" translation="10 0 0"/>
+        
+        <TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
+        <TriangleSetTopologyModifier   name="Modifier" />
+        <TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
+        
+        <MechanicalObject name="Mo"/>
+        <DiagonalMass massDensity="10.0" />
+        
+        <BoxROI name="FixedSide" box="9.9 9.9 0.1 20.1 10.1 -0.1" drawBoxes="1" />
+        <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
+
+        <TriangularFEMForceFieldOptim name="FEM" youngModulus="60" poissonRatio="0.3" method="large"  />
+        <TriangularBendingSprings name="FEM-Bend" stiffness="300" />
+        <PlaneForceField normal="0 1 0" d="-20" stiffness="100000" showPlane="1" showPlaneSize="20"/>
+            
+        <TriangleCollisionModel />
+        
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="30.0" 
+            step="30" nbFractureMax="40" showFracturePath="1"/>
+            
+        <Node >
+            <OglModel name="Visual" color="blue" />
+            <IdentityMapping input="@.." output="@Visual" />
+        </Node>
+    </Node>
+    -->
+    
 </Node>

@@ -50,13 +50,14 @@
         <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
         <BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
-        <ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -200 0" showArrowSize=".01" />
+        <ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -200 50" showArrowSize=".01" />
         
         <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true" showStressVector="1"/>
         <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.3" 
             step="20" nbFractureMax="40" showFracturePath="1"/>
         
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" showSprings="0" />
+        <PlaneForceField normal="0 1 0" d="-30" stiffness="100000" showPlane="1" showPlaneSize="20"/>
         <TriangleCollisionModel />
         
         <Node >
