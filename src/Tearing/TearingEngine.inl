@@ -336,6 +336,14 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
 
 
 template <class DataTypes>
+void TearingEngine<DataTypes>::algoFracturePath2()
+{
+    std::cout << "TearingEngine<DataTypes>::algoFracturePath2" << std::endl;
+    m_tearingAlgo->algoFracturePath2(m_maxStressTriangleIndex, m_Pa, m_Pb, m_Pc, Coord(0, 0, 0), d_input_positions.getValue());
+}
+
+
+template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
     helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);

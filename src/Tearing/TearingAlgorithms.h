@@ -65,6 +65,8 @@ public:
 	void algoFracturePath(Coord Pa, Index indexA, Coord Pb, Coord Pc, 
 		const Index indexTriangleMaxStress, const Coord principalStressDirection, const VecCoord& input_position);
 
+	void algoFracturePath2(const Index triID, Coord Pa, Coord Pb, Coord Pc, const Coord principalStressDirection, const VecCoord& input_position);
+
 	int getFractureNumber() const { return m_fractureNumber; }
 
 	const sofa::type::vector< sofa::type::vector<int> >& getTjunctionTriangles() const { return m_TjunctionTriangle; }

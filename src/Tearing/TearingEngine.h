@@ -125,6 +125,8 @@ protected:
 	void algoFracturePath();
 
 	void computeFractureDirection(Coord principleStressDirection, Coord& fracture_direction);
+	
+	void algoFracturePath2();
 
 	/// <summary>
 	/// compute extremities of fracture Pb and Pc from a start point Pa
@@ -214,6 +216,8 @@ private:
 	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
 	TriangleID m_maxStressTriangleIndex = 0; ///< Triangle ID of the triangle from filter candadites with the max stress
 	Index m_maxStressVertexIndex = 0; ///< Global Vertex Id where the stress is maximum. Vertex is part of @sa m_maxStressTriangleIndex Triangle
+
+	Coord m_Pa, m_Pb, m_Pc;
 };
 	
 #if !defined(SOFA_COMPONENT_ENGINE_TEARINGENGINE_CPP)

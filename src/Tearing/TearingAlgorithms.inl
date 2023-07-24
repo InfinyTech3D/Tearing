@@ -50,6 +50,33 @@ TearingAlgorithms<DataTypes>::~TearingAlgorithms()
 }
 
 
+
+template <class DataTypes>
+void TearingAlgorithms<DataTypes>::algoFracturePath2(const Index triID, Coord Pa, Coord Pb, Coord Pc, const Coord principalStressDirection, const VecCoord& input_position)
+{
+    m_fracturePath.clear();
+    m_fracturePath.push_back(Pa);
+    double EPS = 1e-8;
+    core::topology::BaseMeshTopology::TriangleID idxA;
+    core::topology::BaseMeshTopology::TriangleID idxB;
+    // Output declarations
+    //sofa::type::vector< sofa::core::topology::TopologyElementType> topoPath_list;
+    //sofa::type::vector<Index> indices_list;
+    //sofa::type::vector< type::Vec3 > coords2_list;
+
+    //bool path_ok = m_triangleGeo->computeIntersectedObjectsList(sofa::InvalidID, Pa, Pb, idxA, idxB, topoPath_list, indices_list, coords2_list);
+    //if (!path_ok)
+    //{
+    //    msg_error("TearingAlgorithms") << " in computeIntersectedObjectsList in algoFracturePath2";
+    //    return;
+    //}
+
+    ////std::cout << "topoPath_list: " << topoPath_list << std::endl;
+    //std::cout << "indices_list: " << indices_list << std::endl;
+    //std::cout << "coords2_list: " << coords2_list << std::endl;
+}
+
+
 template <class DataTypes>
 void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coord Pb, Coord Pc, 
     const Index indexTriangleMaxStress, const Coord principalStressDirection, const VecCoord& input_position)
