@@ -101,7 +101,7 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     //intersections with the mesh exists 
     if (PATH_C_IS_OK || PATH_B_IS_OK)
     {
-        vector< sofa::core::topology::TopologyElementType> topoPath_list;
+        vector< sofa::geometry::ElementType> topoPath_list;
         VecIds indices_list;
         vector< type::Vec3 > coords_list;
         int sizeB, sizeC;
@@ -400,7 +400,7 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     bool pointB_inTriangle, Index triangleB, Coord Pb, VecIds edges_listB, vector<double> coordsEdge_listB, int& sizeB,
     Coord Pa, Index indexA,
     bool pointC_inTriangle, Index triangleC, Coord Pc, VecIds edges_listC, vector<double> coordsEdge_listC, int& sizeC,
-    vector< sofa::core::topology::TopologyElementType>& topoPath_list,
+    vector< sofa::geometry::ElementType>& topoPath_list,
     VecIds& indices_list,
     vector< type::Vec3 >& coords_list)
 {
@@ -431,13 +431,13 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
 
         if (B_isOnVertex) //Pb is on an vertex
         {
-            topoPath_list.push_back(core::topology::TopologyElementType::POINT);
+            topoPath_list.push_back(sofa::geometry::ElementType::POINT);
             indices_list.push_back(indexPointB);
             coords_list.push_back(Pb);
         }
         else//Pb is in an triangle
         {
-            topoPath_list.push_back(core::topology::TopologyElementType::TRIANGLE);
+            topoPath_list.push_back(sofa::geometry::ElementType::TRIANGLE);
             indices_list.push_back(triangleB);
             for (unsigned int i = 0; i < 3; i++)
                 baryCoords[i] = coefs_b[i];
@@ -450,7 +450,7 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     {
         for (auto i = 0; i < sizeB; i++)
         {
-            topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
+            topoPath_list.push_back(sofa::geometry::ElementType::EDGE);
             indices_list.push_back(edges_listB[sizeB - 1 - i]);
             baryCoords[0] = coordsEdge_listB[sizeB - 1 - i];
             baryCoords[1] = 0.0;
@@ -460,7 +460,7 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     }
 
     //add Pa
-    topoPath_list.push_back(core::topology::TopologyElementType::POINT);
+    topoPath_list.push_back(sofa::geometry::ElementType::POINT);
     indices_list.push_back(indexA);
     coords_list.push_back(Pa);
 
@@ -469,7 +469,7 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
     {
         for (auto i = 0; i < sizeC; i++)
         {
-            topoPath_list.push_back(core::topology::TopologyElementType::EDGE);
+            topoPath_list.push_back(sofa::geometry::ElementType::EDGE);
             indices_list.push_back(edges_listC[i]);
             baryCoords[0] = coordsEdge_listC[i];
             baryCoords[1] = 0.0;
@@ -499,13 +499,13 @@ void TearingAlgorithms<DataTypes>::pathAdaptationObject(
 
         if (C_isOnVertex) //Pc is on an vertex
         {
-            topoPath_list.push_back(core::topology::TopologyElementType::POINT);
+            topoPath_list.push_back(sofa::geometry::ElementType::POINT);
             indices_list.push_back(indexPointC);
             coords_list.push_back(Pc);
         }
         else//Pc is in an triangle
         {
-            topoPath_list.push_back(core::topology::TopologyElementType::TRIANGLE);
+            topoPath_list.push_back(sofa::geometry::ElementType::TRIANGLE);
             indices_list.push_back(triangleC);
             for (unsigned int i = 0; i < 3; i++)
                 baryCoords[i] = coefs_c[i];
@@ -525,7 +525,7 @@ int TearingAlgorithms<DataTypes>::splitting(
     int snapingValue, int snapingBorderValue,
     Coord Pa, Coord Pb, Coord Pc,
     int sizeB, int sizeC,
-    vector< sofa::core::topology::TopologyElementType> topoPath_list,
+    vector< sofa::geometry::ElementType> topoPath_list,
     VecIds indices_list,
     vector< type::Vec3 > coords_list,
     vector< Index >& new_edges)

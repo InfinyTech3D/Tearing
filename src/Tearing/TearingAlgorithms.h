@@ -112,7 +112,7 @@ protected:
 		bool pointB_inTriangle, Index triangleB, Coord Pb, VecIds edges_listB, sofa::type::vector<double> coordsEdge_listB, int& sizeB,
 		Coord Pa, Index indexA,
 		bool pointC_inTriangle, Index triangleC, Coord Pc, VecIds edges_listC, sofa::type::vector<double> coordsEdge_listC, int& sizeC,
-		sofa::type::vector< sofa::core::topology::TopologyElementType>& topoPath_list,
+        sofa::type::vector< sofa::geometry::ElementType>& topoPath_list,
 		VecIds& indices_list,
 		sofa::type::vector< sofa::type::Vec<3, double> >& coords_list);
 
@@ -134,7 +134,7 @@ protected:
 		int snapingValue, int snapingBorderValue,
 		Coord Pa, Coord Pb, Coord Pc,
 		int sizeB, int sizeC,
-		sofa::type::vector< sofa::core::topology::TopologyElementType> topoPath_list,
+        sofa::type::vector< sofa::geometry::ElementType> topoPath_list,
 		VecIds indices_list,
 		sofa::type::vector< sofa::type::Vec<3, double> > coords_list,
 		sofa::type::vector< Index >& new_edges);
