@@ -14,7 +14,7 @@
 	
     <DefaultPipeline name="PenalityContactForceField21" verbose="0" />
     <BruteForceDetection name="N2" />
-    <DefaultContactManager name="PenalityContactForceField22" response="PenalityContactForceField" />
+    <CollisionResponse name="PenalityContactForceField22" response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
     <DefaultCollisionGroupManager name="PenalityContactForceField23" />
     
