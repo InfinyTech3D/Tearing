@@ -1,4 +1,4 @@
-# Tearing
+# SOFA Tearing Plugin
 [![Support](https://img.shields.io/badge/support-on_GitHub_Discussions-blue.svg)](https://github.com/sofa-framework/sofa/discussions/categories/tearing)
 [![Gitter](https://img.shields.io/badge/chat-on_Gitter-ff69b4.svg)](https://app.gitter.im/#/room/#sofa-framework:gitter.im)
 [![Contact](https://img.shields.io/badge/contact-on_website-orange.svg)](https://infinytech3d.com/)
