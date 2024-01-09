@@ -36,9 +36,8 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
     <Node name="SquareGravity">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
-        <!--MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" /-->
-		<MeshOBJLoader name="meshLoader" filename="mesh/square_tissue_pre-cut.obj" scale="1" createSubelements="true"/>
-		
+        <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
+		<!--<MeshOBJLoader name="meshLoader" filename="mesh/square_tissue_pre-cut.obj" scale="1" createSubelements="true"/>-->
 		<TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
 		<TriangleSetTopologyModifier   name="Modifier" />
 		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
@@ -52,13 +51,14 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
 		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PulledSide" box="-5.1 0.1 0.1  5.1 -0.1 -0.1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -100 0" showArrowSize=".01" />
+		<ConstantForceField name="CFF" indices="@PulledSide.indices" forces="0 -650 0" showArrowSize=".01" />
 		
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.9" step="0" nbFractureMax="100"/>
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.1" step="0" nbFractureMax="100"/>
+					  startVertexId="318" startDirection="0.0 1.0 0.0" startLength="2.5"/>
 
         <Node >
             <OglModel name="Visual" color="red" />

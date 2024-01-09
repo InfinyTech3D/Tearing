@@ -53,7 +53,7 @@
 		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PullCorner" box="9.9 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PullCorner.indices" force="0 -130 0" showArrowSize=".02" />		
+		<ConstantForceField name="CFF" indices="@PullCorner.indices" forces="0 -130 0" showArrowSize=".02" />		
 
 		<TearingEngine name="TearingEngine" input_position="@Mo.position" 
 			startVertexId="45" startDirection="1.0 0.0 0.0" startLength="2.0"/>
