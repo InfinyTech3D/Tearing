@@ -10,7 +10,7 @@ Only tearing on triangular surface is supported by default. Volume tearing on te
 Current **TRL** is between 3 and 4. *(4 for surface and 3 for volume tearing)*
 All contributions are really welcome.
 
-![TearingAlgorithms](./doc/screenshots_scenario/CastTest1-1.png)
+![TearingAlgorithms](./doc/Tearing_mouse_interaction.gif)
 
 ### Features
 - Low level api (c++ methods) is available through the objects ***TearingAlgorithms*** for surface tissue to compute the fracture path from one point to a direction. Similarly ***VolumeTearingAlgorithms***, allows to compute the plan intersection from an elongated tetrahedron. 
