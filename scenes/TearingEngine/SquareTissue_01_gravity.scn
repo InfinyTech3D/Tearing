@@ -48,13 +48,13 @@
         <BoxROI name="FixedSide" box="-0.1 9.9 0.1  10.1 10.1 -0.1" drawBoxes="1" />
         <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
-        <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="1"/>
+        <TriangularFEMForceField name="FEM" youngModulus="100" poissonRatio="0.3" method="large" computePrincipalStress="1"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" />
         <PlaneForceField normal="0 1 0" d="-20" stiffness="100000" showPlane="1" showPlaneSize="20"/>
         
         <TriangleCollisionModel />
         
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="10.0" 
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="1.0" 
             step="30" nbFractureMax="40" showFracturePath="1"/>
 			
         <Node >

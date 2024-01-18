@@ -36,8 +36,8 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
     <Node name="SquareGravity">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
-        <!--MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" /-->
-		<MeshOBJLoader name="meshLoader" filename="mesh/square_tissue_pre-cut2.obj" scale="1" createSubelements="true"/>
+        <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
+		<!--<MeshOBJLoader name="meshLoader" filename="mesh/square_tissue_pre-cut2.obj" scale="1" createSubelements="true"/>-->
 		
 		<TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
 		<TriangleSetTopologyModifier   name="Modifier" />
@@ -52,7 +52,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
 		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PulledSide" box="-5.1 0.1 0.1  5.1 -0.1 -0.1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -100 0" showArrowSize=".01" />
+		<ConstantForceField name="CFF" indices="@PulledSide.indices" forces="0 -100 0" showArrowSize=".01" />
 		
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
