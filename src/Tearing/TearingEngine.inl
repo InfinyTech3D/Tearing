@@ -119,6 +119,10 @@ void TearingEngine<DataTypes>::init()
     if (m_triangularFEM)
     {
         msg_info() << "Using TriangularFEMForceField component";
+        /*Ronak-Debug*/
+        std::cout << "m_triangularFEM is not null!" << std::endl;
+        helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+        std::cout << "m_triangularFEM size is " << triangleFEMInf.size() << std::endl;
     }
     else
     {
@@ -146,6 +150,9 @@ void TearingEngine<DataTypes>::init()
         m_tearingAlgo = std::make_unique<TearingAlgorithms<DataTypes> >(m_topology, _modifier, _triangleGeo);
 
     sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Valid);
+
+    /*Ronak-debug*/
+    std::cout << "--------------------------------End of init function--------------------------------" << std::endl;
 }
 
 template <class DataTypes>
@@ -161,11 +168,70 @@ void TearingEngine<DataTypes>::doUpdate()
         return;
 
     m_stepCounter++;
+    /*Ronak-modification*/
+   // helper::WriteAccessor< Data<vector<Index>> >triangleToSkip1(d_trianglesToIgnore);
+    //triangleToSkip1.clear();
 
     if (d_ignoreTriangles.getValue())
     {
-        if(m_tearingAlgo!= nullptr && m_tearingAlgo->getFractureNumber() == 0)
-            computeTriangleToSkip();
+        if (m_tearingAlgo != nullptr) 
+        {
+           
+            const vector< vector<int> >& TjunctionTriangle = m_tearingAlgo->getTjunctionTriangles();
+
+            if (m_tearingAlgo->getFractureNumber() == 0)  
+            {
+                helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
+                computeTriangleToSkip();
+                if(TjunctionTriangle.size())
+                {
+                    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
+                    {
+                        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
+                        {
+                            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
+                            {
+                                triangleToSkip.push_back(TjunctionTriangle[i][1]);
+                                /*Ronak-debug*/
+                                //std::cout << "The index of T_juncion triangle is :" << TjunctionTriangle[i][1] << std::endl;
+                            }
+                        }
+                    }
+                }
+            
+            }
+            else 
+            {
+                helper::WriteAccessor< Data<vector<Index>> >triangleToSkip1(d_trianglesToIgnore);
+                triangleToSkip1.clear();
+               
+                computeTriangleToSkip();
+                if (TjunctionTriangle.size())
+                {
+                    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
+                    {
+                        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
+                        {
+                            std::cout << "The fracture number is : " << m_tearingAlgo->getFractureNumber() << std::endl;
+                            if (std::find(triangleToSkip1.begin(), triangleToSkip1.end(), TjunctionTriangle[i][1]) == triangleToSkip1.end())
+                            {
+                                triangleToSkip1.push_back(TjunctionTriangle[i][1]);
+                                /*Ronak-debug*/
+                                //std::cout << "The index of T_juncion triangle is :" << TjunctionTriangle[i][1] << std::endl;
+                            }
+                        }
+                    }
+                }
+                for (unsigned int j = 0; j < triangleToSkip1.size(); j++)
+                    std::cout << triangleToSkip1[j] << " ";
+                std::cout << std::endl;
+
+            }
+
+            
+
+        }
+       
     }
     else
     {
@@ -173,22 +239,28 @@ void TearingEngine<DataTypes>::doUpdate()
         d_trianglesToIgnore.setValue(emptyIndexList);
     }
 
-    if (m_tearingAlgo != nullptr)
-    {
-        const vector< vector<int> >& TjunctionTriangle = m_tearingAlgo->getTjunctionTriangles();
-        helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-        for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
-        {
-            if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
-            {
-                if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
-                    triangleToSkip.push_back(TjunctionTriangle[i][1]);
-            }
-        }
-    }
+    //if (m_tearingAlgo != nullptr)
+    //{
+    //    const vector< vector<int> >& TjunctionTriangle = m_tearingAlgo->getTjunctionTriangles();
+    //    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
+    //    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
+    //    {
+    //        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
+    //        {
+    //            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
+    //            {
+    //                triangleToSkip.push_back(TjunctionTriangle[i][1]);
+    //                /*Ronak-debug*/
+    //                std::cout << "The index of T_juncion triangle is :" << TjunctionTriangle[i][1] << std::endl;
+    //            }
+    //        }
+    //    }
+    //}
 
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
+    /*Ronak-debug*/
+    std::cout << "-----------------------------End of doUpdate function-----------------------------" << std::endl;
 }
 
 
@@ -223,6 +295,9 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             if (tinfo.maxStress >= threshold)
             {
                 candidate.push_back(i);
+                /*Ronak-debug*/
+                //std::cout << "The value of \sigma_1 is " << tinfo.maxStress
+                    //<< " and the index of this candidate is " << i << std::endl;
             }
 
             if (tinfo.maxStress > maxStress)
@@ -232,15 +307,72 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             }
         }
     }
+    /*Ronak-debug*/
+    //std::cout << "The value of  m_maxStressTriangleIndex in triangleOverThresholdPrincipalStress function: " << m_maxStressTriangleIndex << std::endl;
+
+    //if (candidate.size())
+    //{
+    //    TriangleTearingInformation& tinfo = m_triangleInfoTearing[m_maxStressTriangleIndex];
+    //    Index k = (tinfo.stress[0] > tinfo.stress[1]) ? 0 : 1;
+    //    k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
+    //    m_maxStressVertexIndex = triangleList[m_maxStressTriangleIndex][k];
+    //    //d_stepModulo.setValue(0);
+    //    /*Ronak-debug*/
+    //    std::cout << "The stress value for the triangle with maximum principle stress: " <<
+    //        tinfo.stress[0] << " " << tinfo.stress[1] << " " << tinfo.stress[2] << std::endl;
+    //}
+    /*Ronak-modification*/
+    //Computing the vertex with maximum stress using the 
+    //principle stress of the triangles adjacent to that vertex
 
     if (candidate.size())
-    {
-        TriangleTearingInformation& tinfo = m_triangleInfoTearing[m_maxStressTriangleIndex];
-        Index k = (tinfo.stress[0] > tinfo.stress[1]) ? 0 : 1;
-        k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
-        m_maxStressVertexIndex = triangleList[m_maxStressTriangleIndex][k];
-        //d_stepModulo.setValue(0);
-    }
+        {
+        helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+
+        const auto& triangles = m_topology->getTriangles();
+        
+        constexpr size_t numVertices = 3;
+        sofa::type::vector<Index> VertexIndicies(numVertices);
+        sofa::type::vector<Real>  StressPerVertex(numVertices);
+        VertexIndicies[0] = (triangles[m_maxStressTriangleIndex])[0];
+        VertexIndicies[1] = (triangles[m_maxStressTriangleIndex])[1];
+        VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
+        
+
+
+       for (unsigned int i = 0; i < numVertices; i++)
+        {
+            const core::topology::BaseMeshTopology::TrianglesAroundVertex& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies
+                [i]);
+            Real averageStress = 0.0;
+            double sumArea = 0.0;
+           
+            for (auto triID : trianglesAround)
+            {
+                const TriangleFEMInformation& tFEMinfo = triangleFEMInf[triID];
+                
+                if (tFEMinfo.area)
+                {
+                    averageStress += (fabs(tFEMinfo.maxStress) * tFEMinfo.area);
+                    sumArea += tFEMinfo.area;
+                }
+            }
+            
+            if (sumArea)
+                averageStress /= sumArea;
+
+            StressPerVertex[i] = averageStress;
+            //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
+           
+        }
+       Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
+             k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
+         
+             m_maxStressVertexIndex = triangles[m_maxStressTriangleIndex][k];
+             std::cout << "m_maxStressPerVertex is : " << m_maxStressVertexIndex << std::endl;
+           
+        }
+
     d_maxStress.endEdit();
 }
 
@@ -258,6 +390,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
     {
         // Access list of triangularFEM info per triangle
         helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+
         if (triangleFEMInf.size() != triangleList.size())
         {
             msg_warning() << "VecTriangleFEMInformation of size: " << triangleFEMInf.size() << " is not the same size as le list of triangles: " << triangleList.size();
@@ -384,14 +517,14 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
     this->getContext()->template get< fixC >(&_fixConstraints, sofa::core::objectmodel::BaseContext::SearchUp);
 
     std::set<Index> vertexToSkip;
-    for (constantFF* compo : _constantForceFields)
-    {
-        const vector<Index>& _indices = compo->d_indices.getValue();
-        for (Index vId : _indices)
-        {
-            vertexToSkip.insert(vId);
-        }
-    }
+    //for (constantFF* compo : _constantForceFields)
+    //{
+    //    const vector<Index>& _indices = compo->d_indices.getValue();
+    //    for (Index vId : _indices)
+    //    {
+    //        vertexToSkip.insert(vId);
+    //    }
+    //}
     
     for (fixC* compo : _fixConstraints)
     {
@@ -401,7 +534,7 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
             vertexToSkip.insert(vId);
         }
     }
-
+    //triangleToSkip.clear();
     for (Index vId : vertexToSkip)
     {
         const vector<Index>& triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vId);
@@ -445,13 +578,16 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 template <class DataTypes>
 void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 {    
+    /*Ronak-Debug*/
+    //std::cout << "The value of  m_maxStressTriangleIndex in draw function: " << m_maxStressTriangleIndex << std::endl;
+
     if (d_showTearableCandidates.getValue())
     {
         VecTriangles triangleList = m_topology->getTriangles();
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
         std::vector<Vec3> vertices;
-        sofa::type::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);
+        sofa::type::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);  // (R, G, B, alpha)
         std::vector<Vec3> tearTriangleVertices;
         sofa::type::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
         if (candidate.size() > 0)
@@ -477,31 +613,40 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
                     tearTriangleVertices.push_back(Pc);
                 }
             }
-            vparams->drawTool()->drawTriangles(vertices, color);
+
+          
+
+         //   vparams->drawTool()->drawTriangles(vertices, color);
             vparams->drawTool()->drawTriangles(tearTriangleVertices, color2);
 
-            std::vector<Vec3> vecteur;
-            Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-            Coord Pa = x[m_maxStressVertexIndex];
+            //std::vector<Vec3> vecteur;
+            //Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
+            //Coord Pa = x[m_maxStressVertexIndex];
 
-            vecteur.push_back(Pa);
-            vecteur.push_back(Pa + principalStressDirection);
-            vparams->drawTool()->drawLines(vecteur, 1, sofa::type::RGBAColor(0, 1, 0, 1));
-            vecteur.clear();
-            Coord fractureDirection;
-            fractureDirection[0] = -principalStressDirection[1];
-            fractureDirection[1] = principalStressDirection[0];
-            vecteur.push_back(Pa);
-            vecteur.push_back(Pa + fractureDirection);
-            vparams->drawTool()->drawLines(vecteur, 2, sofa::type::RGBAColor(0.0, 1.0, 0.0, 1.0));
-            vecteur.clear();
+            //vecteur.push_back(Pa);
+            //vecteur.push_back(Pa + principalStressDirection);
+            //vparams->drawTool()->drawLines(vecteur, 1, sofa::type::RGBAColor(0, 1, 0, 1));
+            //vecteur.clear();
+            //Coord fractureDirection;
+            //fractureDirection[0] = -principalStressDirection[1];
+            //fractureDirection[1] = principalStressDirection[0];
+            //vecteur.push_back(Pa);
+            //vecteur.push_back(Pa + fractureDirection);
+            //vparams->drawTool()->drawLines(vecteur, 2, sofa::type::RGBAColor(0.0, 1.0, 0.0, 1.0));
+            //vecteur.clear();
         }
 
         const VecIDs& triIds = d_trianglesToIgnore.getValue();
         std::vector<Vec3> verticesIgnore;
         sofa::type::RGBAColor colorIgnore(1.0f, 0.0f, 0.0f, 1.0f);
+        /*Ronak-debug*/
+        //std::cout << "The list of indices to be ignored :" << std::endl;
+
         for (auto triId : triIds)
         {
+            /*Ronak-debug*/
+            //std::cout << triId << " ";
+
             Coord Pa = x[triangleList[triId][0]];
             Coord Pb = x[triangleList[triId][1]];
             Coord Pc = x[triangleList[triId][2]];
@@ -532,19 +677,25 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             points.push_back(Pa);
             points.push_back(Pa);
             points.push_back(Pc);
+            // Blue == computed fracture path (using d_fractureMaxLength)
             vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
             vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
 
+            // Green == principal stress direction
             vector<Coord> pointsDir;
             pointsDir.push_back(Pa);
-            pointsDir.push_back(Pa + principalStressDirection);
-            vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1.0, 0, 1));
+            //std::cout << "Pa coordinate: " << Pa[0]+principalStressDirection[0] << " " << Pa[1] << std::endl;
+            //std::cout << "PSD vector:" << principalStressDirection[0] << " " << principalStressDirection[1] << std::endl;
+            //std::cout << "Pa coordinate + PSD: " << Pa[0]+principalStressDirection[0] << " " << Pa[1] + principalStressDirection[1] << std::endl;
+            pointsDir.push_back(100.0*(Pa + principalStressDirection));
+            vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
+           vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
             
             points.clear();
 
             const vector<Coord>& path = m_tearingAlgo->getFracturePath();
             if (!path.empty())
-                vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
+               vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
         }
     }
 }
