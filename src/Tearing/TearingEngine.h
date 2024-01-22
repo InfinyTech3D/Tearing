@@ -76,6 +76,7 @@ public:
 	Data<Real> d_fractureMaxLength; ///< max length of a fracture
 	
 	Data<bool> d_ignoreTriangles; ///< option to ignore triangle at start
+	Data<bool> d_ignoreVertices; ///< option to ignore vertices instead of the whole triangles
 	Data<VecIDs> d_trianglesToIgnore; ///< list of triangles to ignore at start
 	Data<int> d_stepModulo; ///< to define a number of step between 2 fractures
 	Data<int> d_nbFractureMax; ///< Maximum number of fracture
@@ -92,7 +93,8 @@ public:
 	/// Output Data
 	Data<VecIDs> d_triangleIdsOverThreshold; ///< output vector of triangles candidates from @sa triangleOverThresholdPrincipalStress
 	Data<Real> d_maxStress; ///< output of the maximum stress found
-	
+
+
 	struct TriangleTearingInformation
 	{
 		//Real area;
@@ -133,6 +135,12 @@ protected:
 	/// compute ignored triangle at start of the tearing algo
 	/// </summary>
 	void computeTriangleToSkip();
+
+/// <summary>
+/// add T-junction triangles to the list of ignored triangles
+/// </summary>
+	void processTjunctionTriangle(const vector<vector<int>>& TjunctionTriangle, helper::WriteAccessor<Data<vector<Index>>>& triangleToSkip);
+
 
 private:
 	/// Pointer to the current topology

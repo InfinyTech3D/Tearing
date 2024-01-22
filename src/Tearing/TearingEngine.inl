@@ -44,6 +44,7 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by occurence"))
 
     , d_ignoreTriangles(initData(&d_ignoreTriangles, true, "ignoreTriangles", "option to ignore some triangles from the tearing algo"))
+    , d_ignoreVertices(initData(&d_ignoreVertices, false, "ignoreVertices", "option to ignore vertices instead of the whole triangles"))
     , d_trianglesToIgnore(initData(&d_trianglesToIgnore, "trianglesToIgnore", "triangles that can't be choosen as starting fracture point"))
     , d_stepModulo(initData(&d_stepModulo, 20, "step", "step size"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
@@ -63,6 +64,7 @@ TearingEngine<DataTypes>::TearingEngine()
     addInput(&d_fractureMaxLength);
 
     addInput(&d_ignoreTriangles);
+    addInput(&d_ignoreVertices);
     addAlias(&d_ignoreTriangles, "ignoreTriangleAtStart");
 
     addInput(&d_startVertexId);
@@ -168,76 +170,34 @@ void TearingEngine<DataTypes>::doUpdate()
         return;
 
     m_stepCounter++;
+    
     /*Ronak-modification*/
-   // helper::WriteAccessor< Data<vector<Index>> >triangleToSkip1(d_trianglesToIgnore);
-    //triangleToSkip1.clear();
-
+ 
     if (d_ignoreTriangles.getValue())
     {
         if (m_tearingAlgo != nullptr) 
         {
            
-            const vector< vector<int> >& TjunctionTriangle = m_tearingAlgo->getTjunctionTriangles();
-
-            if (m_tearingAlgo->getFractureNumber() == 0)  
-            {
-                helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-                computeTriangleToSkip();
-                if(TjunctionTriangle.size())
-                {
-                    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
-                    {
-                        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
-                        {
-                            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
-                            {
-                                triangleToSkip.push_back(TjunctionTriangle[i][1]);
-                                /*Ronak-debug*/
-                                //std::cout << "The index of T_juncion triangle is :" << TjunctionTriangle[i][1] << std::endl;
-                            }
-                        }
-                    }
-                }
+            const vector<vector<int>>& TjunctionTriangle = m_tearingAlgo->getTjunctionTriangles();
+            helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
+           
             
-            }
-            else 
-            {
-                helper::WriteAccessor< Data<vector<Index>> >triangleToSkip1(d_trianglesToIgnore);
-                triangleToSkip1.clear();
-               
-                computeTriangleToSkip();
-                if (TjunctionTriangle.size())
-                {
-                    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
-                    {
-                        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
-                        {
-                            std::cout << "The fracture number is : " << m_tearingAlgo->getFractureNumber() << std::endl;
-                            if (std::find(triangleToSkip1.begin(), triangleToSkip1.end(), TjunctionTriangle[i][1]) == triangleToSkip1.end())
-                            {
-                                triangleToSkip1.push_back(TjunctionTriangle[i][1]);
-                                /*Ronak-debug*/
-                                //std::cout << "The index of T_juncion triangle is :" << TjunctionTriangle[i][1] << std::endl;
-                            }
-                        }
-                    }
-                }
-                for (unsigned int j = 0; j < triangleToSkip1.size(); j++)
-                    std::cout << triangleToSkip1[j] << " ";
-                std::cout << std::endl;
+            triangleToSkip.clear();
 
-            }
+            computeTriangleToSkip();
+           
+            if (TjunctionTriangle.size())
+                processTjunctionTriangle(TjunctionTriangle, triangleToSkip);
 
-            
+            for (unsigned int j = 0; j < triangleToSkip.size(); j++)
+                std::cout << triangleToSkip[j] << " ";
+            std::cout << std::endl;
+
 
         }
        
     }
-    else
-    {
-        vector<Index> emptyIndexList;
-        d_trianglesToIgnore.setValue(emptyIndexList);
-    }
+  
 
     //if (m_tearingAlgo != nullptr)
     //{
@@ -256,6 +216,25 @@ void TearingEngine<DataTypes>::doUpdate()
     //        }
     //    }
     //}
+
+    else
+    {
+        vector<Index> emptyIndexList;
+        d_trianglesToIgnore.setValue(emptyIndexList);
+    }
+
+    /*Ronak-modification*/
+
+   /* if (d_ignoreVertices)
+    {
+        if (m_tearingAlgo != nullptr)
+            {
+                const vector< vector<int> >& TjunctionVertex = m_tearingAlgo->getTjunctionVertex();
+               
+            
+            }
+
+    }*/
 
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
@@ -321,6 +300,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     //    std::cout << "The stress value for the triangle with maximum principle stress: " <<
     //        tinfo.stress[0] << " " << tinfo.stress[1] << " " << tinfo.stress[2] << std::endl;
     //}
+   
     /*Ronak-modification*/
     //Computing the vertex with maximum stress using the 
     //principle stress of the triangles adjacent to that vertex
@@ -402,7 +382,7 @@ void TearingEngine<DataTypes>::updateTriangleInformation()
         {
             const TriangleFEMInformation& tFEMinfo = triangleFEMInf[i];
             m_triangleInfoTearing[i].stress = tFEMinfo.stress;
-            m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress * tFEMinfo.area;
+            m_triangleInfoTearing[i].maxStress = tFEMinfo.maxStress; // * tFEMinfo.area;
             m_triangleInfoTearing[i].principalStressDirection = tFEMinfo.principalStressDirection;
         }
     }
@@ -544,6 +524,23 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
                 triangleToSkip.push_back(triangleAroundVertex_i[j]);
         }
     }        
+}
+
+template<class DataTypes>
+inline void TearingEngine<DataTypes>::processTjunctionTriangle(const vector<vector<int>>& TjunctionTriangle, helper::WriteAccessor<Data<vector<Index>>>& triangleToSkip)
+{
+    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
+    {
+        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
+        {
+            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
+            {
+                triangleToSkip.push_back(TjunctionTriangle[i][1]);
+                
+            }
+        }
+    }
+
 }
 
 
