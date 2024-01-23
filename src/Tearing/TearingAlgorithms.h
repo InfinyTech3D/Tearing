@@ -68,6 +68,7 @@ public:
 	int getFractureNumber() const { return m_fractureNumber; }
 
 	const sofa::type::vector< sofa::type::vector<int> >& getTjunctionTriangles() const { return m_TjunctionTriangle; }
+	const sofa::type::vector< sofa::type::vector<int> >& getTjunctionVertices() const { return m_TjunctionVertex; }
 
 	const sofa::type::vector<Coord>& getFracturePath() const { return m_fracturePath; }
 
@@ -150,6 +151,10 @@ private:
 	
 	/// list of triangle where a T junction is blocking the algorithm
 	sofa::type::vector< sofa::type::vector<int> > m_TjunctionTriangle;
+	/// <summary>
+	/// List of vertices at which a T-junction has heppened
+	/// </summary>
+	sofa::type::vector< sofa::type::vector<int> > m_TjunctionVertex;
 
 	/// path created by algoFracturePath
 	sofa::type::vector<Coord> m_fracturePath;

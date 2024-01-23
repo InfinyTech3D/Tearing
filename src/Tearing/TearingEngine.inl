@@ -121,10 +121,9 @@ void TearingEngine<DataTypes>::init()
     if (m_triangularFEM)
     {
         msg_info() << "Using TriangularFEMForceField component";
-        /*Ronak-Debug*/
-        std::cout << "m_triangularFEM is not null!" << std::endl;
+       
         helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
-        std::cout << "m_triangularFEM size is " << triangleFEMInf.size() << std::endl;
+        
     }
     else
     {
@@ -153,8 +152,6 @@ void TearingEngine<DataTypes>::init()
 
     sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Valid);
 
-    /*Ronak-debug*/
-    std::cout << "--------------------------------End of init function--------------------------------" << std::endl;
 }
 
 template <class DataTypes>
@@ -171,8 +168,7 @@ void TearingEngine<DataTypes>::doUpdate()
 
     m_stepCounter++;
     
-    /*Ronak-modification*/
- 
+   
     if (d_ignoreTriangles.getValue())
     {
         if (m_tearingAlgo != nullptr) 
@@ -189,9 +185,9 @@ void TearingEngine<DataTypes>::doUpdate()
             if (TjunctionTriangle.size())
                 processTjunctionTriangle(TjunctionTriangle, triangleToSkip);
 
-            for (unsigned int j = 0; j < triangleToSkip.size(); j++)
-                std::cout << triangleToSkip[j] << " ";
-            std::cout << std::endl;
+          //  for (unsigned int j = 0; j < triangleToSkip.size(); j++)
+               // std::cout << triangleToSkip[j] << " ";
+           // std::cout << std::endl;
 
 
         }
@@ -208,11 +204,9 @@ void TearingEngine<DataTypes>::doUpdate()
     //        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
     //        {
     //            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
-    //            {
     //                triangleToSkip.push_back(TjunctionTriangle[i][1]);
-    //                /*Ronak-debug*/
-    //                std::cout << "The index of T_juncion triangle is :" << TjunctionTriangle[i][1] << std::endl;
-    //            }
+    //               
+    //            
     //        }
     //    }
     //}
@@ -223,7 +217,7 @@ void TearingEngine<DataTypes>::doUpdate()
         d_trianglesToIgnore.setValue(emptyIndexList);
     }
 
-    /*Ronak-modification*/
+    /*Ongoing modification*/
 
    /* if (d_ignoreVertices)
     {
@@ -238,8 +232,7 @@ void TearingEngine<DataTypes>::doUpdate()
 
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
-    /*Ronak-debug*/
-    std::cout << "-----------------------------End of doUpdate function-----------------------------" << std::endl;
+    
 }
 
 
@@ -274,9 +267,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             if (tinfo.maxStress >= threshold)
             {
                 candidate.push_back(i);
-                /*Ronak-debug*/
-                //std::cout << "The value of \sigma_1 is " << tinfo.maxStress
-                    //<< " and the index of this candidate is " << i << std::endl;
+                
             }
 
             if (tinfo.maxStress > maxStress)
@@ -286,8 +277,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             }
         }
     }
-    /*Ronak-debug*/
-    //std::cout << "The value of  m_maxStressTriangleIndex in triangleOverThresholdPrincipalStress function: " << m_maxStressTriangleIndex << std::endl;
+   
 
     //if (candidate.size())
     //{
@@ -296,14 +286,12 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     //    k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
     //    m_maxStressVertexIndex = triangleList[m_maxStressTriangleIndex][k];
     //    //d_stepModulo.setValue(0);
-    //    /*Ronak-debug*/
-    //    std::cout << "The stress value for the triangle with maximum principle stress: " <<
-    //        tinfo.stress[0] << " " << tinfo.stress[1] << " " << tinfo.stress[2] << std::endl;
+    //   
     //}
    
-    /*Ronak-modification*/
+    
     //Computing the vertex with maximum stress using the 
-    //principle stress of the triangles adjacent to that vertex
+    //principle stress of the triangles adjacent to that vertices
 
     if (candidate.size())
         {
@@ -349,7 +337,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
              k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
          
              m_maxStressVertexIndex = triangles[m_maxStressTriangleIndex][k];
-             std::cout << "m_maxStressPerVertex is : " << m_maxStressVertexIndex << std::endl;
+             //std::cout << "m_maxStressPerVertex is : " << m_maxStressVertexIndex << std::endl;
            
         }
 
@@ -575,9 +563,6 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 template <class DataTypes>
 void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 {    
-    /*Ronak-Debug*/
-    //std::cout << "The value of  m_maxStressTriangleIndex in draw function: " << m_maxStressTriangleIndex << std::endl;
-
     if (d_showTearableCandidates.getValue())
     {
         VecTriangles triangleList = m_topology->getTriangles();
@@ -636,14 +621,10 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         const VecIDs& triIds = d_trianglesToIgnore.getValue();
         std::vector<Vec3> verticesIgnore;
         sofa::type::RGBAColor colorIgnore(1.0f, 0.0f, 0.0f, 1.0f);
-        /*Ronak-debug*/
-        //std::cout << "The list of indices to be ignored :" << std::endl;
+        
 
         for (auto triId : triIds)
         {
-            /*Ronak-debug*/
-            //std::cout << triId << " ";
-
             Coord Pa = x[triangleList[triId][0]];
             Coord Pb = x[triangleList[triId][1]];
             Coord Pc = x[triangleList[triId][2]];
