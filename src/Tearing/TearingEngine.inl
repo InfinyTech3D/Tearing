@@ -307,27 +307,43 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
         VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
         
 
-
-       for (unsigned int i = 0; i < numVertices; i++)
+        helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
+      
+        for (unsigned int i = 0; i < numVertices; i++)
         {
-            const core::topology::BaseMeshTopology::TrianglesAroundVertex& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies
-                [i]);
+            //std::cout << "Vertex with index " << VertexIndicies[i] << " is in process" << std::endl;
+
+            const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
+            sofa::type::vector<Index> ValidTrianglesAround;
+            
+            for(unsigned int tri: trianglesAround)
+            {
+                // Check if the current triangle is not in triangleToSkip
+                if (std::find(triangleToSkip.begin(), triangleToSkip.end(), tri) == triangleToSkip.end()) 
+                {
+                    // Add the triangle to ValidTrianglesAround
+                    ValidTrianglesAround.push_back(tri);
+                }
+            }
+                      
+
             Real averageStress = 0.0;
             double sumArea = 0.0;
-           
-            for (auto triID : trianglesAround)
+
+           for(unsigned int triID : ValidTrianglesAround)
             {
                 const TriangleFEMInformation& tFEMinfo = triangleFEMInf[triID];
                 
                 if (tFEMinfo.area)
                 {
-                    averageStress += (fabs(tFEMinfo.maxStress) * tFEMinfo.area);
+                   // averageStress += (fabs(tFEMinfo.maxStress) * tFEMinfo.area);
+                    averageStress += fabs(tFEMinfo.maxStress);
                     sumArea += tFEMinfo.area;
                 }
             }
             
-            if (sumArea)
-                averageStress /= sumArea;
+            //if (sumArea)
+                //averageStress /= sumArea;
 
             StressPerVertex[i] = averageStress;
             //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
@@ -337,7 +353,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
              k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
          
              m_maxStressVertexIndex = triangles[m_maxStressTriangleIndex][k];
-             //std::cout << "m_maxStressPerVertex is : " << m_maxStressVertexIndex << std::endl;
+             //std::cout << "m_maxStressVertexIndex is : " << m_maxStressVertexIndex << std::endl;
            
         }
 
@@ -502,16 +518,19 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
             vertexToSkip.insert(vId);
         }
     }
-    //triangleToSkip.clear();
+    
     for (Index vId : vertexToSkip)
     {
         const vector<Index>& triangleAroundVertex_i = m_topology->getTrianglesAroundVertex(vId);
+       
         for (unsigned int j = 0; j < triangleAroundVertex_i.size(); j++)
         {
+            
             if (std::find(triangleToSkip.begin(), triangleToSkip.end(), triangleAroundVertex_i[j]) == triangleToSkip.end())
                 triangleToSkip.push_back(triangleAroundVertex_i[j]);
         }
-    }        
+    }
+   
 }
 
 template<class DataTypes>
