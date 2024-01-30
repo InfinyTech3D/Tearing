@@ -40,6 +40,7 @@ using sofa::type::Vec3;
 template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
     : d_input_positions(initData(&d_input_positions, "input_position", "Input position"))
+    , d_computeVertexStressMethod(initData(&d_computeVertexStressMethod, "computeVertexStressMethod", "Method used to compute the starting fracture point, among: \"WeightedAverageInverseDistance\", \"UnweightedAverage\" or \"WeightedAverageArea\""))
     , d_stressThreshold(initData(&d_stressThreshold, 55.0, "stressThreshold", "threshold value for stress"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by occurence"))
 
@@ -59,6 +60,10 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
     , l_topology(initLink("topology", "link to the topology container"))
 {
+    sofa::helper::OptionsGroup m_newoptiongroup{ "WeightedAverageInverseDistance","UnweightedAverage", "WeightedAverageArea" };
+    m_newoptiongroup.setSelectedItem("WeightedAverageInverseDistance");
+    d_computeVertexStressMethod.setValue(m_newoptiongroup);
+
     addInput(&d_input_positions);
     addInput(&d_stressThreshold);
     addInput(&d_fractureMaxLength);
@@ -290,72 +295,33 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     //}
    
     
-    //Computing the vertex with maximum stress using the 
-    //principle stress of the triangles adjacent to that vertices
-
-    if (candidate.size())
+    //choosing a vertex for starting fracture depending on the method
+    
+        if(candidate.size())
         {
-        helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
-
-        const auto& triangles = m_topology->getTriangles();
-        
-        constexpr size_t numVertices = 3;
-        sofa::type::vector<Index> VertexIndicies(numVertices);
-        sofa::type::vector<Real>  StressPerVertex(numVertices);
-        VertexIndicies[0] = (triangles[m_maxStressTriangleIndex])[0];
-        VertexIndicies[1] = (triangles[m_maxStressTriangleIndex])[1];
-        VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
-        
-
-        helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-      
-        for (unsigned int i = 0; i < numVertices; i++)
-        {
-            //std::cout << "Vertex with index " << VertexIndicies[i] << " is in process" << std::endl;
-
-            const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
-            sofa::type::vector<Index> ValidTrianglesAround;
-            
-            for(unsigned int tri: trianglesAround)
+            switch (d_computeVertexStressMethod.getValue().getSelectedId())
             {
-                // Check if the current triangle is not in triangleToSkip
-                if (std::find(triangleToSkip.begin(), triangleToSkip.end(), tri) == triangleToSkip.end()) 
-                {
-                    // Add the triangle to ValidTrianglesAround
-                    ValidTrianglesAround.push_back(tri);
-                }
-            }
-                      
-
-            Real averageStress = 0.0;
-            double sumArea = 0.0;
-
-           for(unsigned int triID : ValidTrianglesAround)
+            case 0: //(reciprocal-distance) weighted average
             {
-                const TriangleFEMInformation& tFEMinfo = triangleFEMInf[triID];
-                
-                if (tFEMinfo.area)
-                {
-                   // averageStress += (fabs(tFEMinfo.maxStress) * tFEMinfo.area);
-                    averageStress += fabs(tFEMinfo.maxStress);
-                    sumArea += tFEMinfo.area;
-                }
+                m_maxStressVertexIndex = computeVertexByInverseDistance_WeightedAverage();
+                break;
             }
-            
-            //if (sumArea)
-                //averageStress /= sumArea;
-
-            StressPerVertex[i] = averageStress;
-            //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
-           
+            case 1: //unweighted average
+            {
+                m_maxStressVertexIndex = computeVertexByUnweightedAverage();
+                break;
+            }
+            case 2: //(area) weighted average
+            {
+                m_maxStressVertexIndex = computeVertexByArea_WeightedAverage();
+                break;
+            }
+            default:
+                msg_error() << "Wrong \"computeVertexStressMethod\" given";
+            }
         }
-       Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
-             k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
-         
-             m_maxStressVertexIndex = triangles[m_maxStressTriangleIndex][k];
-             //std::cout << "m_maxStressVertexIndex is : " << m_maxStressVertexIndex << std::endl;
-           
-        }
+       
+    
 
     d_maxStress.endEdit();
 }
@@ -547,6 +513,253 @@ inline void TearingEngine<DataTypes>::processTjunctionTriangle(const vector<vect
             }
         }
     }
+
+}
+
+template<class DataTypes>
+inline Index TearingEngine<DataTypes>::computeVertexByArea_WeightedAverage()
+{
+    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+
+    const auto& triangles = m_topology->getTriangles();
+
+    constexpr size_t numVertices = 3;
+    sofa::type::vector<Index> VertexIndicies(numVertices);
+    sofa::type::vector<Real>  StressPerVertex(numVertices);
+    VertexIndicies[0] = (triangles[m_maxStressTriangleIndex])[0];
+    VertexIndicies[1] = (triangles[m_maxStressTriangleIndex])[1];
+    VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
+
+
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
+
+    for (unsigned int i = 0; i < numVertices; i++)
+    {
+        //std::cout << "Vertex with index " << VertexIndicies[i] << " is in process" << std::endl;
+
+        const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
+        sofa::type::vector<Index> ValidTrianglesAround;
+
+        for (unsigned int tri = 0; tri < trianglesAround.size(); tri++)
+        {
+            // Check if the current triangle is not in triangleToSkip
+            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), trianglesAround[tri]) == triangleToSkip.end())
+            {
+                // Add the triangle to ValidTrianglesAround
+                ValidTrianglesAround.push_back(trianglesAround[tri]);
+            }
+        }
+
+
+        Real averageStress = 0.0;
+        double sumArea = 0.0;
+
+        for (unsigned int triID = 0; triID < ValidTrianglesAround.size(); triID++)
+        {
+            const TriangleFEMInformation& tFEMinfo = triangleFEMInf[triID];
+
+            if (tFEMinfo.area)
+            {
+                averageStress += (fabs(tFEMinfo.maxStress) * tFEMinfo.area);
+                sumArea += tFEMinfo.area;
+            }
+        }
+
+        if (sumArea)
+            averageStress /= sumArea;
+
+        StressPerVertex[i] = averageStress;
+        //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
+
+    }
+    Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
+    k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
+
+   return(triangles[m_maxStressTriangleIndex][k]);
+
+    
+}
+
+template<class DataTypes>
+inline Index TearingEngine<DataTypes>::computeVertexByUnweightedAverage()
+{
+    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+
+    const auto& triangles = m_topology->getTriangles();
+
+    constexpr size_t numVertices = 3;
+    sofa::type::vector<Index> VertexIndicies(numVertices);
+    sofa::type::vector<Real>  StressPerVertex(numVertices);
+    VertexIndicies[0] = (triangles[m_maxStressTriangleIndex])[0];
+    VertexIndicies[1] = (triangles[m_maxStressTriangleIndex])[1];
+    VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
+
+
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
+
+    for (unsigned int i = 0; i < numVertices; i++)
+    {
+        //std::cout << "Vertex with index " << VertexIndicies[i] << " is in process" << std::endl;
+
+        const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
+        sofa::type::vector<Index> ValidTrianglesAround;
+
+        for (unsigned int tri = 0; tri < trianglesAround.size(); tri++)
+        {
+            // Check if the current triangle is not in triangleToSkip
+            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), trianglesAround[tri]) == triangleToSkip.end())
+            {
+                // Add the triangle to ValidTrianglesAround
+                ValidTrianglesAround.push_back(trianglesAround[tri]);
+               
+            }
+        }
+
+        
+        Real averageStress = 0.0;
+       
+        for (unsigned int triID = 0 ; triID < ValidTrianglesAround.size() ; triID++)
+        {
+            const TriangleFEMInformation& tFEMinfo = triangleFEMInf[triID];
+
+            if (tFEMinfo.area)
+             averageStress += fabs(tFEMinfo.maxStress);
+            
+        }
+
+        StressPerVertex[i] = averageStress;
+        //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
+
+    }
+    Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
+    k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
+
+    return(triangles[m_maxStressTriangleIndex][k]);
+   
+}
+
+template<class DataTypes>
+inline Index TearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAverage()
+{
+    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+
+    const auto& triangles = m_topology->getTriangles();
+
+    constexpr size_t numVertices = 3;
+    sofa::type::vector<Index> VertexIndicies(numVertices);
+    sofa::type::vector<Real>  StressPerVertex(numVertices);
+    VertexIndicies[0] = (triangles[m_maxStressTriangleIndex])[0];
+    VertexIndicies[1] = (triangles[m_maxStressTriangleIndex])[1];
+    VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
+
+
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
+
+    for (unsigned int i = 0; i < numVertices; i++)
+    {
+        //std::cout << "Vertex with index " << VertexIndicies[i] << " is in process" << std::endl;
+
+        std::vector<double> weight;
+        sofa::type::vector<Index> ValidTrianglesAround;
+        calculate_inverse_distance_weights(weight, VertexIndicies[i], ValidTrianglesAround);
+ 
+        Real averageStress = 0.0;
+        
+        for (unsigned int triID=0; triID < ValidTrianglesAround.size(); triID++)
+        {
+            const TriangleFEMInformation& tFEMinfo = triangleFEMInf[triID];
+
+            if (tFEMinfo.area)
+            {
+                averageStress += (fabs(tFEMinfo.maxStress) * weight[triID]);
+                
+            }
+        }
+
+        
+        StressPerVertex[i] = averageStress;
+        //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
+
+    }
+    Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
+    k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
+
+    return(triangles[m_maxStressTriangleIndex][k]);
+
+    
+}
+
+template<class DataTypes>
+inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::vector<double>& result,
+    const Index vertex, sofa::type::vector<Index>& ValidTrianglesAround)
+{
+    
+    const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(vertex);
+   
+    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
+
+    
+
+    for (unsigned int tri=0;  tri < trianglesAround.size(); tri++)
+    {
+        // Check if the current triangle is not in triangleToSkip
+        if (std::find(triangleToSkip.begin(), triangleToSkip.end(), trianglesAround[tri]) == triangleToSkip.end())
+        {
+            // Add the triangle to ValidTrianglesAround
+            ValidTrianglesAround.push_back(trianglesAround[tri]);
+            //std::cout << trianglesAround[tri] << std::endl;
+        }
+    }
+
+
+    const auto& triangles = m_topology->getTriangles();
+    constexpr size_t numVertices = 3;
+
+     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+     
+     const Coord p = x[(int)vertex];
+
+     ///*debug*/
+     //std::cout << "Coordinate of the current vertex is : " << p[0] << " "
+     //    << p[1] << " "
+     //    << p[2] << std::endl;
+
+    for (unsigned int tri=0 ; tri< ValidTrianglesAround.size(); tri++)
+    {
+        //std::cout << " Current triangle is " << ValidTrianglesAround[tri] << std::endl;
+      
+        sofa::type::vector<Index> VertexIndicies(numVertices);
+        
+        VertexIndicies[0] = (triangles[ValidTrianglesAround[tri]])[0];
+        VertexIndicies[1] = (triangles[ValidTrianglesAround[tri]])[1];
+        VertexIndicies[2] = (triangles[ValidTrianglesAround[tri]])[2];
+       
+
+        Coord baryCenter = (x[(int)VertexIndicies[0]]+ x[(int)VertexIndicies[1]]+ x[(int)VertexIndicies[2]]) / 3.0;
+      
+        ///*debug*/
+        //std::cout << "Center of the current triangle is : " << baryCenter[0] << " "
+        //    << baryCenter[1] << " "
+        //    << baryCenter[2] << std::endl;
+                                                        
+
+        double distance = sqrt(pow(baryCenter[0] - p[0], 2) + pow(baryCenter[1] - p[1], 2) + pow(baryCenter[2] - p[2], 2));
+
+        // Avoid division by zero, add a small epsilon
+        double epsilon = 1e-8; double weight;
+        if (distance < epsilon)
+        {
+            msg_warning() << " Center of triangle " << ValidTrianglesAround[tri] << "is very close to the point!";
+            weight = 1 / (distance + epsilon);
+        }
+        else
+            weight = 1 / distance;
+        
+        
+        result.push_back(weight);
+
+    }
+    
 
 }
 

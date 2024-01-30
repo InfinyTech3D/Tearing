@@ -31,6 +31,7 @@
 
 #include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceField.h>
 #include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceFieldOptim.h>
+#include <sofa/helper/OptionsGroup.h>
 
 
 namespace sofa::component::engine
@@ -75,6 +76,7 @@ public:
 	Data<Real> d_stressThreshold; ///< threshold value for principal stress
 	Data<Real> d_fractureMaxLength; ///< max length of a fracture
 	
+	Data<sofa::helper::OptionsGroup> d_computeVertexStressMethod; ///< option to choose a method to compute the starting point for fracture
 	Data<bool> d_ignoreTriangles; ///< option to ignore triangle at start
 	Data<bool> d_ignoreVertices; ///< option to ignore vertices instead of the whole triangles
 	Data<VecIDs> d_trianglesToIgnore; ///< list of triangles to ignore at start
@@ -136,10 +138,27 @@ protected:
 	/// </summary>
 	void computeTriangleToSkip();
 
-/// <summary>
-/// add T-junction triangles to the list of ignored triangles
-/// </summary>
+    /// <summary>
+    /// add T-junction triangles to the list of ignored triangles
+    /// </summary>
 	void processTjunctionTriangle(const vector<vector<int>>& TjunctionTriangle, helper::WriteAccessor<Data<vector<Index>>>& triangleToSkip);
+	/// <summary>
+	/// select the vertex with the maximum (area) weighted average of principal stress values
+	/// </summary>
+	Index computeVertexByArea_WeightedAverage();
+	/// <summary>
+	/// select the vertex with the maximum unweighted average of principal stress values
+	/// </summary>
+	Index computeVertexByUnweightedAverage();
+	/// <summary>
+	/// select the vertex with the maximum (distance) weighted average of principal stress values
+	/// </summary>
+	Index computeVertexByInverseDistance_WeightedAverage();
+	/// <summary>
+	/// for a given vertex, compute the reciprocal of its distance with centroids of triangles
+	/// around it
+	/// </summary>
+	void calculate_inverse_distance_weights(std::vector<double>& result, const Index vertex, sofa::type::vector<Index>& ValidTrianglesAround);
 
 
 private:
