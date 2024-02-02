@@ -127,7 +127,7 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
         if (topoPath_list.size() > 1)
         {
             //split along path
-            int snapingValue = 50;
+            int snapingValue = 0;
             int snapingBorderValue = 0;
             vector< Index > new_edges;
             int result;
