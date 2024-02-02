@@ -129,6 +129,12 @@ protected:
 	/// @return Pb - one of the extremities of fracture
 	/// @return Pc - one of the extremities of fracture
 	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	/// <summary>
+	/// computes the extremities of fracture Pb and Pc on the edge of neighboring triangles
+	/// </summary>
+	void computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	bool computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t, Real& u, Real& v);
+	bool rayTriangleIntersection(Coord A, Coord B, Coord c, Coord Pa, Coord direction, Real& t);
 	
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;

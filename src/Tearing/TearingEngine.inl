@@ -451,6 +451,120 @@ void TearingEngine<DataTypes>::computeEndPoints(
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 }
 
+template<class DataTypes>
+inline void TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc)
+{
+    /*Debug*/
+    std::cout << "Entering ..." << std::endl;
+
+    bool t_b_ok = false; 
+    bool t_c_ok = false;
+    //compute fracture direction perpendicular to the principal stress direction
+    Coord fractureDirection;
+    fractureDirection[0] = -direction[1];
+    fractureDirection[1] = direction[0];
+    Real norm_fractureDirection = fractureDirection.norm();
+    Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
+
+    Real t_b, u_b, v_b;
+    if (computeIntersectionNeighborTriangle(dir_b,Pa, Pb, t_b, u_b, v_b))
+        t_b_ok = true;
+
+    
+    Coord dir_c = -dir_b;
+    Real t_c, u_c, v_c;
+    if (computeIntersectionNeighborTriangle(dir_c,Pa,Pc, t_c, u_c, v_c))
+        t_c_ok = true;
+
+    if (!(t_b_ok && t_c_ok))
+    {
+        msg_error() << "Not able to build the fracture path.";
+        return;
+    }
+
+
+}
+
+template<class DataTypes>
+inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t, Real& u, Real& v)
+{
+    
+
+    const VecTriangles& triangleList = m_topology->getTriangles();
+   
+    
+    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+
+    // Get Geometry Algorithm
+    TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo = nullptr;
+    m_topology->getContext()->get(_triangleGeo);
+    if (!_triangleGeo)
+    {
+        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
+        return false;
+    }
+
+    
+    Index triangle_id = _triangleGeo->getTriangleInDirection(m_maxStressVertexIndex, normalizedFractureDirection);
+    std::cout << "Triangle index in direction dir_b is " << triangle_id << std::endl;
+    
+    Coord A = x[triangleList[triangle_id][0]];
+    std::cout << "A index: " << triangleList[triangle_id][0] << std::endl;
+    Coord B = x[triangleList[triangle_id][1]];
+    std::cout << "B index: " << triangleList[triangle_id][1] << std::endl;
+    Coord C = x[triangleList[triangle_id][2]];
+    std::cout << "C index: " << triangleList[triangle_id][2] <<std::endl;
+
+    
+    //vector<double> candidateBarycoef;
+    //vector<double> candidateCoordKmin;
+    //if (_triangleGeo->computeIntersectionsLineTriangle(false, current_point, endPoint, current_triangle, candidateIndice, candidateBarycoef, candidateCoordKmin))
+
+   // if (sofa::geometry::Triangle::rayIntersection(B, A, C, Pa, normalizedFractureDirection, t, u, v))
+      if(rayTriangleIntersection(B,A,C,Pa, normalizedFractureDirection,t))
+    {
+        Pb = Pa + t * normalizedFractureDirection;
+        std::cout << "End point id computed " << std::endl;
+        return true;
+
+    }
+    else return false;
+    
+}
+
+template<class DataTypes>
+inline bool TearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord B, Coord C, Coord Pa, Coord direction, Real& t)
+{
+    const auto AB = B - A;
+    const auto AC = C - A;
+    
+    //2D cross product which is a scalar value
+    Real perp = AB[0] * direction[1] - AB[1] * direction[0];
+
+
+
+    // Check if ray is parallel to the triangle
+    if (std::fabs(perp) < 1e-6) {
+        std::cout << "Ray is parallel to the triangle plane. No intersection." << std::endl;
+        return false;
+    }
+
+    // Calculate intersection parameter
+
+     t =  (AC[0] * direction[1] - AC[1] * direction[0])/ perp;
+
+    if (t >= 0 && t <= 1) {
+        return true;
+    }
+    else {
+        std::cout << "Intersection parameter is outside the valid range. No intersection." << std::endl;
+        return false;
+    }
+
+    
+}
+
 
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeTriangleToSkip()
@@ -888,9 +1002,40 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             points.push_back(Pa);
             points.push_back(Pc);
             // Blue == computed fracture path (using d_fractureMaxLength)
-            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
+           // vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
+           // vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
+            //--------------------------------------------------------------------------------------------------
+            /*Ronak-debug*/
+            /*vector<Coord> newPoints;
+            Coord newPb, newPc;
+            computeEndPointsNeighboringTriangles(Pa, principalStressDirection, newPb, newPc);
+           
+            newPoints.push_back(newPb);
+            newPoints.push_back(Pa);
+            newPoints.push_back(Pa);
+            newPoints.push_back(newPc);
+            vparams->drawTool()->drawPoints(newPoints, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
+            vparams->drawTool()->drawLines(newPoints, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));*/
+            vector<Coord> newPoints;
+            Coord A = x[16];
+            Coord B = x[14];
+            Coord C = x[18];
 
+            Coord P = A;
+            P[0] = 3.0;
+
+            Coord direction = P - A;
+
+            newPoints.push_back(A);
+            newPoints.push_back(P);
+            vparams->drawTool()->drawPoints(newPoints, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
+
+            Real t;
+            rayTriangleIntersection(A, B, C, A, direction, t);
+
+
+
+            //---------------------------------------------------------------------------------------------------
             // Green == principal stress direction
             vector<Coord> pointsDir;
             pointsDir.push_back(Pa);
