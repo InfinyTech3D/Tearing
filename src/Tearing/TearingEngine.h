@@ -78,7 +78,7 @@ public:
 	
 	Data<sofa::helper::OptionsGroup> d_computeVertexStressMethod; ///< option to choose a method to compute the starting point for fracture
 	Data<bool> d_ignoreTriangles; ///< option to ignore triangle at start
-	Data<bool> d_ignoreVertices; ///< option to ignore vertices instead of the whole triangles
+	
 	Data<VecIDs> d_trianglesToIgnore; ///< list of triangles to ignore at start
 	Data<int> d_stepModulo; ///< to define a number of step between 2 fractures
 	Data<int> d_nbFractureMax; ///< Maximum number of fracture
@@ -132,10 +132,29 @@ protected:
 	/// <summary>
 	/// computes the extremities of fracture Pb and Pc on the edge of neighboring triangles
 	/// </summary>
-	void computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	/// @param Pa - the point where the fracture starts
+	/// @param direction - principle stress direction
+	/// @return Pb - one of the extremities of fracture
+	/// @return Pc - one of the extremities of fracture
+	bool computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	/// <summary>
+	/// computes the extremities of the (normalized) fracture PbPa on the edge of the triangle
+	/// </summary>
+	/// @param Pa - the point where the fracture starts
+	/// @param normalizedFractureDirection - normalized fracture direction
+	/// @return Pb - one of the extremities of fracture
+	/// @return t - a parameter needed to calculate Pb
 	bool computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t);
-	bool rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t, Coord& intersection);
-//	bool rayTriangleIntersection(Coord A, Coord B, Coord c, Coord Pa, Coord direction, Real& t);
+	/// <summary>
+	/// computes the the intersection of a segment with one endpoint A with DC segment
+	/// </summary>
+	/// @param A - the point where the fracture starts
+	/// @param C,D - the other two vertices of the triangle
+	/// @param direction - normalized fracture direction
+	/// @return t - a parameter needed to calculate Pb
+	/// @return intersection - coordinate of the intersection point
+    bool rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t, Coord& intersection);
+
 	
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;

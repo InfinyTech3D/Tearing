@@ -45,7 +45,6 @@ TearingEngine<DataTypes>::TearingEngine()
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by occurence"))
 
     , d_ignoreTriangles(initData(&d_ignoreTriangles, true, "ignoreTriangles", "option to ignore some triangles from the tearing algo"))
-    , d_ignoreVertices(initData(&d_ignoreVertices, false, "ignoreVertices", "option to ignore vertices instead of the whole triangles"))
     , d_trianglesToIgnore(initData(&d_trianglesToIgnore, "trianglesToIgnore", "triangles that can't be choosen as starting fracture point"))
     , d_stepModulo(initData(&d_stepModulo, 20, "step", "step size"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
@@ -69,7 +68,7 @@ TearingEngine<DataTypes>::TearingEngine()
     addInput(&d_fractureMaxLength);
 
     addInput(&d_ignoreTriangles);
-    addInput(&d_ignoreVertices);
+   
     addAlias(&d_ignoreTriangles, "ignoreTriangleAtStart");
 
     addInput(&d_startVertexId);
@@ -190,51 +189,17 @@ void TearingEngine<DataTypes>::doUpdate()
             if (TjunctionTriangle.size())
                 processTjunctionTriangle(TjunctionTriangle, triangleToSkip);
 
-          //  for (unsigned int j = 0; j < triangleToSkip.size(); j++)
-               // std::cout << triangleToSkip[j] << " ";
-           // std::cout << std::endl;
-
-
         }
        
     }
   
-
-    //if (m_tearingAlgo != nullptr)
-    //{
-    //    const vector< vector<int> >& TjunctionTriangle = m_tearingAlgo->getTjunctionTriangles();
-    //    helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-    //    for (unsigned int i = 0; i < TjunctionTriangle.size(); i++)
-    //    {
-    //        if (TjunctionTriangle[i][0] == m_tearingAlgo->getFractureNumber())
-    //        {
-    //            if (std::find(triangleToSkip.begin(), triangleToSkip.end(), TjunctionTriangle[i][1]) == triangleToSkip.end())
-    //                triangleToSkip.push_back(TjunctionTriangle[i][1]);
-    //               
-    //            
-    //        }
-    //    }
-    //}
-
     else
     {
         vector<Index> emptyIndexList;
         d_trianglesToIgnore.setValue(emptyIndexList);
     }
 
-    /*Ongoing modification*/
-
-   /* if (d_ignoreVertices)
-    {
-        if (m_tearingAlgo != nullptr)
-            {
-                const vector< vector<int> >& TjunctionVertex = m_tearingAlgo->getTjunctionVertex();
-               
-            
-            }
-
-    }*/
-
+  
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
     
@@ -282,18 +247,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             }
         }
     }
-   
-
-    //if (candidate.size())
-    //{
-    //    TriangleTearingInformation& tinfo = m_triangleInfoTearing[m_maxStressTriangleIndex];
-    //    Index k = (tinfo.stress[0] > tinfo.stress[1]) ? 0 : 1;
-    //    k = (tinfo.stress[k] > tinfo.stress[2]) ? k : 2;
-    //    m_maxStressVertexIndex = triangleList[m_maxStressTriangleIndex][k];
-    //    //d_stepModulo.setValue(0);
-    //   
-    //}
-   
+  
     
     //choosing a vertex for starting fracture depending on the method
     
@@ -416,6 +370,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         indexA = m_maxStressVertexIndex;
         Pa = x[indexA];
         principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
+       // if(!(computeEndPointsNeighboringTriangles(Pa,principalStressDirection,Pb,Pc)))
         computeEndPoints(Pa, principalStressDirection, Pb, Pc);
     }
     else
@@ -452,17 +407,17 @@ void TearingEngine<DataTypes>::computeEndPoints(
 }
 
 template<class DataTypes>
-inline void TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc)
+inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc)
 {
-    /*Debug*/
-    std::cout << "Entering ..." << std::endl;
-
+    
     bool t_b_ok = false; 
     bool t_c_ok = false;
     //compute fracture direction perpendicular to the principal stress direction
     Coord fractureDirection;
     fractureDirection[0] = -direction[1];
     fractureDirection[1] = direction[0];
+    //fractureDirection[2] = 0.0;
+
     Real norm_fractureDirection = fractureDirection.norm();
     Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
 
@@ -478,9 +433,10 @@ inline void TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
 
     if (!(t_b_ok && t_c_ok))
     {
-        msg_error() << "Not able to build the fracture path.";
-        return;
+        msg_warning() << "Not able to build the fracture path through neighboring triangles.";
+        return false;
     }
+    return true;
 
 
 }
@@ -510,7 +466,7 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
     if (triangle_id > m_topology->getNbTriangles() - 1)
         return false;
 
-    std::cout << "Triangle index in direction dir_b is " << triangle_id << std::endl;
+    //std::cout << "Triangle index in direction dir_b is " << triangle_id << std::endl;
 
     constexpr size_t numVertices = 3;
     sofa::type::vector<Index> VertexIndicies(numVertices);
@@ -534,19 +490,14 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 
     
     Coord A = x[m_maxStressVertexIndex];
-    std::cout << "A index: " << m_maxStressVertexIndex << std::endl;
     Coord B = x[B_id];
-    std::cout << "B index: " << B_id << std::endl;
     Coord C = x[C_id];
-    std::cout << "C index: " << C_id <<std::endl;
 
     if(rayTriangleIntersection(A,B,C, normalizedFractureDirection,t,Pb))
-    {
-        std::cout << "End point is computed " << std::endl;
-        return true;
+     return true;
 
-    }
-    else return false;
+     else 
+        return false;
     
 }
 
@@ -559,7 +510,7 @@ inline bool TearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord C, 
     const auto AD = D - A;
     Real AD_length = AD.norm();
 
-    //Building point B such that to be sure that AB intersects CD
+    //Building point B such that to be sure that AB intersects CD, based on "Losange"
     Real Length = AC_length + AD_length;
     Coord B = A + Length * direction;
     
@@ -577,7 +528,7 @@ inline bool TearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord C, 
     const Real alphaNom = (dCACD * dABCD - dCAAB * dCDCD);
     const Real alphaDenom = (dABAB * dCDCD - dABCD * dABCD);
 
-    if (alphaDenom < std::numeric_limits<Real>::epsilon()) // alpha == inf, not sure what it means geometrically, colinear?
+    if (alphaDenom < std::numeric_limits<Real>::epsilon()) // alpha == inf,  colinear
     {
         std::cout << " No intersection." << std::endl;
         return false;
@@ -684,8 +635,7 @@ inline Index TearingEngine<DataTypes>::computeVertexByArea_WeightedAverage()
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
-        //std::cout << "Vertex with index " << VertexIndicies[i] << " is in process" << std::endl;
-
+       
         const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
         sofa::type::vector<Index> ValidTrianglesAround;
 
@@ -718,7 +668,7 @@ inline Index TearingEngine<DataTypes>::computeVertexByArea_WeightedAverage()
             averageStress /= sumArea;
 
         StressPerVertex[i] = averageStress;
-        //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
+       
 
     }
     Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
@@ -748,8 +698,7 @@ inline Index TearingEngine<DataTypes>::computeVertexByUnweightedAverage()
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
-        //std::cout << "Vertex with index " << VertexIndicies[i] << " is in process" << std::endl;
-
+       
         const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
         sofa::type::vector<Index> ValidTrianglesAround;
 
@@ -777,7 +726,6 @@ inline Index TearingEngine<DataTypes>::computeVertexByUnweightedAverage()
         }
 
         StressPerVertex[i] = averageStress;
-        //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
 
     }
     Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
@@ -806,8 +754,7 @@ inline Index TearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAv
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
-        //std::cout << "Vertex with index " << VertexIndicies[i] << " is in process" << std::endl;
-
+       
         std::vector<double> weight;
         sofa::type::vector<Index> ValidTrianglesAround;
         calculate_inverse_distance_weights(weight, VertexIndicies[i], ValidTrianglesAround);
@@ -827,7 +774,6 @@ inline Index TearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAv
 
         
         StressPerVertex[i] = averageStress;
-        //std::cout << "The average stress of vertex " << VertexIndicies[i] << "is " << StressPerVertex[i] << std::endl;
 
     }
     Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
@@ -856,7 +802,7 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
         {
             // Add the triangle to ValidTrianglesAround
             ValidTrianglesAround.push_back(trianglesAround[tri]);
-            //std::cout << trianglesAround[tri] << std::endl;
+           
         }
     }
 
@@ -868,14 +814,9 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
      
      const Coord p = x[(int)vertex];
 
-     ///*debug*/
-     //std::cout << "Coordinate of the current vertex is : " << p[0] << " "
-     //    << p[1] << " "
-     //    << p[2] << std::endl;
 
     for (unsigned int tri=0 ; tri< ValidTrianglesAround.size(); tri++)
     {
-        //std::cout << " Current triangle is " << ValidTrianglesAround[tri] << std::endl;
       
         sofa::type::vector<Index> VertexIndicies(numVertices);
         
@@ -885,13 +826,7 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
        
 
         Coord baryCenter = (x[(int)VertexIndicies[0]]+ x[(int)VertexIndicies[1]]+ x[(int)VertexIndicies[2]]) / 3.0;
-      
-        ///*debug*/
-        //std::cout << "Center of the current triangle is : " << baryCenter[0] << " "
-        //    << baryCenter[1] << " "
-        //    << baryCenter[2] << std::endl;
-                                                        
-
+               
         double distance = sqrt(pow(baryCenter[0] - p[0], 2) + pow(baryCenter[1] - p[1], 2) + pow(baryCenter[2] - p[2], 2));
 
         // Avoid division by zero, add a small epsilon
@@ -1027,6 +962,8 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             Coord fractureDirection;
             fractureDirection[0] = -principalStressDirection[1];
             fractureDirection[1] = principalStressDirection[0];
+            fractureDirection[2] = 0.0;
+            
             
             vector<Coord> points;
             Real norm_fractureDirection = fractureDirection.norm();
@@ -1036,11 +973,11 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             points.push_back(Pa);
             points.push_back(Pa);
             points.push_back(Pc);
-            // Blue == computed fracture path (using d_fractureMaxLength)
+            // Blue == computed fracture path using d_fractureMaxLength
             vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
             vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
             //--------------------------------------------------------------------------------------------------
-            /*Ronak-debug*/
+            //Red == computed fracture path on the edge of neighboring triangles
             vector<Coord> newPoints;
             Coord newPb, newPc;
             computeEndPointsNeighboringTriangles(Pa, principalStressDirection, newPb, newPc);
@@ -1049,44 +986,16 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             newPoints.push_back(Pa);
             newPoints.push_back(Pa);
             newPoints.push_back(newPc);
-            vparams->drawTool()->drawPoints(newPoints, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
-            vparams->drawTool()->drawLines(newPoints, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
-            //------------------------------------------------------------------------------------------------------
-          /*  vector<Coord> newPoints;
-            Coord A = x[16];
-            Coord B = x[14];
-            Coord C = x[18];
-
-            Coord P = A;
-            P[0] = 3.0;
-
-            Coord direction = (P - A)/ (P - A).norm();
-
-
-            newPoints.push_back(A);
-            newPoints.push_back(P);
-           
-            Real t; Coord intersection;
-            if (rayTriangleIntersection(A, C, B, direction, t,intersection))
-                newPoints.push_back(intersection);
-            
-
-            vparams->drawTool()->drawPoints(newPoints, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));*/
-
-
-
-
-
+            vparams->drawTool()->drawPoints(newPoints, 10, sofa::type::RGBAColor(1, 0.2, 0, 1));
+            vparams->drawTool()->drawLines(newPoints, 1, sofa::type::RGBAColor(1, 0.5, 0, 1)); 
             //---------------------------------------------------------------------------------------------------
             // Green == principal stress direction
             vector<Coord> pointsDir;
             pointsDir.push_back(Pa);
-            //std::cout << "Pa coordinate: " << Pa[0]+principalStressDirection[0] << " " << Pa[1] << std::endl;
-            //std::cout << "PSD vector:" << principalStressDirection[0] << " " << principalStressDirection[1] << std::endl;
-            //std::cout << "Pa coordinate + PSD: " << Pa[0]+principalStressDirection[0] << " " << Pa[1] + principalStressDirection[1] << std::endl;
+           
             pointsDir.push_back(100.0*(Pa + principalStressDirection));
             vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
-           vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
+            vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
             
             points.clear();
 
