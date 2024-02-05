@@ -467,13 +467,13 @@ inline void TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
     Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
 
     Real t_b, u_b, v_b;
-    if (computeIntersectionNeighborTriangle(dir_b,Pa, Pb, t_b, u_b, v_b))
+    if (computeIntersectionNeighborTriangle(dir_b,Pa, Pb, t_b))
         t_b_ok = true;
 
     
     Coord dir_c = -dir_b;
     Real t_c, u_c, v_c;
-    if (computeIntersectionNeighborTriangle(dir_c,Pa,Pc, t_c, u_c, v_c))
+    if (computeIntersectionNeighborTriangle(dir_c,Pa,Pc, t_c))
         t_c_ok = true;
 
     if (!(t_b_ok && t_c_ok))
@@ -486,7 +486,7 @@ inline void TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
 }
 
 template<class DataTypes>
-inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t, Real& u, Real& v)
+inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t)
 {
     
 
@@ -507,25 +507,42 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 
     
     Index triangle_id = _triangleGeo->getTriangleInDirection(m_maxStressVertexIndex, normalizedFractureDirection);
+    if (triangle_id > m_topology->getNbTriangles() - 1)
+        return false;
+
     std::cout << "Triangle index in direction dir_b is " << triangle_id << std::endl;
-    
-    Coord A = x[triangleList[triangle_id][0]];
-    std::cout << "A index: " << triangleList[triangle_id][0] << std::endl;
-    Coord B = x[triangleList[triangle_id][1]];
-    std::cout << "B index: " << triangleList[triangle_id][1] << std::endl;
-    Coord C = x[triangleList[triangle_id][2]];
-    std::cout << "C index: " << triangleList[triangle_id][2] <<std::endl;
 
-    
-    //vector<double> candidateBarycoef;
-    //vector<double> candidateCoordKmin;
-    //if (_triangleGeo->computeIntersectionsLineTriangle(false, current_point, endPoint, current_triangle, candidateIndice, candidateBarycoef, candidateCoordKmin))
+    constexpr size_t numVertices = 3;
+    sofa::type::vector<Index> VertexIndicies(numVertices);
+    VertexIndicies[0] = triangleList[triangle_id][0];
+    VertexIndicies[1] = triangleList[triangle_id][1];
+    VertexIndicies[2] = triangleList[triangle_id][2];
 
-   // if (sofa::geometry::Triangle::rayIntersection(B, A, C, Pa, normalizedFractureDirection, t, u, v))
-      if(rayTriangleIntersection(B,A,C,Pa, normalizedFractureDirection,t))
+    Index B_id=-1, C_id=-1;
+
+    for (unsigned int vertex_id=0; vertex_id < VertexIndicies.size() ; vertex_id++)
     {
-        Pb = Pa + t * normalizedFractureDirection;
-        std::cout << "End point id computed " << std::endl;
+        if (VertexIndicies[vertex_id] != m_maxStressVertexIndex)
+            if (B_id == -1)
+                B_id = VertexIndicies[vertex_id];
+            else {
+                C_id = VertexIndicies[vertex_id];
+                break;
+            }
+
+    }
+
+    
+    Coord A = x[m_maxStressVertexIndex];
+    std::cout << "A index: " << m_maxStressVertexIndex << std::endl;
+    Coord B = x[B_id];
+    std::cout << "B index: " << B_id << std::endl;
+    Coord C = x[C_id];
+    std::cout << "C index: " << C_id <<std::endl;
+
+    if(rayTriangleIntersection(A,B,C, normalizedFractureDirection,t,Pb))
+    {
+        std::cout << "End point is computed " << std::endl;
         return true;
 
     }
@@ -534,27 +551,45 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 }
 
 template<class DataTypes>
-inline bool TearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord B, Coord C, Coord Pa, Coord direction, Real& t)
+inline bool TearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t,Coord& intersection)
 {
-    const auto AB = B - A;
     const auto AC = C - A;
+    Real AC_length = AC.norm();
+
+    const auto AD = D - A;
+    Real AD_length = AD.norm();
+
+    //Building point B such that to be sure that AB intersects CD
+    Real Length = AC_length + AD_length;
+    Coord B = A + Length * direction;
     
-    //2D cross product which is a scalar value
-    Real perp = AB[0] * direction[1] - AB[1] * direction[0];
+    // alpha = ( d[CA/CD]*d[CD/AB] - d[CA/AB]*d[CD/CD] ) / ( d[AB/AB]*d[CD/CD] - d[AB/CD]*d[AB/CD])
+    const auto AB = B - A;
+    const auto CD = D - C;
+    const auto CA = A - C;
 
+    const Real dCACD = sofa::type::dot(CA, CD);
+    const Real dABCD = sofa::type::dot(AB, CD);
+    const Real dCDCD = sofa::type::dot(CD, CD);
+    const Real dCAAB = sofa::type::dot(CA, AB);
+    const Real dABAB = sofa::type::dot(AB, AB);
 
+    const Real alphaNom = (dCACD * dABCD - dCAAB * dCDCD);
+    const Real alphaDenom = (dABAB * dCDCD - dABCD * dABCD);
 
-    // Check if ray is parallel to the triangle
-    if (std::fabs(perp) < 1e-6) {
-        std::cout << "Ray is parallel to the triangle plane. No intersection." << std::endl;
+    if (alphaDenom < std::numeric_limits<Real>::epsilon()) // alpha == inf, not sure what it means geometrically, colinear?
+    {
+        std::cout << " No intersection." << std::endl;
         return false;
     }
 
+    
     // Calculate intersection parameter
 
-     t =  (AC[0] * direction[1] - AC[1] * direction[0])/ perp;
+     t = alphaNom / alphaDenom;
 
     if (t >= 0 && t <= 1) {
+        intersection = A + t * AB;
         return true;
     }
     else {
@@ -1002,11 +1037,11 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             points.push_back(Pa);
             points.push_back(Pc);
             // Blue == computed fracture path (using d_fractureMaxLength)
-           // vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
-           // vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
+            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
             //--------------------------------------------------------------------------------------------------
             /*Ronak-debug*/
-            /*vector<Coord> newPoints;
+            vector<Coord> newPoints;
             Coord newPb, newPc;
             computeEndPointsNeighboringTriangles(Pa, principalStressDirection, newPb, newPc);
            
@@ -1015,8 +1050,9 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             newPoints.push_back(Pa);
             newPoints.push_back(newPc);
             vparams->drawTool()->drawPoints(newPoints, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
-            vparams->drawTool()->drawLines(newPoints, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));*/
-            vector<Coord> newPoints;
+            vparams->drawTool()->drawLines(newPoints, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
+            //------------------------------------------------------------------------------------------------------
+          /*  vector<Coord> newPoints;
             Coord A = x[16];
             Coord B = x[14];
             Coord C = x[18];
@@ -1024,14 +1060,20 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             Coord P = A;
             P[0] = 3.0;
 
-            Coord direction = P - A;
+            Coord direction = (P - A)/ (P - A).norm();
+
 
             newPoints.push_back(A);
             newPoints.push_back(P);
-            vparams->drawTool()->drawPoints(newPoints, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
+           
+            Real t; Coord intersection;
+            if (rayTriangleIntersection(A, C, B, direction, t,intersection))
+                newPoints.push_back(intersection);
+            
 
-            Real t;
-            rayTriangleIntersection(A, B, C, A, direction, t);
+            vparams->drawTool()->drawPoints(newPoints, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));*/
+
+
 
 
 
