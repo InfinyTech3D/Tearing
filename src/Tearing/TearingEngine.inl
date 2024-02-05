@@ -68,7 +68,6 @@ TearingEngine<DataTypes>::TearingEngine()
     addInput(&d_fractureMaxLength);
 
     addInput(&d_ignoreTriangles);
-   
     addAlias(&d_ignoreTriangles, "ignoreTriangleAtStart");
 
     addInput(&d_startVertexId);
@@ -199,7 +198,7 @@ void TearingEngine<DataTypes>::doUpdate()
         d_trianglesToIgnore.setValue(emptyIndexList);
     }
 
-  
+   
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
     
@@ -635,7 +634,7 @@ inline Index TearingEngine<DataTypes>::computeVertexByArea_WeightedAverage()
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
-       
+        
         const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
         sofa::type::vector<Index> ValidTrianglesAround;
 
@@ -668,7 +667,6 @@ inline Index TearingEngine<DataTypes>::computeVertexByArea_WeightedAverage()
             averageStress /= sumArea;
 
         StressPerVertex[i] = averageStress;
-       
 
     }
     Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
@@ -698,7 +696,6 @@ inline Index TearingEngine<DataTypes>::computeVertexByUnweightedAverage()
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
-       
         const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
         sofa::type::vector<Index> ValidTrianglesAround;
 
@@ -754,7 +751,6 @@ inline Index TearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAv
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
-       
         std::vector<double> weight;
         sofa::type::vector<Index> ValidTrianglesAround;
         calculate_inverse_distance_weights(weight, VertexIndicies[i], ValidTrianglesAround);
@@ -802,7 +798,6 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
         {
             // Add the triangle to ValidTrianglesAround
             ValidTrianglesAround.push_back(trianglesAround[tri]);
-           
         }
     }
 
@@ -814,10 +809,9 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
      
      const Coord p = x[(int)vertex];
 
-
     for (unsigned int tri=0 ; tri< ValidTrianglesAround.size(); tri++)
     {
-      
+        
         sofa::type::vector<Index> VertexIndicies(numVertices);
         
         VertexIndicies[0] = (triangles[ValidTrianglesAround[tri]])[0];
@@ -992,7 +986,6 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             // Green == principal stress direction
             vector<Coord> pointsDir;
             pointsDir.push_back(Pa);
-           
             pointsDir.push_back(100.0*(Pa + principalStressDirection));
             vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
             vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
