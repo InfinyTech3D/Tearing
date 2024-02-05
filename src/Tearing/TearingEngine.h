@@ -78,7 +78,7 @@ public:
 	
 	Data<sofa::helper::OptionsGroup> d_computeVertexStressMethod; ///< option to choose a method to compute the starting point for fracture
 	Data<bool> d_ignoreTriangles; ///< option to ignore triangle at start
-	Data<bool> d_ignoreVertices; ///< option to ignore vertices instead of the whole triangles
+	
 	Data<VecIDs> d_trianglesToIgnore; ///< list of triangles to ignore at start
 	Data<int> d_stepModulo; ///< to define a number of step between 2 fractures
 	Data<int> d_nbFractureMax; ///< Maximum number of fracture
