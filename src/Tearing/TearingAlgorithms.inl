@@ -62,9 +62,6 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     bool sideC_resumed = true;
     Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
 
-    /*debug*/
-    //std::cout << "The new triangle in direction Pc-Pa is : " << current_triangle << std::endl;
-
     bool triangleInDirectionC = true;
     //no triangle around Pa in the direction Pc
     if (current_triangle > m_topology->getNbTriangles() - 1)
@@ -88,9 +85,7 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     //computeSegmentMeshIntersection [Pa;Pb]
     bool sideB_resumed = true;
     current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pb - Pa);
-    /*debug*/
-    //std::cout << "The new triangle in direction Pb-Pa is : " << current_triangle << std::endl;
-
+   
     bool triangleInDirectionB = true;
     //no triangle around Pa in the direction Pb
     if (current_triangle > m_topology->getNbTriangles() - 1)
@@ -257,9 +252,6 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
             int b = indexTriangleMaxStress;
             m_TjunctionTriangle.push_back({ {a},{b} });
 
-            /*Ongoing modification*/
-            int c = indexA;
-            m_TjunctionVertex.push_back({ {a},{c} });
         }
     }
 }
