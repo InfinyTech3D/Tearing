@@ -106,7 +106,7 @@ public:
 	};
 
 	/// Fracture segment endpoints
-	std::vector<Coord> fractureSegmentEndpoints;
+	std::vector<Coord>fractureSegmentEndpoints;
 
 protected:
 	/// <summary>
