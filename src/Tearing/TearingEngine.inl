@@ -276,7 +276,7 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
         }
        
     
-
+        std::cout << "m_maxStressVertexIndex is : " << m_maxStressVertexIndex << std::endl;
     d_maxStress.endEdit();
 }
 
@@ -371,14 +371,12 @@ void TearingEngine<DataTypes>::algoFracturePath()
         indexA = m_maxStressVertexIndex;
         Pa = x[indexA];
         principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-        //if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, pb, pc)))
-        if(fractureSegmentEndpoints.size() == 0)
-            return;
-        else
+        if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
         {
-            Pb = fractureSegmentEndpoints[0];
-            Pc = fractureSegmentEndpoints[1];
+            fractureSegmentEndpoints.clear();
+            return;
         }
+        
     }
     else
     {
@@ -388,16 +386,13 @@ void TearingEngine<DataTypes>::algoFracturePath()
         const Real& alpha = d_startLength.getValue();
 
         Pa = x[indexA];
-       // Pb = Pa + alpha * dir;
         Pb = Pa + alpha * dir;
-
-        //Pc = Pa - alpha * dir;
         Pc = Pa - alpha * dir;
     }
 
 
     m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
-    //m_tearingAlgo->algoFracturePath(Pa, indexA, pb, pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
+    
 
     if (d_stepModulo.getValue() == 0) // reset to 0
         m_stepCounter = 0;
@@ -867,6 +862,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
     Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
     Coord Pa = x[m_maxStressVertexIndex];
+    std::cout << "The vertex with maximum value in handle event " << m_maxStressVertexIndex << std::endl;
     Coord Pb, Pc;
     fractureSegmentEndpoints.clear();
     if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
@@ -875,7 +871,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
         fractureSegmentEndpoints.push_back(Pc);
 
     }
-
+  
     if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateEndEvent::checkEventType(event))
     {
         int step = d_stepModulo.getValue();
@@ -938,7 +934,6 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             }
 
           
-
          //   vparams->drawTool()->drawTriangles(vertices, color);
             vparams->drawTool()->drawTriangles(tearTriangleVertices, color2);
 
@@ -973,7 +968,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             verticesIgnore.push_back(Pb);
             verticesIgnore.push_back(Pc);
         }
-        vparams->drawTool()->drawTriangles(verticesIgnore, colorIgnore);
+        //vparams->drawTool()->drawTriangles(verticesIgnore, colorIgnore);
     }
 
     if (d_showFracturePath.getValue())
@@ -1006,8 +1001,14 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
            
             if (fractureSegmentEndpoints.size() != 0)
             {
-                vparams->drawTool()->drawPoints(fractureSegmentEndpoints, 10, sofa::type::RGBAColor(1, 0.2, 0, 1));
-                vparams->drawTool()->drawLines(fractureSegmentEndpoints, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));
+                Coord PbPa = fractureSegmentEndpoints[0] - Pa;
+                Coord PcPa = fractureSegmentEndpoints[0] - Pa;
+                Coord cross_PbPa_PcPa = sofa::type::cross(PbPa, PcPa);
+                if (cross_PbPa_PcPa.norm() < std::numeric_limits<Real>::epsilon())
+                {
+                    vparams->drawTool()->drawPoints(fractureSegmentEndpoints, 10, sofa::type::RGBAColor(1, 0.2, 0, 1));
+                    vparams->drawTool()->drawLines(fractureSegmentEndpoints, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));
+                }
             }
 
             //---------------------------------------------------------------------------------------------------
