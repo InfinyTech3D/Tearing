@@ -42,7 +42,7 @@ TearingEngine<DataTypes>::TearingEngine()
     : d_input_positions(initData(&d_input_positions, "input_position", "Input position"))
     , d_computeVertexStressMethod(initData(&d_computeVertexStressMethod, "computeVertexStressMethod", "Method used to compute the starting fracture point, among: \"WeightedAverageInverseDistance\", \"UnweightedAverage\" or \"WeightedAverageArea\""))
     , d_stressThreshold(initData(&d_stressThreshold, 55.0, "stressThreshold", "threshold value for stress"))
-    , d_fractureMaxLength(initData(&d_fractureMaxLength, 1.0, "fractureMaxLength", "fracture max length by occurence"))
+    , d_fractureMaxLength(initData(&d_fractureMaxLength, 0.0, "fractureMaxLength", "fracture max length by occurence"))
 
     , d_ignoreTriangles(initData(&d_ignoreTriangles, true, "ignoreTriangles", "option to ignore some triangles from the tearing algo"))
     , d_trianglesToIgnore(initData(&d_trianglesToIgnore, "trianglesToIgnore", "triangles that can't be choosen as starting fracture point"))
@@ -367,7 +367,9 @@ void TearingEngine<DataTypes>::algoFracturePath()
         indexA = m_maxStressVertexIndex;
         Pa = x[indexA];
         principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-        if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
+        if (d_fractureMaxLength.getValue())
+            computeEndPoints(Pa, principalStressDirection, Pb, Pc);
+        else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
             return;
         
     }
@@ -391,6 +393,43 @@ void TearingEngine<DataTypes>::algoFracturePath()
         m_stepCounter = 0;
 }
 
+template<class DataTypes>
+inline void TearingEngine<DataTypes>::computeFractureDirection(Coord principleStressDirection,Coord & fracture_direction)
+{
+    const VecTriangles& triangleList = m_topology->getTriangles();
+
+    constexpr size_t numVertices = 3;
+    sofa::type::vector<Index> VertexIndicies(numVertices);
+    VertexIndicies[0] = triangleList[m_maxStressTriangleIndex][0];
+    VertexIndicies[1] = triangleList[m_maxStressTriangleIndex][1];
+    VertexIndicies[2] = triangleList[m_maxStressTriangleIndex][2];
+
+    Index B_id = -1, C_id = -1;
+
+    for (unsigned int vertex_id = 0; vertex_id < VertexIndicies.size(); vertex_id++)
+    {
+        if (VertexIndicies[vertex_id] != m_maxStressVertexIndex)
+            if (B_id == -1)
+                B_id = VertexIndicies[vertex_id];
+            else {
+                C_id = VertexIndicies[vertex_id];
+                break;
+            }
+
+    }
+
+    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+    Coord A = x[m_maxStressVertexIndex];
+    Coord B = x[B_id];
+    Coord C = x[C_id];
+
+    Coord AB = B - A;
+    Coord AC = C - A;
+
+    Coord triangleNormal = sofa::type::cross(AB,AC);
+    fracture_direction = sofa::type::cross(triangleNormal, principleStressDirection);
+}
+
 
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeEndPoints(
@@ -399,8 +438,7 @@ void TearingEngine<DataTypes>::computeEndPoints(
     Coord& Pb, Coord& Pc)
 {
     Coord fractureDirection;
-    fractureDirection[0] = - direction[1];
-    fractureDirection[1] = direction[0];
+    computeFractureDirection(direction, fractureDirection);
     Real norm_fractureDirection = fractureDirection.norm();
     Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
@@ -414,9 +452,8 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
     bool t_c_ok = false;
     //compute fracture direction perpendicular to the principal stress direction
     Coord fractureDirection;
-    fractureDirection[0] = -direction[1];
-    fractureDirection[1] = direction[0];
-    //fractureDirection[2] = 0.0;
+    computeFractureDirection(direction, fractureDirection);
+   
 
     Real norm_fractureDirection = fractureDirection.norm();
     Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
@@ -847,18 +884,22 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
 {
    
-    //Recording the endpoints of the fracture segment
-    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-    Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-    Coord Pa = x[m_maxStressVertexIndex];
     
-    Coord Pb, Pc;
-    fractureSegmentEndpoints.clear();
-    if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
+    if (!d_fractureMaxLength.getValue())
     {
-        fractureSegmentEndpoints.push_back(Pb);
-        fractureSegmentEndpoints.push_back(Pc);
+        //Recording the endpoints of the fracture segment
+        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+        Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
+        Coord Pa = x[m_maxStressVertexIndex];
 
+        Coord Pb, Pc;
+        fractureSegmentEndpoints.clear();
+        if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
+        {
+            fractureSegmentEndpoints.push_back(Pb);
+            fractureSegmentEndpoints.push_back(Pc);
+
+        }
     }
   
     if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateEndEvent::checkEventType(event))
@@ -969,9 +1010,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
             Coord Pa = x[m_maxStressVertexIndex];
             Coord fractureDirection;
-            fractureDirection[0] = -principalStressDirection[1];
-            fractureDirection[1] = principalStressDirection[0];
-            fractureDirection[2] = 0.0;
+            computeFractureDirection(principalStressDirection, fractureDirection);
             
             
             vector<Coord> points;
