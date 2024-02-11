@@ -57,11 +57,14 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     m_fracturePath.clear();
     m_fracturePath.push_back(Pa);
     double EPS = 1e-8;
-
+    std::cout << "#### algoFracturePath: ####" << std::endl;
+    std::cout << "## Pa: " << Pa << std::endl;
+    std::cout << "## Pb: " << Pb << std::endl;
+    std::cout << "## Pc: " << Pc << std::endl;
     //computeSegmentMeshIntersection [Pa;Pc]
     bool sideC_resumed = true;
     Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
-
+    std::cout << "## current_triangle: " << current_triangle << std::endl;
     bool triangleInDirectionC = true;
     //no triangle around Pa in the direction Pc
     if (current_triangle > m_topology->getNbTriangles() - 1)
@@ -75,10 +78,11 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     VecIds edges_listC;
     vector< double > coordsEdge_listC;
     bool PATH_C_IS_OK = false;
+    std::cout << "## sideC_resumed: " << sideC_resumed << std::endl;
     if (sideC_resumed)
     {
         PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC, input_position);
-
+        std::cout << "computeSegmentMeshIntersection: " << edges_listC << std::endl;
     }
     m_fracturePath.push_back(Pc);
 
