@@ -129,6 +129,32 @@ protected:
 	/// @return Pb - one of the extremities of fracture
 	/// @return Pc - one of the extremities of fracture
 	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	/// <summary>
+	/// computes the extremities of fracture Pb and Pc on the edge of neighboring triangles
+	/// </summary>
+	/// @param Pa - the point where the fracture starts
+	/// @param direction - principle stress direction
+	/// @return Pb - one of the extremities of fracture
+	/// @return Pc - one of the extremities of fracture
+	bool computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	/// <summary>
+	/// computes the extremities of the (normalized) fracture PbPa on the edge of the triangle
+	/// </summary>
+	/// @param Pa - the point where the fracture starts
+	/// @param normalizedFractureDirection - normalized fracture direction
+	/// @return Pb - one of the extremities of fracture
+	/// @return t - a parameter needed to calculate Pb
+	bool computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t);
+	/// <summary>
+	/// computes the the intersection of a segment with one endpoint A with DC segment
+	/// </summary>
+	/// @param A - the point where the fracture starts
+	/// @param C,D - the other two vertices of the triangle
+	/// @param direction - normalized fracture direction
+	/// @return t - a parameter needed to calculate Pb
+	/// @return intersection - coordinate of the intersection point
+    bool rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t, Coord& intersection);
+
 	
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;

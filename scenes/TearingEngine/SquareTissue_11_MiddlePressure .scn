@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
-<!--Test case 1: Upper border is fixed and only heavy gravity is applied -->
+<!--Test case 3: Upper border is fixed and constant pulling force is applied to middle of bottom border -->
 
-<Node name="root" dt="0.01" showBoundingTree="0" gravity="0 -10 0">
+<Node name="root" dt="0.05" showBoundingTree="0" gravity="0 0 0">
 	<Node name="RequiredPlugins">
 		<RequiredPlugin name="Sofa.Component.Collision.Detection.Algorithm"/> <!-- Needed to use components [BVHNarrowPhase, BruteForceBroadPhase, DefaultPipeline] -->
 		<RequiredPlugin name="Sofa.Component.Collision.Detection.Intersection"/> <!-- Needed to use components [MinProximityIntersection] -->
@@ -13,6 +13,7 @@
 		<RequiredPlugin name="Sofa.Component.LinearSolver.Iterative"/> <!-- Needed to use components [CGLinearSolver] -->
 		<RequiredPlugin name="Sofa.Component.Mapping.Linear"/> <!-- Needed to use components [IdentityMapping] -->
 		<RequiredPlugin name="Sofa.Component.Mass"/> <!-- Needed to use components [DiagonalMass] -->
+		<RequiredPlugin name="Sofa.Component.MechanicalLoad"/> <!-- Needed to use components [ConstantForceField] -->
 		<RequiredPlugin name="Sofa.Component.ODESolver.Backward"/> <!-- Needed to use components [EulerImplicitSolver] -->
 		<RequiredPlugin name="Sofa.Component.SceneUtility"/> <!-- Needed to use components [InfoComponent] -->
 		<RequiredPlugin name="Sofa.Component.SolidMechanics.FEM.Elastic"/> <!-- Needed to use components [TriangularFEMForceField] -->
@@ -32,67 +33,37 @@
     <BVHNarrowPhase/>
     <CollisionResponse response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
-    
-    <Node name="SquareGravity_FEM">
+	
+    <Node name="SquareGravity">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
         <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
-        
-        <TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
-        <TriangleSetTopologyModifier   name="Modifier" />
-        <TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
-        
+		
+		<TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
+		<TriangleSetTopologyModifier   name="Modifier" />
+		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
+		
         <MechanicalObject name="Mo"/>
-        <DiagonalMass massDensity="10.0" />
-        
-        <BoxROI name="FixedSide" box="-0.1 9.9 0.1  10.1 10.1 -0.1" drawBoxes="1" />
-        <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
+        <DiagonalMass massDensity="0.15" />
+		
+		<BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
+		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
-        <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="1"/>
-        <TriangularBendingSprings name="FEM-Bend" stiffness="300" />
-        <PlaneForceField normal="0 1 0" d="-20" stiffness="100000" showPlane="1" showPlaneSize="20"/>
+		<BoxROI template="Vec3d" name="PullMiddle" box="4.9 4.95 0.1  5.1 5.1 0.1" drawBoxes="1"/>
+		<!--<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>-->
+		<ConstantForceField name="CFF" indices="772" forces="0 -300 0" showArrowSize=".01" />        
+		
+		<TriangularFEMForceField name="FEM" youngModulus="100" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
+        <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
+        <PlaneForceField normal="0 1 0" d="-30" stiffness="100000" showPlane="1" showPlaneSize="20"/>
         
         <TriangleCollisionModel />
-        
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="1.0" 
-            step="30" nbFractureMax="40" showFracturePath="0"/>
-			
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.1" 
+            step="20" nbFractureMax="40" showFracturePath="1"/>
+		
         <Node >
-            <OglModel name="Visual" color="red" />
+            <OglModel name="Visual" color="gray" />
             <IdentityMapping input="@.." output="@Visual" />
         </Node>
     </Node>
-    
-    <!--
-    <Node name="SquareGravity_FEM_optim">
-        <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
-        <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
-        <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" translation="10 0 0"/>
-        
-        <TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
-        <TriangleSetTopologyModifier   name="Modifier" />
-        <TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
-        
-        <MechanicalObject name="Mo"/>
-        <DiagonalMass massDensity="10.0" />
-        
-        <BoxROI name="FixedSide" box="9.9 9.9 0.1 20.1 10.1 -0.1" drawBoxes="1" />
-        <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
-
-        <TriangularFEMForceFieldOptim name="FEM" youngModulus="60" poissonRatio="0.3" method="large"  />
-        <TriangularBendingSprings name="FEM-Bend" stiffness="300" />
-        <PlaneForceField normal="0 1 0" d="-20" stiffness="100000" showPlane="1" showPlaneSize="20"/>
-            
-        <TriangleCollisionModel />
-        
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="30.0" 
-            step="30" nbFractureMax="40" showFracturePath="1"/>
-            
-        <Node >
-            <OglModel name="Visual" color="blue" />
-            <IdentityMapping input="@.." output="@Visual" />
-        </Node>
-    </Node>
-    -->
-    
 </Node>
