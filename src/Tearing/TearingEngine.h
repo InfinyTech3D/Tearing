@@ -105,6 +105,9 @@ public:
 		Coord principalStressDirection;
 	};
 
+	/// Fracture segment endpoints
+	std::vector<Coord>fractureSegmentEndpoints;
+
 protected:
 	/// <summary>
 	/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
