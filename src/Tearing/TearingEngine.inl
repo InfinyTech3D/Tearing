@@ -396,28 +396,26 @@ void TearingEngine<DataTypes>::algoFracturePath()
 template<class DataTypes>
 inline void TearingEngine<DataTypes>::computeFractureDirection(Coord principleStressDirection,Coord & fracture_direction)
 {
-    const VecTriangles& triangleList = m_topology->getTriangles();
+    if (m_maxStressTriangleIndex == InvalidID) {
+        fracture_direction = { 0.0, 0.0, 0.0 };
+        return;
+    }
 
+    const Triangle& VertexIndicies = m_topology->getTriangle(m_maxStressTriangleIndex);
     constexpr size_t numVertices = 3;
-    sofa::type::vector<Index> VertexIndicies(numVertices);
-    VertexIndicies[0] = triangleList[m_maxStressTriangleIndex][0];
-    VertexIndicies[1] = triangleList[m_maxStressTriangleIndex][1];
-    VertexIndicies[2] = triangleList[m_maxStressTriangleIndex][2];
 
     Index B_id = -1, C_id = -1;
 
-    for (unsigned int vertex_id = 0; vertex_id < VertexIndicies.size(); vertex_id++)
+    for (unsigned int vertex_id = 0; vertex_id < numVertices; vertex_id++)
     {
-        if (VertexIndicies[vertex_id] != m_maxStressVertexIndex)
-            if (B_id == -1)
-                B_id = VertexIndicies[vertex_id];
-            else {
-                C_id = VertexIndicies[vertex_id];
-                break;
-            }
-
+        if (VertexIndicies[vertex_id] == m_maxStressVertexIndex)
+        {
+            B_id = VertexIndicies[(vertex_id + 1) % 3];
+            C_id = VertexIndicies[(vertex_id + 2) % 3];
+            break;
+        }
     }
-
+    
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
     Coord A = x[m_maxStressVertexIndex];
     Coord B = x[B_id];
@@ -1038,7 +1036,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             vector<Coord> pointsDir;
             pointsDir.push_back(Pa);
            
-            pointsDir.push_back(100.0*(Pa + principalStressDirection));
+            pointsDir.push_back(Pa + 100.0*(principalStressDirection));
             vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
             vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
             
