@@ -485,11 +485,6 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t)
 {
-    
-
-    const VecTriangles& triangleList = m_topology->getTriangles();
-   
-    
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
     // Get Geometry Algorithm
@@ -509,23 +504,20 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 
     //std::cout << "Triangle index in direction dir_b is " << triangle_id << std::endl;
 
+   
+    const Triangle& VertexIndicies = m_topology->getTriangle(triangle_id);
+   
     constexpr size_t numVertices = 3;
-    sofa::type::vector<Index> VertexIndicies(numVertices);
-    VertexIndicies[0] = triangleList[triangle_id][0];
-    VertexIndicies[1] = triangleList[triangle_id][1];
-    VertexIndicies[2] = triangleList[triangle_id][2];
-
     Index B_id=-1, C_id=-1;
 
-    for (unsigned int vertex_id=0; vertex_id < VertexIndicies.size() ; vertex_id++)
+    for (unsigned int vertex_id = 0; vertex_id < numVertices ; vertex_id++)
     {
-        if (VertexIndicies[vertex_id] != m_maxStressVertexIndex)
-            if (B_id == -1)
-                B_id = VertexIndicies[vertex_id];
-            else {
-                C_id = VertexIndicies[vertex_id];
-                break;
-            }
+        if (VertexIndicies[vertex_id] == m_maxStressVertexIndex)
+        {
+            B_id = VertexIndicies[(vertex_id + 1) % 3];
+            C_id = VertexIndicies[(vertex_id + 2) % 3];
+            break;
+        }
 
     }
 
@@ -891,7 +883,6 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     
     if (!d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
     {
-        std::cout << ":m_maxStressTriangleIndex: " << m_maxStressTriangleIndex << std::endl;
         //Recording the endpoints of the fracture segment
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
         Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
@@ -1003,7 +994,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             verticesIgnore.push_back(Pb);
             verticesIgnore.push_back(Pc);
         }
-        //vparams->drawTool()->drawTriangles(verticesIgnore, colorIgnore);
+        vparams->drawTool()->drawTriangles(verticesIgnore, colorIgnore);
     }
 
     if (d_showFracturePath.getValue())
