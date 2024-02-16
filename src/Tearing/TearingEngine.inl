@@ -225,7 +225,8 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     candidate.clear();
     maxStress = 0;
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-
+    
+    m_maxStressTriangleIndex = InvalidID;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
         if (std::find(triangleToSkip.begin(), triangleToSkip.end(), i) == triangleToSkip.end())
@@ -351,6 +352,11 @@ void TearingEngine<DataTypes>::algoFracturePath()
     if (scenarioIdStart == -1 && candidate.empty())
         return;
 
+    if (m_maxStressTriangleIndex == InvalidID) {
+        msg_warning() << "m_maxStressTriangleIndex is invalid. Algo should not reach this point.";
+        return;
+    }
+
 
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
@@ -387,7 +393,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
 
     m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
-    
+    m_maxStressTriangleIndex = InvalidID;
 
     if (d_stepModulo.getValue() == 0) // reset to 0
         m_stepCounter = 0;
@@ -883,8 +889,9 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
 {
    
     
-    if (!d_fractureMaxLength.getValue())
+    if (!d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
     {
+        std::cout << ":m_maxStressTriangleIndex: " << m_maxStressTriangleIndex << std::endl;
         //Recording the endpoints of the fracture segment
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
         Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
