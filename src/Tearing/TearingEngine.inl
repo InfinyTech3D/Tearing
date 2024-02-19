@@ -29,7 +29,7 @@
 #include <sofa/core/objectmodel/KeypressedEvent.h>
 
 #include <sofa/component/mechanicalload/ConstantForceField.h>
-#include <sofa/component/constraint/projective/FixedConstraint.h>
+#include <sofa/component/constraint/projective/FixedProjectiveConstraint.h>
 
 
 namespace sofa::component::engine
@@ -593,7 +593,7 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
 
     using constantFF = sofa::component::mechanicalload::ConstantForceField<DataTypes>;
-    using fixC = sofa::component::constraint::projective::FixedConstraint<DataTypes>;
+    using fixC = sofa::component::constraint::projective::FixedProjectiveConstraint<DataTypes>;
     
     vector<constantFF*>  _constantForceFields;
     this->getContext()->template get< constantFF >(&_constantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);

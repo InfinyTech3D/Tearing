@@ -31,7 +31,7 @@
 #include <sofa/helper/ColorMap.h>
 #include <sofa/component/topology/container/dynamic/TetrahedronSetTopologyContainer.h>
 #include <sofa/component/mechanicalload/ConstantForceField.h>
-#include <sofa/component/constraint/projective/FixedConstraint.h>
+#include <sofa/component/constraint/projective/FixedProjectiveConstraint.h>
 
 #include <sofa/core/objectmodel/KeypressedEvent.h>
 #include <sofa/core/objectmodel/KeyreleasedEvent.h>
@@ -451,8 +451,8 @@ void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
     vector<sofa::component::mechanicalload::ConstantForceField<DataTypes>*>  m_ConstantForceFields;
     this->getContext()->get< sofa::component::mechanicalload::ConstantForceField<DataTypes> >(&m_ConstantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
     
-    vector<sofa::component::constraint::projective::FixedConstraint<DataTypes>*> m_FixedConstraint;
-    this->getContext()->get<sofa::component::constraint::projective::FixedConstraint<DataTypes>>(&m_FixedConstraint, sofa::core::objectmodel::BaseContext::SearchUp);
+    vector<sofa::component::constraint::projective::FixedProjectiveConstraint<DataTypes>*> m_FixedConstraint;
+    this->getContext()->get<sofa::component::constraint::projective::FixedProjectiveConstraint<DataTypes>>(&m_FixedConstraint, sofa::core::objectmodel::BaseContext::SearchUp);
 
     for (sofa::component::mechanicalload::ConstantForceField<DataTypes>*cff_i : m_ConstantForceFields)
     {
@@ -468,7 +468,7 @@ void VolumeTearingEngine<DataTypes>::computeTetraToSkip()
         }
     }
 
-    for (sofa::component::constraint::projective::FixedConstraint<DataTypes>*fc_i : m_FixedConstraint)
+    for (sofa::component::constraint::projective::FixedProjectiveConstraint<DataTypes>*fc_i : m_FixedConstraint)
     {
         vector<Index> vertexToSkip = fc_i->d_indices.getValue();
         for (unsigned int i = 0; i < vertexToSkip.size(); i++)
