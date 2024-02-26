@@ -70,7 +70,7 @@ public:
     void TearDown() override
     {
         if (m_instance.root != nullptr)
-            sofa::simulation::getSimulation()->unload(m_instance.root);
+            sofa::simulation::node::unload(m_instance.root);
     }
 
 protected:
@@ -137,7 +137,7 @@ struct TearingEngine_Case1 : public TearingEngine_test
         return true;
     }
 
-    bool testTearing()
+    bool testTearing() override
     {
         TriangleSetTopologyContainer* topoCon = this->getTopology();
         if (topoCon == nullptr)

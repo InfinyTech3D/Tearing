@@ -29,7 +29,7 @@
 #include <sofa/core/objectmodel/KeypressedEvent.h>
 
 #include <sofa/component/mechanicalload/ConstantForceField.h>
-#include <sofa/component/constraint/projective/FixedConstraint.h>
+#include <sofa/component/constraint/projective/FixedProjectiveConstraint.h>
 
 
 namespace sofa::component::engine
@@ -40,11 +40,12 @@ using sofa::type::Vec3;
 template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
     : d_input_positions(initData(&d_input_positions, "input_position", "Input position"))
-    , d_computeVertexStressMethod(initData(&d_computeVertexStressMethod, "computeVertexStressMethod", "Method used to compute the starting fracture point, among: \"WeightedAverageInverseDistance\", \"UnweightedAverage\" or \"WeightedAverageArea\""))
     , d_stressThreshold(initData(&d_stressThreshold, 55.0, "stressThreshold", "threshold value for stress"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 0.0, "fractureMaxLength", "fracture max length by occurence"))
 
+    , d_computeVertexStressMethod(initData(&d_computeVertexStressMethod, "computeVertexStressMethod", "Method used to compute the starting fracture point, among: \"WeightedAverageInverseDistance\", \"UnweightedAverage\" or \"WeightedAverageArea\""))
     , d_ignoreTriangles(initData(&d_ignoreTriangles, true, "ignoreTriangles", "option to ignore some triangles from the tearing algo"))
+
     , d_trianglesToIgnore(initData(&d_trianglesToIgnore, "trianglesToIgnore", "triangles that can't be choosen as starting fracture point"))
     , d_stepModulo(initData(&d_stepModulo, 20, "step", "step size"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
@@ -462,13 +463,13 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
     Real norm_fractureDirection = fractureDirection.norm();
     Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
 
-    Real t_b, u_b, v_b;
+    Real t_b;
     if (computeIntersectionNeighborTriangle(dir_b,Pa, Pb, t_b))
         t_b_ok = true;
 
     
     Coord dir_c = -dir_b;
-    Real t_c, u_c, v_c;
+    Real t_c;
     if (computeIntersectionNeighborTriangle(dir_c,Pa,Pc, t_c))
         t_c_ok = true;
 
@@ -485,6 +486,7 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t)
 {
+    SOFA_UNUSED(Pa);
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
     // Get Geometry Algorithm
@@ -590,7 +592,7 @@ void TearingEngine<DataTypes>::computeTriangleToSkip()
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
 
     using constantFF = sofa::component::mechanicalload::ConstantForceField<DataTypes>;
-    using fixC = sofa::component::constraint::projective::FixedConstraint<DataTypes>;
+    using fixC = sofa::component::constraint::projective::FixedProjectiveConstraint<DataTypes>;
     
     vector<constantFF*>  _constantForceFields;
     this->getContext()->template get< constantFF >(&_constantForceFields, sofa::core::objectmodel::BaseContext::SearchUp);
@@ -932,9 +934,8 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
         std::vector<Vec3> vertices;
-        sofa::type::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);  // (R, G, B, alpha)
         std::vector<Vec3> tearTriangleVertices;
-        sofa::type::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
+        sofa::type::RGBAColor color(0.0f, 1.0f, 0.0f, 1.0f);
         if (candidate.size() > 0)
         {
             for (unsigned int i = 0; i < candidate.size(); i++)
@@ -960,8 +961,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             }
 
           
-         //   vparams->drawTool()->drawTriangles(vertices, color);
-            vparams->drawTool()->drawTriangles(tearTriangleVertices, color2);
+            vparams->drawTool()->drawTriangles(tearTriangleVertices, color);
 
             //std::vector<Vec3> vecteur;
             //Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
