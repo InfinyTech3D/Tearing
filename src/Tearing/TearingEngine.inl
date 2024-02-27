@@ -915,8 +915,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     }
     else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
     {
-        if (m_stepCounter > d_stepModulo.getValue())
-            algoFracturePath();
+        algoFracturePath();
     }
 }
 
