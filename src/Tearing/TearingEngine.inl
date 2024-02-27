@@ -820,7 +820,7 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
         const Triangle& valTri = triangles[valTriId];
         sofa::type::vector<Index> VertexIndicies(numVertices);
 
-        Coord baryCenter = (x[(int)valTri[0]]+ x[(int)valTri[1]]+ x[(int)valTri[2]]) / 3.0;
+        Coord baryCenter = (x[valTri[0]]+ x[valTri[1]]+ x[valTri[2]]) / 3.0;
         double distance = sqrt(pow(baryCenter[0] - p[0], 2) + pow(baryCenter[1] - p[1], 2) + pow(baryCenter[2] - p[2], 2));
 
         // Avoid division by zero, add a small epsilon
