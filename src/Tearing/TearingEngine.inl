@@ -192,7 +192,6 @@ void TearingEngine<DataTypes>::doUpdate()
         }
        
     }
-  
     else
     {
         vector<Index> emptyIndexList;
@@ -202,7 +201,6 @@ void TearingEngine<DataTypes>::doUpdate()
    
     updateTriangleInformation();
     triangleOverThresholdPrincipalStress();
-    
 }
 
 
@@ -248,35 +246,35 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             }
         }
     }
-  
-    
-    //choosing a vertex for starting fracture depending on the method
-    
-        if(candidate.size())
-        {
-            switch (d_computeVertexStressMethod.getValue().getSelectedId())
-            {
-            case 0: //(reciprocal-distance) weighted average
-            {
-                m_maxStressVertexIndex = computeVertexByInverseDistance_WeightedAverage();
-                break;
-            }
-            case 1: //unweighted average
-            {
-                m_maxStressVertexIndex = computeVertexByUnweightedAverage();
-                break;
-            }
-            case 2: //(area) weighted average
-            {
-                m_maxStressVertexIndex = computeVertexByArea_WeightedAverage();
-                break;
-            }
-            default:
-                msg_error() << "Wrong \"computeVertexStressMethod\" given";
-            }
-        }
-       
     d_maxStress.endEdit();
+
+    
+    //choosing a vertex for starting fracture depending on the method    
+    if(m_maxStressTriangleIndex != InvalidID)
+    {
+        const Triangle& selectedTri = m_topology->getTriangle(m_maxStressTriangleIndex);
+
+        switch (d_computeVertexStressMethod.getValue().getSelectedId())
+        {
+        case 0: //(reciprocal-distance) weighted average
+        {
+            m_maxStressVertexIndex = computeVertexByInverseDistance_WeightedAverage(selectedTri);
+            break;
+        }
+        case 1: //unweighted average
+        {
+            m_maxStressVertexIndex = computeVertexByUnweightedAverage(selectedTri);
+            break;
+        }
+        case 2: //(area) weighted average
+        {
+            m_maxStressVertexIndex = computeVertexByArea_WeightedAverage(selectedTri);
+            break;
+        }
+        default:
+            msg_error() << "Wrong \"computeVertexStressMethod\" given";
+        }
+    }
 }
 
 
@@ -400,6 +398,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
         m_stepCounter = 0;
 }
 
+
 template<class DataTypes>
 inline void TearingEngine<DataTypes>::computeFractureDirection(Coord principleStressDirection,Coord & fracture_direction)
 {
@@ -449,6 +448,7 @@ void TearingEngine<DataTypes>::computeEndPoints(
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 }
 
+
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc)
 {
@@ -479,9 +479,8 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
         return false;
     }
     return true;
-
-
 }
+
 
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t)
@@ -503,8 +502,6 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
     Index triangle_id = _triangleGeo->getTriangleInDirection(m_maxStressVertexIndex, normalizedFractureDirection);
     if (triangle_id > m_topology->getNbTriangles() - 1)
         return false;
-
-    //std::cout << "Triangle index in direction dir_b is " << triangle_id << std::endl;
 
    
     const Triangle& VertexIndicies = m_topology->getTriangle(triangle_id);
@@ -581,8 +578,6 @@ inline bool TearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord C, 
         std::cout << "Intersection parameter is outside the valid range. No intersection." << std::endl;
         return false;
     }
-
-    
 }
 
 
@@ -651,26 +646,21 @@ inline void TearingEngine<DataTypes>::processTjunctionTriangle(const vector<vect
 }
 
 template<class DataTypes>
-inline Index TearingEngine<DataTypes>::computeVertexByArea_WeightedAverage()
+inline Index TearingEngine<DataTypes>::computeVertexByArea_WeightedAverage(const Triangle& selectedTriangle)
 {
     helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
 
     const auto& triangles = m_topology->getTriangles();
 
     constexpr size_t numVertices = 3;
-    sofa::type::vector<Index> VertexIndicies(numVertices);
     sofa::type::vector<Real>  StressPerVertex(numVertices);
-    VertexIndicies[0] = (triangles[m_maxStressTriangleIndex])[0];
-    VertexIndicies[1] = (triangles[m_maxStressTriangleIndex])[1];
-    VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
-
 
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
        
-        const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
+        const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(selectedTriangle[i]);
         sofa::type::vector<Index> ValidTrianglesAround;
 
         for (unsigned int tri = 0; tri < trianglesAround.size(); tri++)
@@ -707,31 +697,23 @@ inline Index TearingEngine<DataTypes>::computeVertexByArea_WeightedAverage()
     Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
     k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
 
-   return(triangles[m_maxStressTriangleIndex][k]);
-
-    
+    return selectedTriangle[k];
 }
 
+
 template<class DataTypes>
-inline Index TearingEngine<DataTypes>::computeVertexByUnweightedAverage()
+inline Index TearingEngine<DataTypes>::computeVertexByUnweightedAverage(const Triangle& selectedTriangle)
 {
     helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
 
-    const auto& triangles = m_topology->getTriangles();
-
     constexpr size_t numVertices = 3;
-    sofa::type::vector<Index> VertexIndicies(numVertices);
     sofa::type::vector<Real>  StressPerVertex(numVertices);
-    VertexIndicies[0] = (triangles[m_maxStressTriangleIndex])[0];
-    VertexIndicies[1] = (triangles[m_maxStressTriangleIndex])[1];
-    VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
-
 
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
-        const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(VertexIndicies[i]);
+        const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(selectedTriangle[i]);
         sofa::type::vector<Index> ValidTrianglesAround;
 
         for (unsigned int tri = 0; tri < trianglesAround.size(); tri++)
@@ -741,54 +723,47 @@ inline Index TearingEngine<DataTypes>::computeVertexByUnweightedAverage()
             {
                 // Add the triangle to ValidTrianglesAround
                 ValidTrianglesAround.push_back(trianglesAround[tri]);
-               
             }
         }
 
         
-        Real averageStress = 0.0;
-       
+        Real averageStress = 0.0;       
         for (unsigned int triID = 0 ; triID < ValidTrianglesAround.size() ; triID++)
         {
             const TriangleFEMInformation& tFEMinfo = triangleFEMInf[triID];
 
             if (tFEMinfo.area)
-             averageStress += fabs(tFEMinfo.maxStress);
+                averageStress += fabs(tFEMinfo.maxStress);
             
         }
 
         StressPerVertex[i] = averageStress;
-
     }
+
     Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
     k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
 
-    return(triangles[m_maxStressTriangleIndex][k]);
-   
+    return selectedTriangle[k];
 }
 
+
 template<class DataTypes>
-inline Index TearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAverage()
+inline Index TearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAverage(const Triangle& selectedTriangle)
 {
     helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
 
     const auto& triangles = m_topology->getTriangles();
 
     constexpr size_t numVertices = 3;
-    sofa::type::vector<Index> VertexIndicies(numVertices);
     sofa::type::vector<Real>  StressPerVertex(numVertices);
-    VertexIndicies[0] = (triangles[m_maxStressTriangleIndex])[0];
-    VertexIndicies[1] = (triangles[m_maxStressTriangleIndex])[1];
-    VertexIndicies[2] = (triangles[m_maxStressTriangleIndex])[2];
-
 
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
 
     for (unsigned int i = 0; i < numVertices; i++)
     {
         std::vector<double> weight;
-        sofa::type::vector<Index> ValidTrianglesAround;
-        calculate_inverse_distance_weights(weight, VertexIndicies[i], ValidTrianglesAround);
+        sofa::type::vector<TriangleID> ValidTrianglesAround;
+        calculate_inverse_distance_weights(weight, selectedTriangle[i], ValidTrianglesAround);
  
         Real averageStress = 0.0;
         
@@ -799,33 +774,26 @@ inline Index TearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAv
             if (tFEMinfo.area)
             {
                 averageStress += (fabs(tFEMinfo.maxStress) * weight[triID]);
-                
             }
         }
-
         
         StressPerVertex[i] = averageStress;
-
     }
+
     Index k = (StressPerVertex[0] > StressPerVertex[1]) ? 0 : 1;
     k = (StressPerVertex[k] > StressPerVertex[2]) ? k : 2;
 
-    return(triangles[m_maxStressTriangleIndex][k]);
-
-    
+    return selectedTriangle[k];    
 }
+
 
 template<class DataTypes>
 inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::vector<double>& result,
-    const Index vertex, sofa::type::vector<Index>& ValidTrianglesAround)
+    const Index vertexId, sofa::type::vector<TriangleID>& ValidTrianglesAround)
 {
-    
-    const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(vertex);
+    const vector<Index>& trianglesAround = m_topology->getTrianglesAroundVertex(vertexId);
    
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-
-    
-
     for (unsigned int tri=0;  tri < trianglesAround.size(); tri++)
     {
         // Check if the current triangle is not in triangleToSkip
@@ -842,38 +810,28 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
 
      helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
      
-     const Coord p = x[(int)vertex];
+     const Coord p = x[vertexId];
 
-    for (unsigned int tri=0 ; tri< ValidTrianglesAround.size(); tri++)
+    for (TriangleID valTriId : ValidTrianglesAround)
     {
-        
+        const Triangle& valTri = triangles[valTriId];
         sofa::type::vector<Index> VertexIndicies(numVertices);
-        
-        VertexIndicies[0] = (triangles[ValidTrianglesAround[tri]])[0];
-        VertexIndicies[1] = (triangles[ValidTrianglesAround[tri]])[1];
-        VertexIndicies[2] = (triangles[ValidTrianglesAround[tri]])[2];
-       
 
-        Coord baryCenter = (x[(int)VertexIndicies[0]]+ x[(int)VertexIndicies[1]]+ x[(int)VertexIndicies[2]]) / 3.0;
-               
+        Coord baryCenter = (x[valTri[0]]+ x[valTri[1]]+ x[valTri[2]]) / 3.0;
         double distance = sqrt(pow(baryCenter[0] - p[0], 2) + pow(baryCenter[1] - p[1], 2) + pow(baryCenter[2] - p[2], 2));
 
         // Avoid division by zero, add a small epsilon
         double epsilon = 1e-8; double weight;
         if (distance < epsilon)
         {
-            msg_warning() << " Center of triangle " << ValidTrianglesAround[tri] << "is very close to the point!";
+            msg_warning() << " Center of triangle " << valTriId << "is very close to the point!";
             weight = 1 / (distance + epsilon);
         }
         else
             weight = 1 / distance;
-        
-        
+
         result.push_back(weight);
-
     }
-    
-
 }
 
 
@@ -881,8 +839,22 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
 template <class DataTypes>
 void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
 {
-   
-    
+    if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
+    {
+        // Bypass to perform fracture by pressing Ctrl + C
+        if (ev->getKey() == 'C')
+        {
+            algoFracturePath();
+        }
+        return;
+    }
+    else if (!simulation::AnimateEndEvent::checkEventType(event))
+    {
+        return; // We only launch computation at end of a simulation step
+    }
+
+
+    // Compute the current fracture path
     if (!d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
     {
         //Recording the endpoints of the fracture segment
@@ -896,94 +868,73 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
         {
             fractureSegmentEndpoints.push_back(Pb);
             fractureSegmentEndpoints.push_back(Pc);
-
-        }
-    }
-  
-    if (/* simulation::AnimateBeginEvent* ev = */simulation::AnimateEndEvent::checkEventType(event))
-    {
-        int step = d_stepModulo.getValue();
-        if (step == 0) // interactive version
-        {
-            if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
-                algoFracturePath();
-        }
-        else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
-        {
-            if (m_stepCounter > d_stepModulo.getValue())
-                algoFracturePath();
         }
     }
 
-    if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
+    // Perform fracture every d_stepModulo
+    int step = d_stepModulo.getValue();
+    if (step == 0) // interactive version
     {
-        if (ev->getKey() == 'C')
-        {
+        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
             algoFracturePath();
-        }
+    }
+    else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
+    {
+        algoFracturePath();
     }
 }
 
+
 template <class DataTypes>
 void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
-{  
-    
+{     
+    const auto stateLifeCycle = vparams->drawTool()->makeStateLifeCycle();
+
+    if (vparams->displayFlags().getShowWireFrame())
+        vparams->drawTool()->setPolygonMode(0, true);
+
     if (d_showTearableCandidates.getValue())
     {
-        VecTriangles triangleList = m_topology->getTriangles();
+        const VecTriangles& triangleList = m_topology->getTriangles();
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-        std::vector<Vec3> vertices;
-        std::vector<Vec3> tearTriangleVertices;
-        sofa::type::RGBAColor color(0.0f, 1.0f, 0.0f, 1.0f);
+
+        std::vector<Vec3> tearTriangles;
+        sofa::type::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);  // (R, G, B, alpha)
+        std::vector<Vec3> maxStressTri; 
+        sofa::type::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
+        
+        // draw candidates in blue and selected triangle in green
         if (candidate.size() > 0)
         {
             for (unsigned int i = 0; i < candidate.size(); i++)
             {
-                if (candidate[i] != m_maxStressTriangleIndex)
+                const Triangle& tri = triangleList[candidate[i]];
+                Coord Pa = x[tri[0]];
+                Coord Pb = x[tri[1]];
+                Coord Pc = x[tri[2]];
+                if (candidate[i] == m_maxStressTriangleIndex)
                 {
-                    Coord Pa = x[triangleList[candidate[i]][0]];
-                    Coord Pb = x[triangleList[candidate[i]][1]];
-                    Coord Pc = x[triangleList[candidate[i]][2]];
-                    vertices.push_back(Pa);
-                    vertices.push_back(Pb);
-                    vertices.push_back(Pc);
+                    maxStressTri.push_back(Pa);
+                    maxStressTri.push_back(Pb);
+                    maxStressTri.push_back(Pc);
                 }
                 else
                 {
-                    Coord Pa = x[triangleList[candidate[i]][0]];
-                    Coord Pb = x[triangleList[candidate[i]][1]];
-                    Coord Pc = x[triangleList[candidate[i]][2]];
-                    tearTriangleVertices.push_back(Pa);
-                    tearTriangleVertices.push_back(Pb);
-                    tearTriangleVertices.push_back(Pc);
+                    tearTriangles.push_back(Pa);
+                    tearTriangles.push_back(Pb);
+                    tearTriangles.push_back(Pc);
                 }
             }
 
-          
-            vparams->drawTool()->drawTriangles(tearTriangleVertices, color);
-
-            //std::vector<Vec3> vecteur;
-            //Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-            //Coord Pa = x[m_maxStressVertexIndex];
-
-            //vecteur.push_back(Pa);
-            //vecteur.push_back(Pa + principalStressDirection);
-            //vparams->drawTool()->drawLines(vecteur, 1, sofa::type::RGBAColor(0, 1, 0, 1));
-            //vecteur.clear();
-            //Coord fractureDirection;
-            //fractureDirection[0] = -principalStressDirection[1];
-            //fractureDirection[1] = principalStressDirection[0];
-            //vecteur.push_back(Pa);
-            //vecteur.push_back(Pa + fractureDirection);
-            //vparams->drawTool()->drawLines(vecteur, 2, sofa::type::RGBAColor(0.0, 1.0, 0.0, 1.0));
-            //vecteur.clear();
+            vparams->drawTool()->drawTriangles(tearTriangles, color);
+            vparams->drawTool()->drawTriangles(maxStressTri, color2);
         }
 
+        // draw triangles ignored in red
         const VecIDs& triIds = d_trianglesToIgnore.getValue();
         std::vector<Vec3> verticesIgnore;
         sofa::type::RGBAColor colorIgnore(1.0f, 0.0f, 0.0f, 1.0f);
-        
 
         for (auto triId : triIds)
         {
@@ -997,10 +948,10 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         vparams->drawTool()->drawTriangles(verticesIgnore, colorIgnore);
     }
 
+
     if (d_showFracturePath.getValue())
     {
-        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
-        if (candidate.size() > 0)
+        if (m_maxStressTriangleIndex != InvalidID)
         {
             helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
             Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
@@ -1020,13 +971,13 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
             // Blue == computed fracture path using d_fractureMaxLength
             vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
             vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
+
             //--------------------------------------------------------------------------------------------------
-            //Red == computed fracture path on the edge of neighboring triangles
-           
+            //Red == computed fracture path on the edge of neighboring triangles          
             if (fractureSegmentEndpoints.size() != 0)
             {
-                    vparams->drawTool()->drawPoints(fractureSegmentEndpoints, 10, sofa::type::RGBAColor(1, 0.2, 0, 1));
-                    vparams->drawTool()->drawLines(fractureSegmentEndpoints, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));  
+                vparams->drawTool()->drawPoints(fractureSegmentEndpoints, 10, sofa::type::RGBAColor(1, 0.2, 0, 1));
+                vparams->drawTool()->drawLines(fractureSegmentEndpoints, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));  
             }
            
             //---------------------------------------------------------------------------------------------------

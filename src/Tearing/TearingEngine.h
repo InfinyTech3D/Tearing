@@ -176,20 +176,29 @@ protected:
 	/// <summary>
 	/// select the vertex with the maximum (area) weighted average of principal stress values
 	/// </summary>
-	Index computeVertexByArea_WeightedAverage();
+	/// @param selectedTriangle - The triangle with the maximum stress selected for the fracture start
+	/// @return Index - The triangle index [0;2] where to start the fracture
+	Index computeVertexByArea_WeightedAverage(const Triangle& selectedTriangle);
+
 	/// <summary>
 	/// select the vertex with the maximum unweighted average of principal stress values
 	/// </summary>
-	Index computeVertexByUnweightedAverage();
+	/// @param selectedTriangle - The triangle with the maximum stress selected for the fracture start
+	/// @return Index - The triangle index [0;2] where to start the fracture
+	Index computeVertexByUnweightedAverage(const Triangle& selectedTriangle);
+
 	/// <summary>
 	/// select the vertex with the maximum (distance) weighted average of principal stress values
 	/// </summary>
-	Index computeVertexByInverseDistance_WeightedAverage();
+	/// @param selectedTriangle - The triangle with the maximum stress selected for the fracture start
+	/// @return Index - The triangle index [0;2] where to start the fracture
+	Index computeVertexByInverseDistance_WeightedAverage(const Triangle& selectedTriangle);
+
 	/// <summary>
 	/// for a given vertex, compute the reciprocal of its distance with centroids of triangles
 	/// around it
 	/// </summary>
-	void calculate_inverse_distance_weights(std::vector<double>& result, const Index vertex, sofa::type::vector<Index>& ValidTrianglesAround);
+	void calculate_inverse_distance_weights(std::vector<double>& result, const Index vertex, sofa::type::vector<TriangleID>& ValidTrianglesAround);
 
 
 private:
