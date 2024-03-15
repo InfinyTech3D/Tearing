@@ -40,11 +40,12 @@ using sofa::type::Vec3;
 template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
     : d_input_positions(initData(&d_input_positions, "input_position", "Input position"))
-    , d_computeVertexStressMethod(initData(&d_computeVertexStressMethod, "computeVertexStressMethod", "Method used to compute the starting fracture point, among: \"WeightedAverageInverseDistance\", \"UnweightedAverage\" or \"WeightedAverageArea\""))
     , d_stressThreshold(initData(&d_stressThreshold, 55.0, "stressThreshold", "threshold value for stress"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 0.0, "fractureMaxLength", "fracture max length by occurence"))
 
+    , d_computeVertexStressMethod(initData(&d_computeVertexStressMethod, "computeVertexStressMethod", "Method used to compute the starting fracture point, among: \"WeightedAverageInverseDistance\", \"UnweightedAverage\" or \"WeightedAverageArea\""))
     , d_ignoreTriangles(initData(&d_ignoreTriangles, true, "ignoreTriangles", "option to ignore some triangles from the tearing algo"))
+
     , d_trianglesToIgnore(initData(&d_trianglesToIgnore, "trianglesToIgnore", "triangles that can't be choosen as starting fracture point"))
     , d_stepModulo(initData(&d_stepModulo, 20, "step", "step size"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
@@ -470,13 +471,13 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
     Real norm_fractureDirection = fractureDirection.norm();
     Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
 
-    Real t_b, u_b, v_b;
+    Real t_b;
     if (computeIntersectionNeighborTriangle(dir_b,Pa, Pb, t_b))
         t_b_ok = true;
 
     
     Coord dir_c = -dir_b;
-    Real t_c, u_c, v_c;
+    Real t_c;
     if (computeIntersectionNeighborTriangle(dir_c,Pa,Pc, t_c))
         t_c_ok = true;
 
@@ -492,6 +493,7 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t)
 {
+    SOFA_UNUSED(Pa);
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
     // Get Geometry Algorithm
@@ -823,7 +825,7 @@ inline void TearingEngine<DataTypes>::calculate_inverse_distance_weights(std::ve
         const Triangle& valTri = triangles[valTriId];
         sofa::type::vector<Index> VertexIndicies(numVertices);
 
-        Coord baryCenter = (x[(int)valTri[0]]+ x[(int)valTri[1]]+ x[(int)valTri[2]]) / 3.0;
+        Coord baryCenter = (x[valTri[0]]+ x[valTri[1]]+ x[valTri[2]]) / 3.0;
         double distance = sqrt(pow(baryCenter[0] - p[0], 2) + pow(baryCenter[1] - p[1], 2) + pow(baryCenter[2] - p[2], 2));
 
         // Avoid division by zero, add a small epsilon
@@ -881,13 +883,12 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     int step = d_stepModulo.getValue();
     if (step == 0) // interactive version
     {
-        if (m_stepCounter > 100 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
+        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
             algoFracturePath();
     }
     else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
     {
-        if (m_stepCounter > d_stepModulo.getValue())
-            algoFracturePath();
+        algoFracturePath();
     }
 }
 
@@ -905,6 +906,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         const VecTriangles& triangleList = m_topology->getTriangles();
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+
         std::vector<Vec3> tearTriangles;
         sofa::type::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);  // (R, G, B, alpha)
         std::vector<Vec3> maxStressTri; 
