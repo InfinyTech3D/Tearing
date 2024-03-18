@@ -25,48 +25,5 @@
 
 namespace sofa::component
 {
-    extern "C" {
-        TEARING_API void initExternalModule();
-        TEARING_API const char* getModuleName();
-        TEARING_API const char* getModuleVersion();
-        TEARING_API const char* getModuleLicense();
-        TEARING_API const char* getModuleDescription();
-        TEARING_API const char* getModuleComponentList();
-    }
-
-    void initExternalModule()
-    {
-        static bool first = true;
-        if (first)
-        {
-            first = false;
-        }
-    }
-
-    const char* getModuleName()
-    {
-        return "tearing";
-    }
-
-    const char* getModuleVersion()
-    {
-        return "1.0";
-    }
-
-    const char* getModuleLicense()
-    {
-        return "GPL";
-    }
-
-    const char* getModuleDescription()
-    {
-        return "tearing plugin";
-    }
-
-    const char* getModuleComponentList()
-    {
-        // string containing the names of the classes provided by the plugin
-        return "StressDetector";
-    }   
-
+    TEARING_API void init();
 } // namespace sofa::component
