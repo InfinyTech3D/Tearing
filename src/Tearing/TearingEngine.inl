@@ -340,15 +340,8 @@ template <class DataTypes>
 void TearingEngine<DataTypes>::algoFracturePath()
 {
     helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
-    int scenarioIdStart = -1;
 
-    //start with specific scenario
-    if (m_tearingAlgo->getFractureNumber() == 0) // first fracture of the scene
-    {
-        scenarioIdStart = d_startVertexId.getValue(); // -1 by default for no scenario
-    }
-
-    if (scenarioIdStart == -1 && candidate.empty())
+    if (candidate.empty())
         return;
 
     if (m_maxStressTriangleIndex == InvalidID) {
@@ -360,42 +353,50 @@ void TearingEngine<DataTypes>::algoFracturePath()
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
     //Calculate fracture starting point (Pa)
-    int indexA;
-    Coord Pa;
-    Coord principalStressDirection;
+    int indexA = m_maxStressVertexIndex;
+    Coord Pa = x[indexA];
+    Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
     //Calculate fracture end points (Pb and Pc)
     Coord Pb;
     Coord Pc;
     
-    if (scenarioIdStart == -1)
-    {
-        indexA = m_maxStressVertexIndex;
-        Pa = x[indexA];
-        principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-        if (d_fractureMaxLength.getValue())
-            computeEndPoints(Pa, principalStressDirection, Pb, Pc);
-        else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
-            return;
+    if (d_fractureMaxLength.getValue())
+        computeEndPoints(Pa, principalStressDirection, Pb, Pc);
+    else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
+        return;
         
-    }
-    else
-    {
-        indexA = scenarioIdStart;
-
-        const Vec3& dir = d_startDirection.getValue();
-        const Real& alpha = d_startLength.getValue();
-
-        Pa = x[indexA];
-        Pb = Pa + alpha * dir;
-        Pc = Pa - alpha * dir;
-    }
-
 
     m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
     m_maxStressTriangleIndex = InvalidID;
 
     if (d_stepModulo.getValue() == 0) // reset to 0
         m_stepCounter = 0;
+}
+
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::performFractureScenario()
+{
+    if (m_maxStressTriangleIndex == InvalidID) {
+        msg_warning() << "m_maxStressTriangleIndex is invalid. Algo should not reach this point.";
+        return;
+    }
+
+    // perform scenario only once
+    d_nbFractureMax.setValue(1);
+
+    int indexA = d_startVertexId.getValue();
+    const Vec3& dir = d_startDirection.getValue();
+    const Real& alpha = d_startLength.getValue();
+
+    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+    Coord Pa = x[indexA];
+    Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
+    Coord Pb = Pa + alpha * dir;
+    Coord Pc = Pa - alpha * dir;
+
+    m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
+    m_maxStressTriangleIndex = InvalidID;
 }
 
 
@@ -851,6 +852,17 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     else if (!simulation::AnimateEndEvent::checkEventType(event))
     {
         return; // We only launch computation at end of a simulation step
+    }
+
+
+    // if benchmark scenario, only perform this fracture once
+    auto scenario = d_startVertexId.getValue();
+    if (scenario != -1)
+    {
+        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
+            performFractureScenario();
+
+        return;
     }
 
 

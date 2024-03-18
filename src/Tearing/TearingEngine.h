@@ -124,6 +124,8 @@ protected:
 	/// </summary>
 	void algoFracturePath();
 
+	void performFractureScenario();
+
 	void computeFractureDirection(Coord principleStressDirection, Coord& fracture_direction);
 
 	/// <summary>
