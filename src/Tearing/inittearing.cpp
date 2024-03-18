@@ -23,54 +23,50 @@
  ****************************************************************************/
 #include <Tearing/config.h>
 
-namespace sofa
+namespace sofa::component
 {
-namespace component
-{
-
-extern "C" {
-
-TEARING_API
-void initExternalModule()
-{
-    static bool first = true;
-    if (first)
-    {
-        first = false;
+    extern "C" {
+        TEARING_API void initExternalModule();
+        TEARING_API const char* getModuleName();
+        TEARING_API const char* getModuleVersion();
+        TEARING_API const char* getModuleLicense();
+        TEARING_API const char* getModuleDescription();
+        TEARING_API const char* getModuleComponentList();
     }
-}
 
-TEARING_API
-const char* getModuleName()
-{
-    return "tearing";
-}
+    void initExternalModule()
+    {
+        static bool first = true;
+        if (first)
+        {
+            first = false;
+        }
+    }
 
-TEARING_API
-const char* getModuleVersion()
-{
-    return "1.0";
-}
+    const char* getModuleName()
+    {
+        return "tearing";
+    }
 
-TEARING_API
-const char* getModuleLicense()
-{
-    return "LGPL";
-}
+    const char* getModuleVersion()
+    {
+        return "1.0";
+    }
 
-TEARING_API
-const char* getModuleDescription()
-{
-    return "tearing plugin cr�e par Bun pour son stage de fin d'�tude";
-}
+    const char* getModuleLicense()
+    {
+        return "GPL";
+    }
 
-TEARING_API
-const char* getModuleComponentList()
-{
-    // string containing the names of the classes provided by the plugin
-    return "StressDetector";
-}   
-} // extern "C"
+    const char* getModuleDescription()
+    {
+        return "tearing plugin";
+    }
 
-} // namespace component
-} // namespace sofa
+    const char* getModuleComponentList()
+    {
+        // string containing the names of the classes provided by the plugin
+        return "StressDetector";
+    }   
+
+} // namespace sofa::component
