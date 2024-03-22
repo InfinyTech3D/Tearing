@@ -23,54 +23,7 @@
  ****************************************************************************/
 #include <Tearing/config.h>
 
-namespace sofa
+namespace sofa::component
 {
-namespace component
-{
-
-extern "C" {
-
-TEARING_API
-void initExternalModule()
-{
-    static bool first = true;
-    if (first)
-    {
-        first = false;
-    }
-}
-
-TEARING_API
-const char* getModuleName()
-{
-    return "tearing";
-}
-
-TEARING_API
-const char* getModuleVersion()
-{
-    return "1.0";
-}
-
-TEARING_API
-const char* getModuleLicense()
-{
-    return "LGPL";
-}
-
-TEARING_API
-const char* getModuleDescription()
-{
-    return "tearing plugin cr�e par Bun pour son stage de fin d'�tude";
-}
-
-TEARING_API
-const char* getModuleComponentList()
-{
-    // string containing the names of the classes provided by the plugin
-    return "StressDetector";
-}   
-} // extern "C"
-
-} // namespace component
-} // namespace sofa
+    TEARING_API void init();
+} // namespace sofa::component
