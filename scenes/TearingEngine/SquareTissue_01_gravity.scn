@@ -54,8 +54,8 @@
         
         <TriangleCollisionModel />
         
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="10.0" 
-            step="30" nbFractureMax="40" showFracturePath="1"/>
+        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="1.0" 
+            step="30" nbFractureMax="40" showFracturePath="0"/>
 			
         <Node >
             <OglModel name="Visual" color="red" />

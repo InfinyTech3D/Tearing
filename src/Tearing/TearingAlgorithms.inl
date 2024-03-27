@@ -61,6 +61,7 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     //computeSegmentMeshIntersection [Pa;Pc]
     bool sideC_resumed = true;
     Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
+
     bool triangleInDirectionC = true;
     //no triangle around Pa in the direction Pc
     if (current_triangle > m_topology->getNbTriangles() - 1)
@@ -75,12 +76,16 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     vector< double > coordsEdge_listC;
     bool PATH_C_IS_OK = false;
     if (sideC_resumed)
+    {
         PATH_C_IS_OK = computeSegmentMeshIntersection(Pa, indexA, Pc, pointC_inTriangle, triangleC, edges_listC, coordsEdge_listC, input_position);
+
+    }
     m_fracturePath.push_back(Pc);
 
     //computeSegmentMeshIntersection [Pa;Pb]
     bool sideB_resumed = true;
     current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pb - Pa);
+   
     bool triangleInDirectionB = true;
     //no triangle around Pa in the direction Pb
     if (current_triangle > m_topology->getNbTriangles() - 1)
@@ -117,7 +122,7 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
         if (topoPath_list.size() > 1)
         {
             //split along path
-            int snapingValue = 50;
+            int snapingValue = 0;
             int snapingBorderValue = 0;
             vector< Index > new_edges;
             int result;
@@ -130,6 +135,8 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
                 VecIds end_points;
                 bool reachBorder = false;
                 bool incision_ok = m_triangleGeo->InciseAlongEdgeList(new_edges, new_points, end_points, reachBorder);
+
+              
                 if (!incision_ok)
                 {
                     dmsg_error("TopologicalChangeManager") << " in InciseAlongEdgeList";
@@ -244,6 +251,7 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
             int a = m_fractureNumber;
             int b = indexTriangleMaxStress;
             m_TjunctionTriangle.push_back({ {a},{b} });
+
         }
     }
 }

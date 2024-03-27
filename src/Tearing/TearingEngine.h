@@ -31,6 +31,7 @@
 
 #include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceField.h>
 #include <sofa/component/solidmechanics/fem/elastic/TriangularFEMForceFieldOptim.h>
+#include <sofa/helper/OptionsGroup.h>
 
 
 namespace sofa::component::engine
@@ -75,7 +76,9 @@ public:
 	Data<Real> d_stressThreshold; ///< threshold value for principal stress
 	Data<Real> d_fractureMaxLength; ///< max length of a fracture
 	
+	Data<sofa::helper::OptionsGroup> d_computeVertexStressMethod; ///< option to choose a method to compute the starting point for fracture
 	Data<bool> d_ignoreTriangles; ///< option to ignore triangle at start
+	
 	Data<VecIDs> d_trianglesToIgnore; ///< list of triangles to ignore at start
 	Data<int> d_stepModulo; ///< to define a number of step between 2 fractures
 	Data<int> d_nbFractureMax; ///< Maximum number of fracture
@@ -92,7 +95,8 @@ public:
 	/// Output Data
 	Data<VecIDs> d_triangleIdsOverThreshold; ///< output vector of triangles candidates from @sa triangleOverThresholdPrincipalStress
 	Data<Real> d_maxStress; ///< output of the maximum stress found
-	
+
+
 	struct TriangleTearingInformation
 	{
 		//Real area;
@@ -100,6 +104,9 @@ public:
 		Real maxStress;
 		Coord principalStressDirection;
 	};
+
+	/// Fracture segment endpoints
+	std::vector<Coord>fractureSegmentEndpoints;
 
 protected:
 	/// <summary>
@@ -117,6 +124,8 @@ protected:
 	/// </summary>
 	void algoFracturePath();
 
+	void computeFractureDirection(Coord principleStressDirection, Coord& fracture_direction);
+
 	/// <summary>
 	/// compute extremities of fracture Pb and Pc from a start point Pa
 	/// </summary>
@@ -125,6 +134,32 @@ protected:
 	/// @return Pb - one of the extremities of fracture
 	/// @return Pc - one of the extremities of fracture
 	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	/// <summary>
+	/// computes the extremities of fracture Pb and Pc on the edge of neighboring triangles
+	/// </summary>
+	/// @param Pa - the point where the fracture starts
+	/// @param direction - principle stress direction
+	/// @return Pb - one of the extremities of fracture
+	/// @return Pc - one of the extremities of fracture
+	bool computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	/// <summary>
+	/// computes the extremities of the (normalized) fracture PbPa on the edge of the triangle
+	/// </summary>
+	/// @param Pa - the point where the fracture starts
+	/// @param normalizedFractureDirection - normalized fracture direction
+	/// @return Pb - one of the extremities of fracture
+	/// @return t - a parameter needed to calculate Pb
+	bool computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t);
+	/// <summary>
+	/// computes the the intersection of a segment with one endpoint A with DC segment
+	/// </summary>
+	/// @param A - the point where the fracture starts
+	/// @param C,D - the other two vertices of the triangle
+	/// @param direction - normalized fracture direction
+	/// @return t - a parameter needed to calculate Pb
+	/// @return intersection - coordinate of the intersection point
+    bool rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t, Coord& intersection);
+
 	
 	/// Link to be set to the topology container in the component graph
 	SingleLink<TearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
@@ -133,6 +168,38 @@ protected:
 	/// compute ignored triangle at start of the tearing algo
 	/// </summary>
 	void computeTriangleToSkip();
+
+    /// <summary>
+    /// add T-junction triangles to the list of ignored triangles
+    /// </summary>
+	void processTjunctionTriangle(const vector<vector<int>>& TjunctionTriangle, helper::WriteAccessor<Data<vector<Index>>>& triangleToSkip);
+	/// <summary>
+	/// select the vertex with the maximum (area) weighted average of principal stress values
+	/// </summary>
+	/// @param selectedTriangle - The triangle with the maximum stress selected for the fracture start
+	/// @return Index - The triangle index [0;2] where to start the fracture
+	Index computeVertexByArea_WeightedAverage(const Triangle& selectedTriangle);
+
+	/// <summary>
+	/// select the vertex with the maximum unweighted average of principal stress values
+	/// </summary>
+	/// @param selectedTriangle - The triangle with the maximum stress selected for the fracture start
+	/// @return Index - The triangle index [0;2] where to start the fracture
+	Index computeVertexByUnweightedAverage(const Triangle& selectedTriangle);
+
+	/// <summary>
+	/// select the vertex with the maximum (distance) weighted average of principal stress values
+	/// </summary>
+	/// @param selectedTriangle - The triangle with the maximum stress selected for the fracture start
+	/// @return Index - The triangle index [0;2] where to start the fracture
+	Index computeVertexByInverseDistance_WeightedAverage(const Triangle& selectedTriangle);
+
+	/// <summary>
+	/// for a given vertex, compute the reciprocal of its distance with centroids of triangles
+	/// around it
+	/// </summary>
+	void calculate_inverse_distance_weights(std::vector<double>& result, const Index vertex, sofa::type::vector<TriangleID>& ValidTrianglesAround);
+
 
 private:
 	/// Pointer to the current topology

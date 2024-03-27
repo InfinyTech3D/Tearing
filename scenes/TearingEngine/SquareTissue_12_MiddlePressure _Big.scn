@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<!--Test case 2: Upper border is fixed and constant pulling force is applied to bottom border -->
+<!--Test case 3: Upper border is fixed and constant pulling force is applied to middle of bottom border -->
 
 <Node name="root" dt="0.05" showBoundingTree="0" gravity="0 0 0">
 	<Node name="RequiredPlugins">
@@ -24,7 +24,7 @@
 		<RequiredPlugin name="Sofa.GL.Component.Rendering3D"/> <!-- Needed to use components [OglModel] -->
 		<RequiredPlugin name="tearing"/>
 	</Node>
-    
+	
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
 
     <DefaultAnimationLoop />
@@ -33,35 +33,36 @@
     <BVHNarrowPhase/>
     <CollisionResponse response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
-    
+	
     <Node name="SquareGravity">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
-        <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
-        
-        <TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
-        <TriangleSetTopologyModifier   name="Modifier" />
-        <TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
-        
+		<MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
+		
+		<TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
+		<TriangleSetTopologyModifier   name="Modifier" />
+		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
+		
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="0.15" />
-                
-        <BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
-        <FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
+		
+		<BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
+		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
-        <BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
-        <ConstantForceField name="CFF" indices="@PulledSide.indices" forces="0 -200 50" showArrowSize=".01" />
-        
-        <TriangularFEMForceField name="FEM" youngModulus="100" poissonRatio="0.3" method="large" computePrincipalStress="true" showStressVector="1"/>
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.3" 
-            step="20" nbFractureMax="40" showFracturePath="1"/>
-        
-        <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" showSprings="0" />
+		<BoxROI template="Vec3d" name="PullMiddle" box="4.9 4.95 0.1  5.1 5.1 0.1" drawBoxes="1"/>
+		<!--<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>-->
+		<ConstantForceField name="CFF" indices="462" forces="0 -300 0" showArrowSize=".01" />        
+		
+		<TriangularFEMForceField name="FEM" youngModulus="100" poissonRatio="0.3" method="large" computePrincipalStress="true" showStressVector="true"/>
+        <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <PlaneForceField normal="0 1 0" d="-30" stiffness="100000" showPlane="1" showPlaneSize="20"/>
-        <TriangleCollisionModel />
         
+        <TriangleCollisionModel />
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.1" 
+            step="20" nbFractureMax="4" showFracturePath="1"/>
+		
         <Node >
-            <OglModel name="Visual" color="red" />
+            <OglModel name="Visual" color="gray" />
             <IdentityMapping input="@.." output="@Visual" />
         </Node>
     </Node>

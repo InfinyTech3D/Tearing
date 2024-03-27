@@ -50,7 +50,7 @@
 		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PullCorner" box="9.9 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
-		<ConstantForceField name="CFF" indices="@PullCorner.indices" force="0 -160 0" showArrowSize=".02" />		
+		<ConstantForceField name="CFF" indices="@PullCorner.indices" forces="0 -160 0" showArrowSize=".02" />		
 		
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
