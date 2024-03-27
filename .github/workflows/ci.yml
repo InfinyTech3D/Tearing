@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, macos-12, windows-2022]
-        sofa_branch: [master]
+        sofa_branch: [v23.12]
 
     steps:
       - name: (Mac) Workaround for homebrew
@@ -114,7 +114,7 @@ jobs:
 
   deploy:
     name: Deploy artifacts
-    if: always() && startsWith(github.ref, 'refs/heads/main') # we are on a branch (not a PR)
+    if: always() && startsWith(github.ref, 'refs/heads/')
     needs: [build-and-test]
     runs-on: ubuntu-latest
     continue-on-error: true
