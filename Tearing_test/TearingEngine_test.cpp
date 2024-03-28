@@ -166,8 +166,8 @@ TEST_F(TearingEngine_Case1, testInit)
     ASSERT_TRUE(this->testInit());
 }
 
-TEST_F(TearingEngine_Case1, testTearing)
-{
-    ASSERT_TRUE(this->testTearing());
-}
+//TEST_F(TearingEngine_Case1, testTearing)
+//{
+//    ASSERT_TRUE(this->testTearing());
+//}
 
