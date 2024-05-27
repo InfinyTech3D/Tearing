@@ -73,20 +73,16 @@ public:
 
 	/// Input Data
 	Data<VecCoord> d_input_positions; ///< Input position
+    Data<sofa::helper::OptionsGroup> d_computeVertexStressMethod; ///< option to choose a method to compute the starting point for fracture
+
+	Data<bool> d_ignoreTriangles; ///< option to ignore triangle at start
+	Data<VecIDs> d_trianglesToIgnore; ///< list of triangles to ignore at start
+	
+	/// Fracture parameters
 	Data<Real> d_stressThreshold; ///< threshold value for principal stress
 	Data<Real> d_fractureMaxLength; ///< max length of a fracture
-	
-	Data<sofa::helper::OptionsGroup> d_computeVertexStressMethod; ///< option to choose a method to compute the starting point for fracture
-	Data<bool> d_ignoreTriangles; ///< option to ignore triangle at start
-	
-	Data<VecIDs> d_trianglesToIgnore; ///< list of triangles to ignore at start
 	Data<int> d_stepModulo; ///< to define a number of step between 2 fractures
 	Data<int> d_nbFractureMax; ///< Maximum number of fracture
-
-	/// Parameters for predefined scenario
-	Data<int> d_startVertexId; ///< vertex ID to start algofracture (scenario case)
-	Data<Vec3> d_startDirection; ///< direction to start algofracture (scenario case)
-	Data<Real> d_startLength; ///< length of first fracture to start algofracture (scenario case)
 
 	/// Display parameters
 	Data<bool> d_showTearableCandidates; ///< option to activate display of triangles candidates
@@ -106,7 +102,7 @@ public:
 	};
 
 	/// Fracture segment endpoints
-	std::vector<Coord>fractureSegmentEndpoints;
+	std::vector<Coord> fractureSegmentEndpoints;
 
 protected:
 	/// <summary>
@@ -123,8 +119,6 @@ protected:
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
 	void algoFracturePath();
-
-	void performFractureScenario();
 
 	void computeFractureDirection(Coord principleStressDirection, Coord& fracture_direction);
 
