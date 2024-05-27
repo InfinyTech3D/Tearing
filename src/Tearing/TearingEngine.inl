@@ -142,9 +142,6 @@ void TearingEngine<DataTypes>::init()
     if (d_ignoreTriangles.getValue())
         computeTriangleToSkip();
 
-    updateTriangleInformation();
-    triangleOverThresholdPrincipalStress();
-    
     if (m_tearingAlgo == nullptr)
         m_tearingAlgo = std::make_unique<TearingAlgorithms<DataTypes> >(m_topology, _modifier, _triangleGeo);
 
@@ -231,12 +228,11 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             {
                 candidate.push_back(i);
                 
-            }
-
-            if (tinfo.maxStress > maxStress)
-            {
-                m_maxStressTriangleIndex = i;
-                maxStress = tinfo.maxStress;
+                if (tinfo.maxStress > maxStress)
+                {
+                    m_maxStressTriangleIndex = i;
+                    maxStress = tinfo.maxStress;
+                }
             }
         }
     }
@@ -266,7 +262,10 @@ void TearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             break;
         }
         default:
+        {
+            m_maxStressTriangleIndex = InvalidID; // Invalidate triangle with max stress to avoid wrond fracture
             msg_error() << "Wrong \"computeVertexStressMethod\" given";
+        }
         }
     }
 }
@@ -454,6 +453,10 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t)
 {
+    if (m_maxStressVertexIndex == InvalidID)
+        return false;
+
+
     SOFA_UNUSED(Pa);
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 

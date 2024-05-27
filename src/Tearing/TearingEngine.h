@@ -208,8 +208,8 @@ private:
 	
 	vector<TriangleTearingInformation> m_triangleInfoTearing; ///< vector of TriangleInfo from FEM
 	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
-	TriangleID m_maxStressTriangleIndex = 0; ///< Triangle ID of the triangle from filter candadites with the max stress
-	Index m_maxStressVertexIndex = 0; ///< Global Vertex Id where the stress is maximum. Vertex is part of @sa m_maxStressTriangleIndex Triangle
+	TriangleID m_maxStressTriangleIndex = InvalidID; ///< Triangle ID of the triangle from filter candadites with the max stress
+	Index m_maxStressVertexIndex = InvalidID; ///< Global Vertex Id where the stress is maximum. Vertex is part of @sa m_maxStressTriangleIndex Triangle
 };
 	
 #if !defined(SOFA_COMPONENT_ENGINE_TEARINGENGINE_CPP)
