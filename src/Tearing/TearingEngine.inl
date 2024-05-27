@@ -40,22 +40,19 @@ using sofa::type::Vec3;
 template <class DataTypes>
 TearingEngine<DataTypes>::TearingEngine()
     : d_input_positions(initData(&d_input_positions, "input_position", "Input position"))
+    , d_computeVertexStressMethod(initData(&d_computeVertexStressMethod, "computeVertexStressMethod", "Method used to compute the starting fracture point, among: \"WeightedAverageInverseDistance\", \"UnweightedAverage\" or \"WeightedAverageArea\""))
+
+    , d_ignoreTriangles(initData(&d_ignoreTriangles, true, "ignoreTriangles", "option to ignore some triangles from the tearing algo"))
+    , d_trianglesToIgnore(initData(&d_trianglesToIgnore, "trianglesToIgnore", "triangles that can't be choosen as starting fracture point"))
+
     , d_stressThreshold(initData(&d_stressThreshold, 55.0, "stressThreshold", "threshold value for stress"))
     , d_fractureMaxLength(initData(&d_fractureMaxLength, 0.0, "fractureMaxLength", "fracture max length by occurence"))
-
-    , d_computeVertexStressMethod(initData(&d_computeVertexStressMethod, "computeVertexStressMethod", "Method used to compute the starting fracture point, among: \"WeightedAverageInverseDistance\", \"UnweightedAverage\" or \"WeightedAverageArea\""))
-    , d_ignoreTriangles(initData(&d_ignoreTriangles, true, "ignoreTriangles", "option to ignore some triangles from the tearing algo"))
-
-    , d_trianglesToIgnore(initData(&d_trianglesToIgnore, "trianglesToIgnore", "triangles that can't be choosen as starting fracture point"))
     , d_stepModulo(initData(&d_stepModulo, 20, "step", "step size"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
 
-    , d_startVertexId(initData(&d_startVertexId, int(-1), "startVertexId", "Vertex ID to start a given tearing scenario, -1 if none"))
-    , d_startDirection(initData(&d_startDirection, Vec3(1.0, 0.0, 0.0), "startDirection", "If startVertexId is set, define the direction of the tearing scenario. x direction by default"))
-    , d_startLength(initData(&d_startLength, Real(1.0), "startLength", "If startVertexId is set, define the length of the tearing, to be combined with startDirection"))
-
     , d_showTearableCandidates(initData(&d_showTearableCandidates, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
     , d_showFracturePath(initData(&d_showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
+    
     , d_triangleIdsOverThreshold(initData(&d_triangleIdsOverThreshold, "triangleIdsOverThreshold", "triangles with maxStress over threshold value"))
     , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
     , l_topology(initLink("topology", "link to the topology container"))
@@ -71,9 +68,6 @@ TearingEngine<DataTypes>::TearingEngine()
     addInput(&d_ignoreTriangles);
     addAlias(&d_ignoreTriangles, "ignoreTriangleAtStart");
 
-    addInput(&d_startVertexId);
-    addInput(&d_startDirection);
-    addInput(&d_startLength);
     addOutput(&d_triangleIdsOverThreshold);
     addOutput(&d_maxStress);
 }
@@ -371,32 +365,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
 
     if (d_stepModulo.getValue() == 0) // reset to 0
         m_stepCounter = 0;
-}
-
-
-template <class DataTypes>
-void TearingEngine<DataTypes>::performFractureScenario()
-{
-    if (m_maxStressTriangleIndex == InvalidID) {
-        msg_warning() << "m_maxStressTriangleIndex is invalid. Algo should not reach this point.";
-        return;
-    }
-
-    // perform scenario only once
-    d_nbFractureMax.setValue(1);
-
-    int indexA = d_startVertexId.getValue();
-    const Vec3& dir = d_startDirection.getValue();
-    const Real& alpha = d_startLength.getValue();
-
-    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-    Coord Pa = x[indexA];
-    Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-    Coord Pb = Pa + alpha * dir;
-    Coord Pc = Pa - alpha * dir;
-
-    m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
-    m_maxStressTriangleIndex = InvalidID;
 }
 
 
@@ -852,17 +820,6 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     else if (!simulation::AnimateEndEvent::checkEventType(event))
     {
         return; // We only launch computation at end of a simulation step
-    }
-
-
-    // if benchmark scenario, only perform this fracture once
-    auto scenario = d_startVertexId.getValue();
-    if (scenario != -1)
-    {
-        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
-            performFractureScenario();
-
-        return;
     }
 
 
