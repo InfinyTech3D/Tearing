@@ -1,0 +1,13 @@
+# WARNING: 
+# REGRESSION_TEST DOES NOT SUPPORT DASHES ("-") IN SCENE NAMES.
+# USE UNDERSCORES ("_") INSTEAD.
+
+### References relative path ###
+../regression/references_topology
+
+### Topology scenes ###
+./TearingEngine/SquareTissue_01_gravity.scn 200 1e-4 1
+./TearingEngine/SquareTissue_02_pressureBorder.scn 200 1e-4 1
+./TearingEngine/SquareTissue_03_centralePressure.scn 200 1e-4 1
+./TearingEngine/SquareTissue_04_cornerPressure.scn 200 1e-4 1
+./TearingEngine/SquareTissue_05_circleHole_gravity.scn 200 1e-4 1
