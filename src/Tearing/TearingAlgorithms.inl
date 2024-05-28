@@ -57,10 +57,13 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
     m_fracturePath.clear();
     m_fracturePath.push_back(Pa);
     double EPS = 1e-8;
+    const type::Vec3 backward = Pb - Pa;
+    const type::Vec3 forward = Pc - Pa;
 
     //computeSegmentMeshIntersection [Pa;Pc]
+    
     bool sideC_resumed = true;
-    Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pc - Pa);
+    Index current_triangle = m_triangleGeo->getTriangleInDirection(indexA, forward);
 
     bool triangleInDirectionC = true;
     //no triangle around Pa in the direction Pc
@@ -84,7 +87,7 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
 
     //computeSegmentMeshIntersection [Pa;Pb]
     bool sideB_resumed = true;
-    current_triangle = m_triangleGeo->getTriangleInDirection(indexA, Pb - Pa);
+    current_triangle = m_triangleGeo->getTriangleInDirection(indexA, backward);
    
     bool triangleInDirectionB = true;
     //no triangle around Pa in the direction Pb
@@ -121,6 +124,76 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
 
         if (topoPath_list.size() > 1)
         {
+            // TODO: Temporary Fix. To be removed and changed when new TriangleSubvidier are integrated in SOFA.
+            bool rmFirstEdge = false;
+            if (topoPath_list[0] == sofa::geometry::ElementType::EDGE)
+            {
+                // first point is on an edge. Need to split triangle
+                auto triAEdge = m_topology->getTrianglesAroundEdge(indices_list[0]);
+                const Edge& ed = m_topology->getEdge(indices_list[0]);
+
+                for (auto triId : triAEdge)
+                {
+                    auto bary = m_triangleGeo->computeTriangleCenter(triId);
+                    type::Vec3 dir = bary - Pb;
+                    auto sign = type::dot(dir, backward);
+                    if (sign > 0.0)
+                    {
+                        const Triangle& tri = m_topology->getTriangle(triId);
+
+                        Index idE = 0;
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            if (tri[j] != ed[0] && tri[j] != ed[1]) {
+                                idE = j;
+                                break;
+                            }
+                        }
+
+                        topoPath_list.insert(topoPath_list.begin(), sofa::geometry::ElementType::POINT);
+                        indices_list.insert(indices_list.begin(), tri[idE]);
+                        coords_list.insert(coords_list.begin(), type::Vec3(1.0, 0.0, 0.0));
+                        rmFirstEdge = true;
+                    }
+                }
+            }
+
+            // TODO: Temporary Fix. To be removed and changed when new TriangleSubvidier are integrated in SOFA.
+            bool rmLastEdge = false;
+            if (topoPath_list.back() == sofa::geometry::ElementType::EDGE)
+            {
+                // first point is on an edge. Need to split triangle
+                auto triAEdge = m_topology->getTrianglesAroundEdge(indices_list.back());
+                const Edge& ed = m_topology->getEdge(indices_list.back());
+
+                for (auto triId : triAEdge)
+                {
+                    auto bary = m_triangleGeo->computeTriangleCenter(triId);
+                    type::Vec3 dir = bary - Pc;
+                    auto sign = type::dot(dir, forward);
+                    if (sign > 0.0)
+                    {
+                        const Triangle& tri = m_topology->getTriangle(triId);
+
+                        Index idE = 0;
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            if (tri[j] != ed[0] && tri[j] != ed[1]) {
+                                idE = j;
+                                break;
+                            }
+                        }
+
+                        topoPath_list.push_back(sofa::geometry::ElementType::POINT);
+                        indices_list.push_back(tri[idE]);
+                        coords_list.push_back(type::Vec3(1.0, 0.0, 0.0));
+                        rmLastEdge = true;
+                    }
+                }
+            }
+
+
+
             //split along path
             int snapingValue = 0;
             int snapingBorderValue = 0;
@@ -130,6 +203,12 @@ void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coor
 
             if (result > 0)
             {
+                // TODO: hack to be removed
+                if (rmFirstEdge)
+                    new_edges.erase(new_edges.begin());
+                if (rmLastEdge)
+                    new_edges.pop_back();
+
                 //incise along new_edges
                 VecIds new_points;
                 VecIds end_points;
@@ -316,7 +395,7 @@ bool TearingAlgorithms<DataTypes>::computeSegmentMeshIntersection(
             return PATH_IS_OK;
 
         //check if endPoint is passed
-        if (candidateCoordKmin[j] >= 1)
+        if (candidateCoordKmin[j] > 1.0001)
         {
             endPoint_inTriangle = true;
             endPointTriangle = current_triangle;
