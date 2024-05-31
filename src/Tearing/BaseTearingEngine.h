@@ -69,7 +69,7 @@ public:
 	void reinit() override;
 	void doUpdate() override;
 	void draw(const core::visual::VisualParams* vparams) override;
-	void handleEvent(sofa::core::objectmodel::Event* event) override;
+	virtual void handleEvent(sofa::core::objectmodel::Event* event) override;
 
 	/// Input Data
 	Data<VecCoord> d_input_positions; ///< Input position
@@ -118,7 +118,7 @@ protected:
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
-	void algoFracturePath();
+	virtual void algoFracturePath();
 
 	void computeFractureDirection(Coord principleStressDirection, Coord& fracture_direction);
 
@@ -195,6 +195,18 @@ protected:
 	/// around it
 	/// </summary>
 	void calculate_inverse_distance_weights(std::vector<double>& result, const Index vertex, sofa::type::vector<TriangleID>& ValidTrianglesAround);
+
+	/// Access to the topology for a drived class
+	sofa::core::topology::BaseMeshTopology* getTopology() const {
+		return m_topology;
+	}
+
+	/// Access to the tearing algorithm for a drived class
+	TearingAlgorithms<DataTypes>* getTearingAlgo() const
+	{
+		return m_tearingAlgo.get();
+	}
+
 
 
 private:
