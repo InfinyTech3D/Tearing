@@ -20,9 +20,12 @@ namespace sofa::component::engine
 	{
 	public:
 
+		SOFA_CLASS(SOFA_TEMPLATE(TearingScenarioEngine, DataTypes), SOFA_TEMPLATE(BaseTearingEngine, DataTypes));
 		typedef typename DataTypes::Real Real;
 		typedef typename DataTypes::Coord Coord;
 		using Vec3 = sofa::type::Vec3;
+		using VecTriangles = sofa::core::topology::BaseMeshTopology::SeqTriangles;
+		using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
 
 
 		Data<int> d_startVertexId; ///< vertex ID to start algofracture (scenario case)
@@ -39,13 +42,13 @@ namespace sofa::component::engine
 		void init() override;
 		void reinit() override;
 		
-		//void draw(const core::visual::VisualParams* vparams) override;
-		//void handleEvent(sofa::core::objectmodel::Event* event) override;
+		void draw(const core::visual::VisualParams* vparams) override;
+	    void handleEvent(sofa::core::objectmodel::Event* event) override;
 
 	protected:
 		
 		void computePerpendicular(Coord dir, Coord& normal);
-		void performFractureScenario();
+		void algoFracturePath() override;
 
 	};
 }//namespace sofa::component::engine
