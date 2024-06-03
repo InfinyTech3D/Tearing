@@ -32,8 +32,6 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
     {
         BaseTearingEngine<DataTypes>::init();
 
-        // Access topology 
-        sofa::core::topology::BaseMeshTopology* topo = this->getTopology();
     }
 
     template <class DataTypes>
@@ -60,12 +58,12 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
 
         if (triID == -1) 
             return;
-        
+       
         // Access topology 
         sofa::core::topology::BaseMeshTopology* topo = this->getTopology();
         const Triangle& VertexIndicies = topo->getTriangle(triID);
         constexpr size_t numVertices = 3;
-
+       
         Index B_id = -1, C_id = -1;
 
         for (unsigned int vertex_id = 0; vertex_id < numVertices; vertex_id++)
@@ -78,7 +76,7 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
             }
         }
 
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions.getValue());
+        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
         Coord A = x[triID];
         Coord B = x[B_id];
         Coord C = x[C_id];
@@ -88,6 +86,7 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
 
         Coord triangleNormal = sofa::type::cross(AB, AC);
         normal = sofa::type::cross(triangleNormal, dir);
+
     }
 
 
@@ -96,16 +95,14 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
     void TearingScenarioEngine<DataTypes>::algoFracturePath()
     {
        
-        // perform scenario only once
-        //d_nbFractureMax.setValue(1);
-
         int indexA = d_startVertexId.getValue();
         int triID = d_startTriId.getValue();
         const Vec3& dir = d_startDirection.getValue();
         const Real& alpha = d_startLength.getValue();
 
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions.getValue());
+        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
         Coord Pa = x[indexA];
+        
         
         Coord normal;
         computePerpendicular(dir,normal);
@@ -115,13 +112,17 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         Coord Pc = Pa - alpha * dir;
 
         TearingAlgorithms<DataTypes>* tearingAlgo = this->getTearingAlgo();
-
+        if (tearingAlgo == nullptr)
+            return;
+        
         tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, triID, normal, d_input_positions.getValue());
+
        
     }
     template <class DataTypes>
     void TearingScenarioEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     {
+
         const auto stateLifeCycle = vparams->drawTool()->makeStateLifeCycle();
 
         if (vparams->displayFlags().getShowWireFrame())
@@ -136,7 +137,7 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         
         const Triangle& tri = triangleList[triID]; // Is this correct?
 
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions.getValue());
+        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
         Coord Pa = x[tri[0]];
         Coord Pb = x[tri[1]];

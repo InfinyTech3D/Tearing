@@ -67,9 +67,9 @@ protected:
 public:
 	void init() override;
 	void reinit() override;
-	void doUpdate() override;
-	void draw(const core::visual::VisualParams* vparams) override;
-	virtual void handleEvent(sofa::core::objectmodel::Event* event) override;
+    void doUpdate() override;
+	virtual void draw(const core::visual::VisualParams* vparams) override;
+    void handleEvent(sofa::core::objectmodel::Event* event) override;
 
 	/// Input Data
 	Data<VecCoord> d_input_positions; ///< Input position
