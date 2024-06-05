@@ -21,6 +21,9 @@ set(HEADER_FILES
     ${TEARING_SRC_DIR}/BaseTearingEngine.h
     ${TEARING_SRC_DIR}/BaseTearingEngine.inl
 
+    ${TEARING_SRC_DIR}/TearingEngine.h
+    ${TEARING_SRC_DIR}/TearingEngine.inl
+
     ${TEARING_SRC_DIR}/TearingScenarioEngine.h
     ${TEARING_SRC_DIR}/TearingScenarioEngine.inl
 )
@@ -29,6 +32,7 @@ set(SOURCE_FILES
     ${TEARING_SRC_DIR}/initTearing.cpp
     ${TEARING_SRC_DIR}/TearingAlgorithms.cpp
     ${TEARING_SRC_DIR}/BaseTearingEngine.cpp
+    ${TEARING_SRC_DIR}/TearingEngine.cpp
     ${TEARING_SRC_DIR}/TearingScenarioEngine.cpp
 )
 
