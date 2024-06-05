@@ -89,7 +89,23 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
 
     }
 
+    template <class DataTypes>
+    void TearingScenarioEngine<DataTypes>::computeEndPoints(
+        Coord Pa,
+        Coord dir,
+        Coord& Pb, Coord& Pc)
+    {
+        
+        int triID = d_startTriId.getValue();
+       
+        const Real& alpha = d_startLength.getValue();
 
+        
+        Real norm_dir = dir.norm();
+       
+         Pb = Pa + alpha/norm_dir * dir;
+         Pc = Pa - alpha /norm_dir * dir;
+    }
 
     template <class DataTypes>
     void TearingScenarioEngine<DataTypes>::algoFracturePath()
@@ -102,20 +118,20 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
 
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
         Coord Pa = x[indexA];
+
+        Coord Pb, Pc;
+        computeEndPoints(Pa, dir, Pb, Pc);
         
         
         Coord normal;
         computePerpendicular(dir,normal);
 
 
-        Coord Pb = Pa + alpha * dir;
-        Coord Pc = Pa - alpha * dir;
-
         TearingAlgorithms<DataTypes>* tearingAlgo = this->getTearingAlgo();
         if (tearingAlgo == nullptr)
             return;
         
-        tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, triID, normal, d_input_positions.getValue());
+        tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, triID, normal, (this->d_input_positions).getValue());
 
        
     }

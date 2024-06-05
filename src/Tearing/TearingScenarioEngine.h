@@ -49,6 +49,7 @@ namespace sofa::component::engine
 		
 		void computePerpendicular(Coord dir, Coord& normal);
 		void algoFracturePath() override;
+		void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc) override;
 
 	};
 }//namespace sofa::component::engine
