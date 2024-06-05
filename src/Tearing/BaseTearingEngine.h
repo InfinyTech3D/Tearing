@@ -69,7 +69,7 @@ public:
 	void reinit() override;
     void doUpdate() override;
 	virtual void draw(const core::visual::VisualParams* vparams) override;
-    void handleEvent(sofa::core::objectmodel::Event* event) override;
+    virtual void handleEvent(sofa::core::objectmodel::Event* event) override;
 
 	/// Input Data
 	Data<VecCoord> d_input_positions; ///< Input position
@@ -101,9 +101,6 @@ public:
 		Coord principalStressDirection;
 	};
 
-	/// Fracture segment endpoints
-	std::vector<Coord> fractureSegmentEndpoints;
-
 protected:
 	/// <summary>
 	/// put in d_triangleOverThresholdList triangle with a maxStress greater than a threshold value (d_seuilPrincipalStress)
@@ -129,7 +126,7 @@ protected:
 	/// @param direction - direction of maximum principal stress
 	/// @return Pb - one of the extremities of fracture
 	/// @return Pc - one of the extremities of fracture
-	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	virtual void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
 	/// <summary>
 	/// computes the extremities of fracture Pb and Pc on the edge of neighboring triangles
 	/// </summary>
@@ -137,7 +134,7 @@ protected:
 	/// @param direction - principle stress direction
 	/// @return Pb - one of the extremities of fracture
 	/// @return Pc - one of the extremities of fracture
-	bool computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	//bool computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
 	/// <summary>
 	/// computes the extremities of the (normalized) fracture PbPa on the edge of the triangle
 	/// </summary>
@@ -145,7 +142,7 @@ protected:
 	/// @param normalizedFractureDirection - normalized fracture direction
 	/// @return Pb - one of the extremities of fracture
 	/// @return t - a parameter needed to calculate Pb
-	bool computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t);
+	//bool computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t);
 	/// <summary>
 	/// computes the the intersection of a segment with one endpoint A with DC segment
 	/// </summary>
@@ -154,7 +151,7 @@ protected:
 	/// @param direction - normalized fracture direction
 	/// @return t - a parameter needed to calculate Pb
 	/// @return intersection - coordinate of the intersection point
-    bool rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t, Coord& intersection);
+    //bool rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t, Coord& intersection);
 
 	
 	/// Link to be set to the topology container in the component graph
@@ -206,22 +203,21 @@ protected:
 	{
 		return m_tearingAlgo.get();
 	}
-
-
-
-private:
+	
+	
 	/// Pointer to the current topology
 	sofa::core::topology::BaseMeshTopology* m_topology = nullptr;
 
 	std::unique_ptr<TearingAlgorithms<DataTypes> > m_tearingAlgo = nullptr;
-	
-	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM = nullptr;
-	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim = nullptr;
-	
-	vector<TriangleTearingInformation> m_triangleInfoTearing; ///< vector of TriangleInfo from FEM
-	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
+
 	TriangleID m_maxStressTriangleIndex = 0; ///< Triangle ID of the triangle from filter candadites with the max stress
 	Index m_maxStressVertexIndex = 0; ///< Global Vertex Id where the stress is maximum. Vertex is part of @sa m_maxStressTriangleIndex Triangle
+	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM = nullptr;
+	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim = nullptr;
+
+	vector<TriangleTearingInformation> m_triangleInfoTearing; ///< vector of TriangleInfo from FEM
+	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
+
 };
 	
 #if !defined(SOFA_COMPONENT_ENGINE_BASETEARINGENGINE_CPP)

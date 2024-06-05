@@ -343,7 +343,6 @@ void BaseTearingEngine<DataTypes>::algoFracturePath()
         return;
     }
 
-
     helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
     //Calculate fracture starting point (Pa)
@@ -356,10 +355,7 @@ void BaseTearingEngine<DataTypes>::algoFracturePath()
     
     if (d_fractureMaxLength.getValue())
         computeEndPoints(Pa, principalStressDirection, Pb, Pc);
-    else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
-        return;
-        
-
+   
     m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
     m_maxStressTriangleIndex = InvalidID;
 
@@ -417,139 +413,6 @@ void BaseTearingEngine<DataTypes>::computeEndPoints(
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 }
 
-
-template<class DataTypes>
-inline bool BaseTearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc)
-{
-    
-    bool t_b_ok = false; 
-    bool t_c_ok = false;
-    //compute fracture direction perpendicular to the principal stress direction
-    Coord fractureDirection;
-    computeFractureDirection(direction, fractureDirection);
-   
-
-    Real norm_fractureDirection = fractureDirection.norm();
-    Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
-
-    Real t_b;
-    if (computeIntersectionNeighborTriangle(dir_b,Pa, Pb, t_b))
-        t_b_ok = true;
-
-    
-    Coord dir_c = -dir_b;
-    Real t_c;
-    if (computeIntersectionNeighborTriangle(dir_c,Pa,Pc, t_c))
-        t_c_ok = true;
-
-    if (!(t_b_ok && t_c_ok))
-    {
-        msg_warning() << "Not able to build the fracture path through neighboring triangles.";
-        return false;
-    }
-    return true;
-}
-
-
-template<class DataTypes>
-inline bool BaseTearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection,Coord Pa ,Coord& Pb, Real& t)
-{
-    SOFA_UNUSED(Pa);
-    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-
-    // Get Geometry Algorithm
-    TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo = nullptr;
-    m_topology->getContext()->get(_triangleGeo);
-    if (!_triangleGeo)
-    {
-        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
-        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
-        return false;
-    }
-
-    
-    Index triangle_id = _triangleGeo->getTriangleInDirection(m_maxStressVertexIndex, normalizedFractureDirection);
-    if (triangle_id > m_topology->getNbTriangles() - 1)
-        return false;
-
-   
-    const Triangle& VertexIndicies = m_topology->getTriangle(triangle_id);
-   
-    constexpr size_t numVertices = 3;
-    Index B_id=-1, C_id=-1;
-
-    for (unsigned int vertex_id = 0; vertex_id < numVertices ; vertex_id++)
-    {
-        if (VertexIndicies[vertex_id] == m_maxStressVertexIndex)
-        {
-            B_id = VertexIndicies[(vertex_id + 1) % 3];
-            C_id = VertexIndicies[(vertex_id + 2) % 3];
-            break;
-        }
-
-    }
-
-    
-    Coord A = x[m_maxStressVertexIndex];
-    Coord B = x[B_id];
-    Coord C = x[C_id];
-
-    if(rayTriangleIntersection(A,B,C, normalizedFractureDirection,t,Pb))
-       return true;
-    else 
-       return false;
-    
-}
-
-template<class DataTypes>
-inline bool BaseTearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t,Coord& intersection)
-{
-    const auto AC = C - A;
-    Real AC_length = AC.norm();
-
-    const auto AD = D - A;
-    Real AD_length = AD.norm();
-
-    //Building point B such that to be sure that AB intersects CD, based on "Losange"
-    Real Length = AC_length + AD_length;
-    Coord B = A + Length * direction;
-    
-    // alpha = ( d[CA/CD]*d[CD/AB] - d[CA/AB]*d[CD/CD] ) / ( d[AB/AB]*d[CD/CD] - d[AB/CD]*d[AB/CD])
-    const auto AB = B - A;
-    const auto CD = D - C;
-    const auto CA = A - C;
-
-    const Real dCACD = sofa::type::dot(CA, CD);
-    const Real dABCD = sofa::type::dot(AB, CD);
-    const Real dCDCD = sofa::type::dot(CD, CD);
-    const Real dCAAB = sofa::type::dot(CA, AB);
-    const Real dABAB = sofa::type::dot(AB, AB);
-
-    const Real alphaNom = (dCACD * dABCD - dCAAB * dCDCD);
-    const Real alphaDenom = (dABAB * dCDCD - dABCD * dABCD);
-
-    if (alphaDenom < std::numeric_limits<Real>::epsilon()) // alpha == inf,  colinear
-    {
-        std::cout << " No intersection." << std::endl;
-        return false;
-    }
-
-    
-    // Calculate intersection parameter
-
-     t = alphaNom / alphaDenom;
-
-    if (t >= 0 && t <= 1) {
-        intersection = A + t * AB;
-        return true;
-    }
-    else {
-        std::cout << "Intersection parameter is outside the valid range. No intersection." << std::endl;
-        return false;
-    }
-}
-
-
 template <class DataTypes>
 void BaseTearingEngine<DataTypes>::computeTriangleToSkip()
 {
@@ -565,14 +428,7 @@ void BaseTearingEngine<DataTypes>::computeTriangleToSkip()
     this->getContext()->template get< fixC >(&_fixConstraints, sofa::core::objectmodel::BaseContext::SearchUp);
 
     std::set<Index> vertexToSkip;
-    //for (constantFF* compo : _constantForceFields)
-    //{
-    //    const vector<Index>& _indices = compo->d_indices.getValue();
-    //    for (Index vId : _indices)
-    //    {
-    //        vertexToSkip.insert(vId);
-    //    }
-    //}
+   
     
     for (fixC* compo : _fixConstraints)
     {
@@ -823,22 +679,22 @@ void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* e
     }
 
 
-    // Compute the current fracture path
-    if (!d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
-    {
-        //Recording the endpoints of the fracture segment
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-        Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-        Coord Pa = x[m_maxStressVertexIndex];
+    //// Compute the current fracture path
+    //if (!d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
+    //{
+    //    //Recording the endpoints of the fracture segment
+    //    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+    //    Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
+    //    Coord Pa = x[m_maxStressVertexIndex];
 
-        Coord Pb, Pc;
-        fractureSegmentEndpoints.clear();
-        if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
-        {
-            fractureSegmentEndpoints.push_back(Pb);
-            fractureSegmentEndpoints.push_back(Pc);
-        }
-    }
+    //    Coord Pb, Pc;
+    //    fractureSegmentEndpoints.clear();
+    //    if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
+    //    {
+    //        fractureSegmentEndpoints.push_back(Pb);
+    //        fractureSegmentEndpoints.push_back(Pc);
+    //    }
+    //}
 
     // Perform fracture every d_stepModulo
     int step = d_stepModulo.getValue();
@@ -941,14 +797,6 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
             vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
             vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
 
-            //--------------------------------------------------------------------------------------------------
-            //Red == computed fracture path on the edge of neighboring triangles          
-            if (fractureSegmentEndpoints.size() != 0)
-            {
-                vparams->drawTool()->drawPoints(fractureSegmentEndpoints, 10, sofa::type::RGBAColor(1, 0.2, 0, 1));
-                vparams->drawTool()->drawLines(fractureSegmentEndpoints, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));  
-            }
-           
             //---------------------------------------------------------------------------------------------------
             // Green == principal stress direction
             vector<Coord> pointsDir;
