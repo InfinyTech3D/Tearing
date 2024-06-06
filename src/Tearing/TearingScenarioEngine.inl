@@ -1,5 +1,6 @@
 #pragma once
 #include <Tearing/TearingScenarioEngine.h>
+#include <Tearing/BaseTearingEngine.inl>
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
 #include <sofa/core/objectmodel/KeypressedEvent.h>
@@ -11,39 +12,20 @@ namespace sofa::component::engine
 {
 
 using sofa::type::Vec3;
+using namespace sofa::core;
 
 template <class DataTypes>
 TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
-        : d_startVertexId(initData(&d_startVertexId, int(-1), "startVertexId", "Vertex ID to start a given tearing scenario, -1 if none"))
+        : BaseTearingEngine<DataTypes> ()
+        , d_startVertexId(initData(&d_startVertexId, int(-1), "startVertexId", "Vertex ID to start a given tearing scenario, -1 if none"))
         , d_startTriId(initData(&d_startTriId, int(-1), "startTriangleId", "Triangle ID from which the starting point is chosen, -1 if none"))
         , d_startDirection(initData(&d_startDirection, Vec3(1.0, 0.0, 0.0), "startDirection", "If startVertexId is set, define the direction of the tearing scenario. x direction by default"))
         , d_startLength(initData(&d_startLength, Real(1.0), "startLength", "If startVertexId is set, define the length of the tearing, to be combined with startDirection"))
     {
-
-        
         addInput(&d_startVertexId);
         addInput(&d_startTriId);
         addInput(&d_startDirection);
         addInput(&d_startLength);
-    }
-
-    template <class DataTypes>
-    void TearingScenarioEngine<DataTypes>::init()
-    {
-        BaseTearingEngine<DataTypes>::init();
-
-    }
-
-    template <class DataTypes>
-    void TearingScenarioEngine<DataTypes>::reinit()
-    {
-        BaseTearingEngine<DataTypes>::update();
-    }
-
-    template <class DataTypes>
-    void TearingScenarioEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
-    {
-        BaseTearingEngine<DataTypes>::handleEvent(event);
     }
 
 
@@ -76,7 +58,7 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
             }
         }
 
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+        helper::ReadAccessor< Data<VecCoord> > x(this->d_input_positions);
         Coord A = x[triID];
         Coord B = x[B_id];
         Coord C = x[C_id];
@@ -116,7 +98,7 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         const Vec3& dir = d_startDirection.getValue();
         const Real& alpha = d_startLength.getValue();
 
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+        helper::ReadAccessor< Data<VecCoord> > x(this->d_input_positions);
         Coord Pa = x[indexA];
 
         Coord Pb, Pc;
@@ -153,7 +135,7 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         
         const Triangle& tri = triangleList[triID]; // Is this correct?
 
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+        helper::ReadAccessor< Data<VecCoord> > x(this->d_input_positions);
 
         Coord Pa = x[tri[0]];
         Coord Pb = x[tri[1]];
@@ -166,7 +148,7 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
 
         vparams->drawTool()->drawTriangles(Tri, color2);
 
-        if (d_showFracturePath.getValue())
+        if (this->d_showFracturePath.getValue())
         {
             const Vec3& dir = d_startDirection.getValue();
             const Real& alpha = d_startLength.getValue();

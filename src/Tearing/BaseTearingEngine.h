@@ -219,9 +219,5 @@ protected:
 	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
 
 };
-	
-#if !defined(SOFA_COMPONENT_ENGINE_BASETEARINGENGINE_CPP)
-extern template class TEARING_API BaseTearingEngine<defaulttype::Vec3Types>;
-#endif
 		
 }//namespace sofa::component::engine

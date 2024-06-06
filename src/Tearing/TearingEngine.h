@@ -62,8 +62,15 @@ public:
 	typedef sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;
 
 protected:
-	using BaseTearingEngine::BaseTearingEngine;
+    using BaseTearingEngine<DataTypes>::BaseTearingEngine;
 	//using BaseTearingEngine::~BaseTearingEngine;
+
+    using BaseTearingEngine<DataTypes>::m_maxStressVertexIndex;
+    using BaseTearingEngine<DataTypes>::m_maxStressTriangleIndex;
+    using BaseTearingEngine<DataTypes>::m_triangleInfoTearing;
+
+    using BaseTearingEngine<DataTypes>::d_input_positions;
+    using BaseTearingEngine<DataTypes>::d_triangleIdsOverThreshold;
 	
 public:
 	void draw(const core::visual::VisualParams* vparams) override;

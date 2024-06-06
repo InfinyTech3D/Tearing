@@ -21,7 +21,7 @@
  * Authors: see Authors.txt                                                  *
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
-#define SOFA_COMPONENT_ENGINE_TEARINGENGINE_CPP
+#define SOFA_COMPONENT_ENGINE_BASETEARINGENGINE_CPP
 #include <Tearing/BaseTearingEngine.inl>
 #include <sofa/core/ObjectFactory.h>
 #include <sofa/defaulttype/VecTypes.h>

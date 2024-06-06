@@ -23,6 +23,7 @@
  ****************************************************************************/
 #pragma once
 #include <Tearing/TearingEngine.h>
+#include <Tearing/BaseTearingEngine.inl>
 
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
@@ -48,7 +49,7 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 
     // Get Geometry Algorithm
     TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo = nullptr;
-    m_topology->getContext()->get(_triangleGeo);
+    this->m_topology->getContext()->get(_triangleGeo);
     if (!_triangleGeo)
     {
         msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
@@ -58,11 +59,11 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 
 
     Index triangle_id = _triangleGeo->getTriangleInDirection(m_maxStressVertexIndex, normalizedFractureDirection);
-    if (triangle_id > m_topology->getNbTriangles() - 1)
+    if (triangle_id > this->m_topology->getNbTriangles() - 1)
         return false;
 
 
-    const Triangle& VertexIndicies = m_topology->getTriangle(triangle_id);
+    const Triangle& VertexIndicies = this->m_topology->getTriangle(triangle_id);
 
     constexpr size_t numVertices = 3;
     Index B_id = -1, C_id = -1;
@@ -148,17 +149,17 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Coord Pb;
     Coord Pc;
 
-    if (d_fractureMaxLength.getValue())
+    if (this->d_fractureMaxLength.getValue())
         this->computeEndPoints(Pa, principalStressDirection, Pb, Pc);
     else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
         return;
 
 
-    m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
+    this->m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
     m_maxStressTriangleIndex = InvalidID;
 
-    if (d_stepModulo.getValue() == 0) // reset to 0
-        m_stepCounter = 0;
+    if (this->d_stepModulo.getValue() == 0) // reset to 0
+        this->m_stepCounter = 0;
 }
 
 template<class DataTypes>
@@ -227,7 +228,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     }
 
     // Compute the current fracture path
-    if (!d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
+    if (!this->d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
     {
         //Recording the endpoints of the fracture segment
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
@@ -246,14 +247,14 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     }
    
 
-    // Perform fracture every d_stepModulo
-    int step = d_stepModulo.getValue();
+    // Perform fracture every this->d_stepModulo
+    int step = this->d_stepModulo.getValue();
     if (step == 0) // interactive version
     {
-        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
+        if (this->m_stepCounter > 200 && (this->m_tearingAlgo->getFractureNumber() < this->d_nbFractureMax.getValue()))
             algoFracturePath();
     }
-    else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
+    else if (((this->m_stepCounter % step) == 0) && (this->m_tearingAlgo->getFractureNumber() < this->d_nbFractureMax.getValue()))
     {
         algoFracturePath();
     }
@@ -267,9 +268,9 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     if (vparams->displayFlags().getShowWireFrame())
         vparams->drawTool()->setPolygonMode(0, true);
 
-    if (d_showTearableCandidates.getValue())
+    if (this->d_showTearableCandidates.getValue())
     {
-        const VecTriangles& triangleList = m_topology->getTriangles();
+        const VecTriangles& triangleList = this->m_topology->getTriangles();
         helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
@@ -306,7 +307,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
         }
 
         // draw triangles ignored in red
-        const VecIDs& triIds = d_trianglesToIgnore.getValue();
+        const VecIDs& triIds = this->d_trianglesToIgnore.getValue();
         std::vector<Vec3> verticesIgnore;
         sofa::type::RGBAColor colorIgnore(1.0f, 0.0f, 0.0f, 1.0f);
 
@@ -323,7 +324,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     }
 
 
-    if (d_showFracturePath.getValue())
+    if (this->d_showFracturePath.getValue())
     {
         if (m_maxStressTriangleIndex != InvalidID)
         {
@@ -336,13 +337,13 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 
             vector<Coord> points;
             Real norm_fractureDirection = fractureDirection.norm();
-            Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            Coord Pb = Pa + this->d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            Coord Pc = Pa - this->d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
             points.push_back(Pa);
             points.push_back(Pa);
             points.push_back(Pc);
-            // Blue == computed fracture path using d_fractureMaxLength
+            // Blue == computed fracture path using this->d_fractureMaxLength
             vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
             vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
 
@@ -365,7 +366,7 @@ void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
 
             points.clear();
 
-            const vector<Coord>& path = m_tearingAlgo->getFracturePath();
+            const vector<Coord>& path = this->m_tearingAlgo->getFracturePath();
             if (!path.empty())
                 vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
         }
