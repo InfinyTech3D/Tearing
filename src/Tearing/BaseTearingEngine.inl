@@ -329,40 +329,6 @@ void BaseTearingEngine<DataTypes>::updateTriangleInformation()
 }
 
 
-//template <class DataTypes>
-//void BaseTearingEngine<DataTypes>::algoFracturePath()
-//{
-//    helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
-//
-//    if (candidate.empty())
-//        return;
-//
-//    if (m_maxStressTriangleIndex == InvalidID) {
-//        msg_warning() << "m_maxStressTriangleIndex is invalid. Algo should not reach this point.";
-//        return;
-//    }
-//
-//    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-//
-//    //Calculate fracture starting point (Pa)
-//    int indexA = m_maxStressVertexIndex;
-//    Coord Pa = x[indexA];
-//    Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-//    //Calculate fracture end points (Pb and Pc)
-//    Coord Pb;
-//    Coord Pc;
-//    
-//    if (d_fractureMaxLength.getValue())
-//        computeEndPoints(Pa, principalStressDirection, Pb, Pc);
-//   
-//    m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
-//    m_maxStressTriangleIndex = InvalidID;
-//
-//    if (d_stepModulo.getValue() == 0) // reset to 0
-//        m_stepCounter = 0;
-//}
-
-
 template<class DataTypes>
 inline void BaseTearingEngine<DataTypes>::computeFractureDirection(Coord principleStressDirection,Coord & fracture_direction)
 {
