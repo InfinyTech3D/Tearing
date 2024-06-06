@@ -227,12 +227,12 @@ void BaseTearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             if (tinfo.maxStress >= threshold)
             {
                 candidate.push_back(i);
-                
-                if (tinfo.maxStress > maxStress)
-                {
-                    m_maxStressTriangleIndex = i;
-                    maxStress = tinfo.maxStress;
-                }
+                m_maxStressTriangleIndex = i;
+            }
+
+            if (tinfo.maxStress > maxStress)
+            {
+                maxStress = tinfo.maxStress;
             }
         }
     }
