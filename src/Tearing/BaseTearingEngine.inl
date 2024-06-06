@@ -142,8 +142,6 @@ void BaseTearingEngine<DataTypes>::init()
     if (d_ignoreTriangles.getValue())
         computeTriangleToSkip();
 
-    updateTriangleInformation();
-    triangleOverThresholdPrincipalStress();
     
     if (m_tearingAlgo == nullptr)
         m_tearingAlgo = std::make_unique<TearingAlgorithms<DataTypes> >(m_topology, _modifier, _triangleGeo);
@@ -229,12 +227,11 @@ void BaseTearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             if (tinfo.maxStress >= threshold)
             {
                 candidate.push_back(i);
-                
+                m_maxStressTriangleIndex = i;
             }
 
             if (tinfo.maxStress > maxStress)
             {
-                m_maxStressTriangleIndex = i;
                 maxStress = tinfo.maxStress;
             }
         }
@@ -265,7 +262,10 @@ void BaseTearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
             break;
         }
         default:
+        {
+            m_maxStressTriangleIndex = InvalidID; // Invalidate triangle with max stress to avoid wrond fracture
             msg_error() << "Wrong \"computeVertexStressMethod\" given";
+        }
         }
     }
 }

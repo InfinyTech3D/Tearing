@@ -210,8 +210,8 @@ protected:
 
 	std::unique_ptr<TearingAlgorithms<DataTypes> > m_tearingAlgo = nullptr;
 
-	TriangleID m_maxStressTriangleIndex = 0; ///< Triangle ID of the triangle from filter candadites with the max stress
-	Index m_maxStressVertexIndex = 0; ///< Global Vertex Id where the stress is maximum. Vertex is part of @sa m_maxStressTriangleIndex Triangle
+	TriangleID m_maxStressTriangleIndex = InvalidID; ///< Triangle ID of the triangle from filter candadites with the max stress
+	Index m_maxStressVertexIndex = InvalidID; ///< Global Vertex Id where the stress is maximum. Vertex is part of @sa m_maxStressTriangleIndex Triangle
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>* m_triangularFEM = nullptr;
 	sofa::component::solidmechanics::fem::elastic::TriangularFEMForceFieldOptim<DataTypes>* m_triangularFEMOptim = nullptr;
 

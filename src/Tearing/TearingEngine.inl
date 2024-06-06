@@ -45,7 +45,9 @@ template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t)
 {
     SOFA_UNUSED(Pa);
-    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+
+    if (m_maxStressVertexIndex == InvalidID)
+        return false;    
 
     // Get Geometry Algorithm
     TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo = nullptr;
@@ -79,7 +81,7 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 
     }
 
-
+    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
     Coord A = x[m_maxStressVertexIndex];
     Coord B = x[B_id];
     Coord C = x[C_id];
