@@ -29,6 +29,16 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
     }
 
 
+    template <class DataTypes>
+    void TearingScenarioEngine<DataTypes>::init()
+    {
+        BaseTearingEngine<DataTypes>::init();
+
+        this->d_nbFractureMax.setValue(1);
+        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Valid);
+    }
+
+
     // --------------------------------------------------------------------------------------
     // --- Computation methods
     // --------------------------------------------------------------------------------------
@@ -92,7 +102,6 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
     template <class DataTypes>
     void TearingScenarioEngine<DataTypes>::algoFracturePath()
     {
-       
         int indexA = d_startVertexId.getValue();
         int triID = d_startTriId.getValue();
         const Vec3& dir = d_startDirection.getValue();
@@ -129,14 +138,14 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         sofa::type::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
 
         int triID = d_startTriId.getValue();// This most be index variable
+        if (triID == -1)
+            return;
 
         sofa::core::topology::BaseMeshTopology* topo = this->getTopology();
         const VecTriangles& triangleList = topo->getTriangles();
-        
         const Triangle& tri = triangleList[triID]; // Is this correct?
 
         helper::ReadAccessor< Data<VecCoord> > x(this->d_input_positions);
-
         Coord Pa = x[tri[0]];
         Coord Pb = x[tri[1]];
         Coord Pc = x[tri[2]];
@@ -147,7 +156,6 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         Tri.push_back(Pc);
 
         vparams->drawTool()->drawTriangles(Tri, color2);
-
         if (this->d_showFracturePath.getValue())
         {
             const Vec3& dir = d_startDirection.getValue();

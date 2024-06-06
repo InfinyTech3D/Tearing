@@ -42,6 +42,7 @@ namespace sofa::component::engine
         using BaseTearingEngine<DataTypes>::addInput;
 
 	public:
+        void init() override;
 		void draw(const core::visual::VisualParams* vparams) override;
 
 	protected:

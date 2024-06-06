@@ -67,7 +67,7 @@ protected:
 public:
 	void init() override;
 	void reinit() override;
-    void doUpdate() override;
+    void doUpdate() final;
 	virtual void draw(const core::visual::VisualParams* vparams) override;
     virtual void handleEvent(sofa::core::objectmodel::Event* event) override;
 

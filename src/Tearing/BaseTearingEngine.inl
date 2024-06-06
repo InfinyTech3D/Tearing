@@ -54,7 +54,7 @@ BaseTearingEngine<DataTypes>::BaseTearingEngine()
     , d_showFracturePath(initData(&d_showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
     
     , d_triangleIdsOverThreshold(initData(&d_triangleIdsOverThreshold, "triangleIdsOverThreshold", "triangles with maxStress over threshold value"))
-    , d_maxStress(initData(&d_maxStress, "maxStress", "maxStress"))
+    , d_maxStress(initData(&d_maxStress, Real(0.0), "maxStress", "maxStress"))
     , l_topology(initLink("topology", "link to the topology container"))
 {
     sofa::helper::OptionsGroup m_newoptiongroup{ "WeightedAverageInverseDistance","UnweightedAverage", "WeightedAverageArea" };
@@ -164,8 +164,7 @@ void BaseTearingEngine<DataTypes>::doUpdate()
     if (sofa::core::objectmodel::BaseObject::d_componentState.getValue() != sofa::core::objectmodel::ComponentState::Valid)
         return;
 
-    m_stepCounter++;
-    
+    m_stepCounter++;   
    
     if (d_ignoreTriangles.getValue())
     {
@@ -696,12 +695,18 @@ void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* e
     //    }
     //}
 
+
+    // Hack: we access one output value to force the engine to call doUpdate()
+    if (d_maxStress.getValue() == Real(0.0))
+        return;
+
     // Perform fracture every d_stepModulo
     int step = d_stepModulo.getValue();
     if (step == 0) // interactive version
     {
-        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
+        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue())){
             algoFracturePath();
+        }
     }
     else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
     {
