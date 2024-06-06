@@ -53,14 +53,14 @@
 
         <BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
         <ConstantForceField name="CFF" indices="@PulledSide.indices" forces="0 -100 0" showArrowSize=".01" />
-        
-        <TearingEngine name="TearingEngine" input_position="@Mo.position" showTearableTriangle="0" showFracturePath="0"
-            startVertexId="421" startDirection="1.0 0.0 0.0" startLength="5"/>
-        
+              
         <TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
-        
+
+        <TearingScenarioEngine name="TearingScenarioEngine" input_position="@Mo.position" showTearableTriangle="0" showFracturePath="1"
+            startVertexId="421" startDirection="1.0 0.0 0.0" startLength="3" />
+
         <Node >
             <OglModel name="Visual" color="red" />
             <IdentityMapping input="@.." output="@Visual" />
