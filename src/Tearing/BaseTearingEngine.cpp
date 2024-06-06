@@ -26,12 +26,12 @@
 #include <sofa/core/ObjectFactory.h>
 #include <sofa/defaulttype/VecTypes.h>
 
-namespace sofa::component::engine
-{
-using namespace sofa::defaulttype;
-
-int BaseTearingEngineClass = core::RegisterObject("Base tearing engine").add< BaseTearingEngine<Vec3Types> >();
-
-template class TEARING_API BaseTearingEngine<Vec3Types>;
-
-}//namespace sofa::component::engine
+//namespace sofa::component::engine
+//{
+//using namespace sofa::defaulttype;
+//
+//int BaseTearingEngineClass = core::RegisterObject("Base tearing engine").add< BaseTearingEngine<Vec3Types> >();
+//
+//template class TEARING_API BaseTearingEngine<Vec3Types>;
+//
+//}//namespace sofa::component::engine
