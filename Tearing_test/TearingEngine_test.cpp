@@ -151,9 +151,9 @@ struct TearingEngine_Case1 : public TearingEngine_test
             m_instance.simulate(0.05);
         }
 
-        EXPECT_EQ(topoCon->getNbTriangles(), 1454);
-        EXPECT_EQ(topoCon->getNbEdges(), 2235);
-        EXPECT_EQ(topoCon->getNbPoints(), 781);
+        EXPECT_EQ(topoCon->getNbTriangles(), 1505);
+        EXPECT_EQ(topoCon->getNbEdges(), 2334);
+        EXPECT_EQ(topoCon->getNbPoints(), 830);
 
         return true;
     }

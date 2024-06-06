@@ -58,8 +58,8 @@
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 
-        <TearingScenarioEngine name="TearingScenarioEngine" input_position="@Mo.position" showTearableTriangle="0" showFracturePath="0"
-            startVertexId="421" startDirection="1.0 0.0 0.0" startLength="5" />
+        <TearingScenarioEngine name="TearingScenarioEngine" input_position="@Mo.position" showTearableTriangle="0" showFracturePath="1"
+            startVertexId="421" startDirection="1.0 0.0 0.0" startLength="3" />
 
         <Node >
             <OglModel name="Visual" color="red" />

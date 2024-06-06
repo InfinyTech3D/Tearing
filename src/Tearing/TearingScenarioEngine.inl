@@ -87,16 +87,14 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         Coord dir,
         Coord& Pb, Coord& Pc)
     {
-        
         int triID = d_startTriId.getValue();
        
         const Real& alpha = d_startLength.getValue();
-
         
         Real norm_dir = dir.norm();
        
-         Pb = Pa + alpha/norm_dir * dir;
-         Pc = Pa - alpha /norm_dir * dir;
+        Pb = Pa + alpha/norm_dir * dir;
+        Pc = Pa - alpha /norm_dir * dir;
     }
 
     template <class DataTypes>
@@ -108,10 +106,10 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         const Real& alpha = d_startLength.getValue();
 
         helper::ReadAccessor< Data<VecCoord> > x(this->d_input_positions);
-        Coord Pa = x[indexA];
+        m_Pa = x[indexA];
 
-        Coord Pb, Pc;
-        computeEndPoints(Pa, dir, Pb, Pc);
+        //Coord Pb, Pc;
+        computeEndPoints(m_Pa, dir, m_Pb, m_Pc);
         
         
         Coord normal;
@@ -122,10 +120,11 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         if (tearingAlgo == nullptr)
             return;
         
-        tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, triID, normal, (this->d_input_positions).getValue());
-
-       
+        tearingAlgo->algoFracturePath(m_Pa, indexA, m_Pb, m_Pc, triID, normal, (this->d_input_positions).getValue());
+        m_fractureDone = true;
     }
+
+
     template <class DataTypes>
     void TearingScenarioEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
     {
@@ -135,43 +134,35 @@ TearingScenarioEngine<DataTypes>::TearingScenarioEngine()
         if (vparams->displayFlags().getShowWireFrame())
             vparams->drawTool()->setPolygonMode(0, true);
 
+        if (!m_fractureDone)
+            return;
+
         sofa::type::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
 
         int triID = d_startTriId.getValue();// This most be index variable
-        if (triID == -1)
-            return;
+        if (triID != -1 && this->d_showTearableCandidates.getValue())
+        {
+            sofa::core::topology::BaseMeshTopology* topo = this->getTopology();
+            const VecTriangles& triangleList = topo->getTriangles();
+            const Triangle& tri = triangleList[triID]; // Is this correct?
 
-        sofa::core::topology::BaseMeshTopology* topo = this->getTopology();
-        const VecTriangles& triangleList = topo->getTriangles();
-        const Triangle& tri = triangleList[triID]; // Is this correct?
+            std::vector<Vec3> Tri;
+            Tri.push_back(m_Pa);
+            Tri.push_back(m_Pb);
+            Tri.push_back(m_Pc);
+            vparams->drawTool()->drawTriangles(Tri, color2);
+        }
 
-        helper::ReadAccessor< Data<VecCoord> > x(this->d_input_positions);
-        Coord Pa = x[tri[0]];
-        Coord Pb = x[tri[1]];
-        Coord Pc = x[tri[2]];
-
-        std::vector<Vec3> Tri;
-        Tri.push_back(Pa);
-        Tri.push_back(Pb);
-        Tri.push_back(Pc);
-
-        vparams->drawTool()->drawTriangles(Tri, color2);
         if (this->d_showFracturePath.getValue())
         {
             const Vec3& dir = d_startDirection.getValue();
             const Real& alpha = d_startLength.getValue();
             
-            int indexA = d_startVertexId.getValue();
-            Coord A = x[indexA];
-
-            Coord B = A + alpha * dir;
-            Coord C = A - alpha * dir;
-
             vector<Coord> points;
-            points.push_back(B);
-            points.push_back(A);
-            points.push_back(A);
-            points.push_back(C);
+            points.push_back(m_Pb);
+            points.push_back(m_Pa);
+            points.push_back(m_Pa);
+            points.push_back(m_Pc);
 
             // Blue == draw fracture path 
             vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));

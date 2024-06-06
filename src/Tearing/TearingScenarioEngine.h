@@ -51,6 +51,10 @@ namespace sofa::component::engine
 		void algoFracturePath() override;
 		void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc) override;
 
+		/// Value to store scenario fracture path
+		Coord m_Pa, m_Pb, m_Pc;
+
+		bool m_fractureDone = false;
 	};
 
 
