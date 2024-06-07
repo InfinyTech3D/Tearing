@@ -1,4 +1,5 @@
 # SOFA Tearing Plugin
+[![Documentation](https://img.shields.io/badge/doc-on_GitHub-green.svg)](https://github.com/InfinyTech3D/Tearing/tree/main/doc/Tearing_doc.md)
 [![Support](https://img.shields.io/badge/support-on_GitHub_Discussions-blue.svg)](https://github.com/sofa-framework/sofa/discussions/categories/tearing)
 [![Discord](https://img.shields.io/badge/chat-on_Discord-darkred.svg)](https://discord.gg/G63t3a8Ra6)
 [![Contact](https://img.shields.io/badge/contact-on_website-orange.svg)](https://infinytech3d.com/)
