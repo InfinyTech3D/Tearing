@@ -85,7 +85,11 @@ simulated material.
 contingent upon both the properties of the applied forces, such as
 magnitude, and the specified material property, particularly the stress threshold. For example, changing the data parameters for a same mesh cause different results:
 
-<figure><img src="https://raw.githubusercontent.com/InfinyTech3D/Tearing/9b12adcbbf5830dd85942d1d998587a242de3dbc/doc/Images/Picture1.jpg" alt="Alt Text">  <figcaption>  </figcaption>  </figure>
+<div style="text-align: center;">
+        <figure><img   src="https://raw.githubusercontent.com/InfinyTech3D/Tearing/9b12adcbbf5830dd85942d1d998587a242de3dbc/doc/Images/Picture1.jpg" alt="Alt Text">  <figcaption>  </figcaption>
+          </figure>
+    </div>
+
 <details>
 <summary></summary>
    
@@ -113,16 +117,15 @@ Our fracture simulation follows four principal steps:
 2.  Among all the triangles included in the list, the one with the
     highest value is considered as the triangle to perform the fracture.
 
-3.  To determine the starting vertex,
-    there are three available options. Let $\sigma_{i}$ indicates the
-    principal stress values of triangles adjacent to vertex $j$ in the
-    candidate triangle. In each method, the vertex with maximum $s_{j}$
-    value is selected as the starting point for fracture, see [Figure 1](#figure-1).
-
-<figure id="figure-1">
-    <img src="https://raw.githubusercontent.com/InfinyTech3D/Tearing/9b12adcbbf5830dd85942d1d998587a242de3dbc/doc/Images/Picture3.png" alt="Starting Vertex" style="width:50%">
-    <figcaption>Figure 1: A value is attributed to vertex j based on the principal values of the triangles adjacent to it.</figcaption>
-</figure>
+3.  To determine the starting vertex, there are three available options. Let $\sigma_{i}$ indicates the  principal stress values of triangles adjacent to vertex $j$ in the candidate triangle. In each method, the vertex with maximum $s_{j}$ value is selected as the starting point for fracture, see [Figure 1](#figure-1).
+<div style="text-align: center;">
+      <figure id="figure-1">
+           <img      src="https://raw.githubusercontent.com/InfinyTech3D/Tearing/165004ac22a47a508078561376e9003c6067fd20/doc/Images/Picture3.png" alt="Starting Vertex" style="width:50px; height:auto;">
+         <figcaption>
+    Figure 1: A value is attributed to vertex j based on the principal values of the triangles adjacent to it.
+         </figcaption>
+      </figure>
+</div>
 
 4.  To initiate the fracture, it is necessary to determine both its
     direction and length. 
@@ -140,13 +143,12 @@ sequential interactions.</figcaption>
 $$
 s_{j} = \frac{\sum_{i}^{}{\left| \sigma_{T_{i}} \right|A_{T_{i}}}}{\sum_{i}^{}A_{T_{i}}}
 $$
-, where $\ A_{T_{i}}$ indicates the area of the i-th triangle adjacent to vertex $j$. To activate this option, you need to pass WeightedAverageArea to ComputeVertexStressMethod.
+, where $\ A_{T_{i}}$ indicates the area of the $i$-th triangle adjacent to vertex $j$. To activate this option, you need to pass WeightedAverageArea to ComputeVertexStressMethod.
 
 <details>
 <summary>Example</summary>
 
-    \<TearingEngine name="TearingEngine" input_position="@Mo.position"
-ComputeVertexStressMethod= "WeightedAverageArea" />
+    \<TearingEngine name="TearingEngine" input_position="@Mo.position" ComputeVertexStressMethod= "WeightedAverageArea" />
 
 </details>
 
@@ -161,8 +163,7 @@ ComputeVertexStressMethod.
 <details>
 <summary>Example</summary>
 
-    <TearingEngine name="TearingEngine" input_position="@Mo.position"
-ComputeVertexStressMethod= "UnweightedAverageArea" />
+    <TearingEngine name="TearingEngine" input_position="@Mo.position" ComputeVertexStressMethod= "UnweightedAverageArea" />
 </details>
 
 3. Using reciprocal-distance weighted average,
@@ -176,8 +177,7 @@ to ComputeVertexStressMethod.
 <details>
 <summary>Example</summary>
 
- <TearingEngine name="TearingEngine" input_position="@Mo.position"
-ComputeVertexStressMethod= "WeightedAverageInverseDistance" />
+    <TearingEngine name="TearingEngine" input_position="@Mo.position" ComputeVertexStressMethod= "WeightedAverageInverseDistance" />
 </details>
 
 
@@ -212,8 +212,8 @@ integrated functions designed to simulate tearing.
 
 **Task.** 
 
-For each triangle in the mesh, essential information---including *stress (*$stress\  = \ K*strain$*)*, *maxStress* (the first dominant principal stress value), and *principalStressDirection* (the corresponding principal stress
-direction) is initialized.
+For each triangle in the mesh, essential information--- including *stress (*$stress\  = \ K*strain$*)*, *maxStress* (the first dominant principal stress value), and *principalStressDirection* (the corresponding principal stress
+direction) --- is initialized.
 
 <details>
 <summary>Function</summary>
@@ -230,11 +230,9 @@ direction) is initialized.
     instances, distinct actions are taken. This filtering process is
     enabled by default.
 
--   The information for all eligible triangles is initialized by
-    updateTriangleInformation.
+-   The information for all eligible triangles is initialized by updateTriangleInformation.
 
--   The potential triangle is selected by
-    triangleOverThresholdPrincipalStress.
+-   The potential triangle is selected by  triangleOverThresholdPrincipalStress.
 
 <details>
 <summary>Function</summary>
