@@ -229,6 +229,10 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
         return; // We only launch computation at end of a simulation step
     }
 
+    // Hack: we access one output value to force the engine to call doUpdate()
+    if (this->d_maxStress.getValue() == Real(0.0))
+        return;
+
     // Compute the current fracture path
     if (!this->d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
     {
