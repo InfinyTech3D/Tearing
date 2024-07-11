@@ -23,6 +23,7 @@
  ****************************************************************************/
 #pragma once
 #include <Tearing/TearingEngine.h>
+#include <Tearing/BaseTearingEngine.inl>
 
 #include <sofa/simulation/AnimateBeginEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
