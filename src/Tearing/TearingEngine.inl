@@ -230,7 +230,7 @@ void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event
     }
 
     // Hack: we access one output value to force the engine to call doUpdate()
-    if (d_maxStress.getValue() == Real(0.0))
+    if (this->d_maxStress.getValue() == Real(0.0))
         return;
 
     // Compute the current fracture path
