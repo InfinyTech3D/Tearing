@@ -87,18 +87,18 @@ jobs:
             echo "LD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$SOFA_ROOT/plugins/SofaPython3/lib:$LD_LIBRARY_PATH" | tee -a $GITHUB_ENV
           fi
       - name: Check environment for tests
-         shell: bash
-         run: |
-           echo '------ ls -la "$WORKSPACE_SRC_PATH" ------'
-           ls -la "$WORKSPACE_SRC_PATH"
-           echo '------ ls -la "$WORKSPACE_BUILD_PATH" ------'
-           ls -la "$WORKSPACE_BUILD_PATH"
-           echo '------ ls -la "$WORKSPACE_INSTALL_PATH" ------'
-           ls -la "$WORKSPACE_INSTALL_PATH"
-           echo '------ ls -la "$WORKSPACE_ARTIFACT_PATH" ------'
-           ls -la "$WORKSPACE_ARTIFACT_PATH"
-           echo '----------------------'
-           echo "SOFA_ROOT = $SOFA_ROOT"
+        shell: bash
+        run: |
+          echo '------ ls -la "$WORKSPACE_SRC_PATH" ------'
+          ls -la "$WORKSPACE_SRC_PATH"
+          echo '------ ls -la "$WORKSPACE_BUILD_PATH" ------'
+          ls -la "$WORKSPACE_BUILD_PATH"
+          echo '------ ls -la "$WORKSPACE_INSTALL_PATH" ------'
+          ls -la "$WORKSPACE_INSTALL_PATH"
+          echo '------ ls -la "$WORKSPACE_ARTIFACT_PATH" ------'
+          ls -la "$WORKSPACE_ARTIFACT_PATH"
+          echo '----------------------'
+          echo "SOFA_ROOT = $SOFA_ROOT"
 
       - name: Run Tearing_test
         if: always()
