@@ -120,7 +120,7 @@ void BaseTearingEngine<DataTypes>::init()
     {
         msg_info() << "Using TriangularFEMForceField component";
        
-        helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+        helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->d_triangleInfo);
         
     }
     else
@@ -283,7 +283,7 @@ void BaseTearingEngine<DataTypes>::updateTriangleInformation()
     if (m_triangularFEM)
     {
         // Access list of triangularFEM info per triangle
-        helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+        helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->d_triangleInfo);
 
         if (triangleFEMInf.size() != triangleList.size())
         {
@@ -438,7 +438,7 @@ inline void BaseTearingEngine<DataTypes>::processTjunctionTriangle(const vector<
 template<class DataTypes>
 inline Index BaseTearingEngine<DataTypes>::computeVertexByArea_WeightedAverage(const Triangle& selectedTriangle)
 {
-    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->d_triangleInfo);
 
     const auto& triangles = m_topology->getTriangles();
 
@@ -494,7 +494,7 @@ inline Index BaseTearingEngine<DataTypes>::computeVertexByArea_WeightedAverage(c
 template<class DataTypes>
 inline Index BaseTearingEngine<DataTypes>::computeVertexByUnweightedAverage(const Triangle& selectedTriangle)
 {
-    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->d_triangleInfo);
 
     constexpr size_t numVertices = 3;
     sofa::type::vector<Real>  StressPerVertex(numVertices);
@@ -540,7 +540,7 @@ inline Index BaseTearingEngine<DataTypes>::computeVertexByUnweightedAverage(cons
 template<class DataTypes>
 inline Index BaseTearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAverage(const Triangle& selectedTriangle)
 {
-    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->triangleInfo);
+    helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->d_triangleInfo);
 
     const auto& triangles = m_topology->getTriangles();
 
