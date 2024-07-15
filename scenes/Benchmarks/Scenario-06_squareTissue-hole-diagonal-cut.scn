@@ -31,7 +31,7 @@
 
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
     <DefaultAnimationLoop />
-    <DefaultPipeline verbose="0" />
+    <CollisionPipeline verbose="0" />
     <BruteForceBroadPhase/>
     <BVHNarrowPhase/>
     <CollisionResponse response="PenalityContactForceField" />
@@ -52,7 +52,7 @@
 		<!--<StressDetector name='StressDetector'/>-->
 		
 		<BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
-		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
+		<FixedProjectiveConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" forces="0 -100 0" showArrowSize=".01" />

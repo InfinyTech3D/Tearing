@@ -12,7 +12,7 @@
 	
 	<RequiredPlugin name='tearing'/>
 	
-    <DefaultPipeline name="PenalityContactForceField21" verbose="0" />
+    <CollisionPipeline name="PenalityContactForceField21" verbose="0" />
     <BruteForceDetection name="N2" />
     <CollisionResponse name="PenalityContactForceField22" response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />
@@ -43,7 +43,7 @@
         <TetrahedralCorotationalFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.4" youngModulus="300" assembling="0" />
         
         <BoxROI template="Vec3d" name="box_roi" box="-11 11 -11 11 -11 -10" indices="0" drawSize="0" drawBoxes="0"/>
-        <FixedConstraint template="Vec3d" name="PenalityContactForceField27" indices="@box_roi.indices" drawSize="0" />
+        <FixedProjectiveConstraint template="Vec3d" name="PenalityContactForceField27" indices="@box_roi.indices" drawSize="0" />
 		
 		<BoxROI template="Vec3d" name="PulledSide" box="11 11 10 -11 -11 11" drawBoxes="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" force="0 -1000 0" showArrowSize=".01" />

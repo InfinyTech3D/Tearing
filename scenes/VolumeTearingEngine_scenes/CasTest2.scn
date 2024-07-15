@@ -13,7 +13,7 @@
 	
 	<RequiredPlugin name='tearing'/>
 	
-    <DefaultPipeline name="PenalityContactForceField21" verbose="0" />
+    <CollisionPipeline name="PenalityContactForceField21" verbose="0" />
     <BruteForceDetection name="N2" />
     <CollisionResponse name="PenalityContactForceField22" response="PenalityContactForceField" />
     <MinProximityIntersection name="Proximity" alarmDistance="0.8" contactDistance="0.5" />

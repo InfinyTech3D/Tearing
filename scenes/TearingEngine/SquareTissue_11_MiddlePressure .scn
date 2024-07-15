@@ -28,7 +28,7 @@
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
 
     <DefaultAnimationLoop />
-    <DefaultPipeline verbose="0" />
+    <CollisionPipeline verbose="0" />
     <BruteForceBroadPhase/>
     <BVHNarrowPhase/>
     <CollisionResponse response="PenalityContactForceField" />
@@ -47,7 +47,7 @@
         <DiagonalMass massDensity="0.15" />
 		
 		<BoxROI name="FixedSide" box="-0.1 9.9 0.1 10.1 10.1 -0.1" drawBoxes="1" />
-		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
+		<FixedProjectiveConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PullMiddle" box="4.9 4.95 0.1  5.1 5.1 0.1" drawBoxes="1"/>
 		<!--<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>-->
