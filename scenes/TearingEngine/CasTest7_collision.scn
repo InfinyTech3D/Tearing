@@ -35,7 +35,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec un tro
     
     <FreeMotionAnimationLoop/>
     <GenericConstraintSolver unbuilt="false" tolerance="1e-3" maxIt="200" printLog="0" multithreading="false"/>
-    <DefaultPipeline depth="6" verbose="0" draw="0"/>
+    <CollisionPipeline depth="6" verbose="0" draw="0"/>
     <BruteForceBroadPhase/>
     <BVHNarrowPhase/>
     <LocalMinDistance name="Proximity" alarmDistance="0.5" contactDistance="0.1" angleCone="0.0"/>
@@ -56,16 +56,16 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec un tro
         <DiagonalMass massDensity="1.0" />
         
         <BoxROI template="Vec3d" name="box_roi1X" box="-0.1 -0.1 -0.1 10.1 0.1 0.1"/>
-        <FixedConstraint template="Vec3d" name="fixedConstraint1" indices="@box_roi1X.indices"/>
+        <FixedProjectiveConstraint template="Vec3d" name="fixedConstraint1" indices="@box_roi1X.indices"/>
 
         <BoxROI template="Vec3d" name="box_roi2X" box="-0.1 -0.1 9.9 10.1 0.1 10.1"/>
-        <FixedConstraint template="Vec3d" name="fixedConstraint2" indices="@box_roi2X.indices"/>
+        <FixedProjectiveConstraint template="Vec3d" name="fixedConstraint2" indices="@box_roi2X.indices"/>
         
         <BoxROI template="Vec3d" name="box_roi1Z" box="-0.1 -0.1 -0.1 0.1 0.1 10.1"/>
-        <FixedConstraint template="Vec3d" name="fixedConstraint3" indices="@box_roi1Z.indices"/>
+        <FixedProjectiveConstraint template="Vec3d" name="fixedConstraint3" indices="@box_roi1Z.indices"/>
         
         <BoxROI template="Vec3d" name="box_roi2Z" box="9.9 -0.1 -0.1 10.1 0.1 10.1"/>
-        <FixedConstraint template="Vec3d" name="fixedConstraint4" indices="@box_roi2Z.indices"/>
+        <FixedProjectiveConstraint template="Vec3d" name="fixedConstraint4" indices="@box_roi2Z.indices"/>
 <!--
         <TriangularFEMForceField name="FEM" youngModulus="600" poissonRatio="0.3" method="large" computePrincipalStress="1"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" />

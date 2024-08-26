@@ -27,7 +27,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
     <VisualStyle displayFlags="showVisual showBehaviorModels" />
 
     <DefaultAnimationLoop />
-    <DefaultPipeline verbose="0" />
+    <CollisionPipeline verbose="0" />
     <BruteForceBroadPhase/>
     <BVHNarrowPhase/>
     <CollisionResponse response="PenalityContactForceField" />
@@ -48,7 +48,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
 		<!--Modification de la fixed constraint pour y mettre une Box constraint-->
 		<!--FixedConstraint indices="0 1" /-->
 		<BoxROI name="FixedSide" box="-5.1 9.9 0.1 5.1 10.1 -0.1" drawBoxes="1" />              <!--box="x1 y1 z1 x2 y2 z2"-->
-		<FixedConstraint name="FixedConstraint" indices="@FixedSide.indices" />
+		<FixedProjectiveConstraint name="FixedConstraint" indices="@FixedSide.indices" />
 
 		<BoxROI template="Vec3d" name="PulledSide" box="-5.1 0.1 0.1  5.1 -0.1 -0.1" drawBoxes="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" forces="0 -650 0" showArrowSize=".01" />
