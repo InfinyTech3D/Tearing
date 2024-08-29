@@ -440,8 +440,6 @@ inline Index BaseTearingEngine<DataTypes>::computeVertexByArea_WeightedAverage(c
 {
     helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->d_triangleInfo);
 
-    const auto& triangles = m_topology->getTriangles();
-
     constexpr size_t numVertices = 3;
     sofa::type::vector<Real>  StressPerVertex(numVertices);
 
@@ -541,8 +539,6 @@ template<class DataTypes>
 inline Index BaseTearingEngine<DataTypes>::computeVertexByInverseDistance_WeightedAverage(const Triangle& selectedTriangle)
 {
     helper::ReadAccessor< Data<VecTriangleFEMInformation> > triangleFEMInf(m_triangularFEM->d_triangleInfo);
-
-    const auto& triangles = m_topology->getTriangles();
 
     constexpr size_t numVertices = 3;
     sofa::type::vector<Real>  StressPerVertex(numVertices);
