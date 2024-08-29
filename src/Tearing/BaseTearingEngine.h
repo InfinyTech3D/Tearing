@@ -58,7 +58,7 @@ public:
 	using StrainDisplacement = type::Mat<6, 3, Real>;    ///< the strain-displacement matrix
 	
 	typedef typename sofa::component::solidmechanics::fem::elastic::TriangularFEMForceField<DataTypes>::TriangleInformation TriangleFEMInformation;
-	typedef sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;
+	typedef typename sofa::type::vector<TriangleFEMInformation> VecTriangleFEMInformation;
 
 protected:
 	BaseTearingEngine();
