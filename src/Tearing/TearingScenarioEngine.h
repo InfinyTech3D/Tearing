@@ -52,6 +52,8 @@ public:
 	using VecTriangles = sofa::core::topology::BaseMeshTopology::SeqTriangles;
 	using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
 
+	typedef typename BaseTearingEngine<DataTypes>::TriangleFEMInformation TriangleFEMInformation;
+	typedef typename BaseTearingEngine<DataTypes>::VecTriangleFEMInformation VecTriangleFEMInformation;
 
 	Data<int> d_startVertexId; ///< vertex ID to start algofracture (scenario case)
 	Data<int> d_startTriId; ///< triangle ID to check junctions in algofracture

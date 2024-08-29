@@ -23,6 +23,9 @@
  ****************************************************************************/
 #include <Tearing/initTearing.h>
 
+#include <sofa/core/ObjectFactory.h>
+using sofa::core::ObjectFactory;
+
 namespace sofa::component
 {
 
@@ -35,7 +38,7 @@ extern "C" {
     TEARING_API const char* getModuleComponentList();
 }
 
-void initExternalModule()
+void initTearing()
 {
     static bool first = true;
     if (first)
@@ -44,14 +47,21 @@ void initExternalModule()
     }
 }
 
+void initExternalModule()
+{
+    initTearing();
+}
+
+
+
 const char* getModuleName()
 {
-    return "tearing";
+    return sofa_tostring(SOFA_TARGET);
 }
 
 const char* getModuleVersion()
 {
-    return "1.0";
+    return sofa_tostring(TEARING_VERSION);
 }
 
 const char* getModuleLicense()
@@ -66,14 +76,10 @@ const char* getModuleDescription()
 
 const char* getModuleComponentList()
 {
-    // string containing the names of the classes provided by the plugin
-    return "TearingEngine, TearingAlgorithms, VolumeTearingEngine, VolumeTearingAlgorithms";
-}   
-
-
-void init()
-{
-    initExternalModule();
+    /// string containing the names of the classes provided by the plugin
+    static std::string classes = ObjectFactory::getInstance()->listClassesFromTarget(sofa_tostring(SOFA_TARGET));
+    return classes.c_str();
 }
+
 
 } // namespace sofa::component

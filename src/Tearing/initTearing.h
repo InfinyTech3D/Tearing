@@ -21,9 +21,10 @@
  * Authors: see Authors.txt                                                  *
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
+#pragma once
 #include <Tearing/config.h>
 
 namespace sofa::component
 {
-    TEARING_API void init();
+    void TEARING_API initTearing();
 } // namespace sofa::component

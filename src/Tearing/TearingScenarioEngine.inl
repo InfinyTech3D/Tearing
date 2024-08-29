@@ -84,7 +84,7 @@ inline void TearingScenarioEngine<DataTypes>::computePerpendicular(Coord dir, Co
 
     for (unsigned int vertex_id = 0; vertex_id < numVertices; vertex_id++)
     {
-        if (VertexIndicies[vertex_id] == indexA)
+        if (VertexIndicies[vertex_id] == sofa::Index(indexA))
         {
             B_id = VertexIndicies[(vertex_id + 1) % 3];
             C_id = VertexIndicies[(vertex_id + 2) % 3];
@@ -111,8 +111,6 @@ void TearingScenarioEngine<DataTypes>::computeEndPoints(
     Coord dir,
     Coord& Pb, Coord& Pc)
 {
-    int triID = d_startTriId.getValue();
-       
     const Real& alpha = d_startLength.getValue();
         
     Real norm_dir = dir.norm();
@@ -127,7 +125,6 @@ void TearingScenarioEngine<DataTypes>::algoFracturePath()
     int indexA = d_startVertexId.getValue();
     int triID = d_startTriId.getValue();
     const Vec3& dir = d_startDirection.getValue();
-    const Real& alpha = d_startLength.getValue();
 
     helper::ReadAccessor< Data<VecCoord> > x(this->d_input_positions);
     m_Pa = x[indexA];
@@ -167,8 +164,6 @@ void TearingScenarioEngine<DataTypes>::draw(const core::visual::VisualParams* vp
     if (triID != -1 && this->d_showTearableCandidates.getValue())
     {
         sofa::core::topology::BaseMeshTopology* topo = this->getTopology();
-        const VecTriangles& triangleList = topo->getTriangles();
-        const Triangle& tri = triangleList[triID]; // Is this correct?
 
         std::vector<Vec3> Tri;
         Tri.push_back(m_Pa);
@@ -179,9 +174,6 @@ void TearingScenarioEngine<DataTypes>::draw(const core::visual::VisualParams* vp
 
     if (this->d_showFracturePath.getValue())
     {
-        const Vec3& dir = d_startDirection.getValue();
-        const Real& alpha = d_startLength.getValue();
-            
         vector<Coord> points;
         points.push_back(m_Pb);
         points.push_back(m_Pa);
