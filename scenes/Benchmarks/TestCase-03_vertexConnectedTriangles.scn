@@ -37,7 +37,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
         <!--MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" /-->
-		<MeshOBJLoader name="meshLoader" filename="mesh/sablier.obj" scale="1" createSubelements="true"/>
+		<MeshOBJLoader name="meshLoader" filename="../TearingEngine/mesh/sablier.obj" scale="1" createSubelements="true"/>
 		
 		<TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
 		<TriangleSetTopologyModifier   name="Modifier" />

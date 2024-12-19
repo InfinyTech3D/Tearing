@@ -57,7 +57,7 @@
 		<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" forces="0 -100 0" showArrowSize=".01" />
 		
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" 
+		<TearingScenarioEngine name="TearingEngine" input_position="@Mo.position" 
 			startVertexId="282" startDirection="0.707 -0.707 0.0" startLength="5.0"/>
 			
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
