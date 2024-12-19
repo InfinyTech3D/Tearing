@@ -116,7 +116,7 @@ void TearingScenarioEngine<DataTypes>::computeEndPoints(
     Real norm_dir = dir.norm();
        
     Pb = Pa + alpha/norm_dir * dir;
-    Pc = Pa - alpha /norm_dir * dir;
+    Pc = Pa;// -alpha / norm_dir * dir;
 }
 
 template <class DataTypes>
@@ -128,6 +128,12 @@ void TearingScenarioEngine<DataTypes>::algoFracturePath()
 
     helper::ReadAccessor< Data<VecCoord> > x(this->d_input_positions);
     m_Pa = x[indexA];
+
+    if (indexA < 0 || indexA >= x.size())
+    {
+        msg_error() << "Invalid Input: startVertexId.";
+        return;
+    }
 
     //Coord Pb, Pc;
     computeEndPoints(m_Pa, dir, m_Pb, m_Pc);
