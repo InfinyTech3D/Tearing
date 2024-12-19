@@ -57,7 +57,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec une in
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 		
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.1" step="0" nbFractureMax="100"/>
+		<TearingScenarioEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.1" step="0" nbFractureMax="100"
 					  startVertexId="318" startDirection="0.0 1.0 0.0" startLength="2.5"/>
 
         <Node >

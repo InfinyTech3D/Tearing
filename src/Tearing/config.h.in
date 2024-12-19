@@ -24,8 +24,10 @@
 #pragma once
 
 #include <sofa/config.h>
+#define PLUGIN_VERSION @PROJECT_VERSION@
 
 #ifdef SOFA_BUILD_TEARING
+#  define SOFA_TARGET @PROJECT_NAME@
 #  define TEARING_API SOFA_EXPORT_DYNAMIC_LIBRARY
 #else
 #  define TEARING_API SOFA_IMPORT_DYNAMIC_LIBRARY

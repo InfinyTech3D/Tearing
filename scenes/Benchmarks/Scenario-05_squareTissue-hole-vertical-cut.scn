@@ -61,7 +61,7 @@
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <TriangleCollisionModel />
 
-		<TearingEngine name="TearingEngine" input_position="@Mo.position"
+		<TearingScenarioEngine name="TearingEngine" input_position="@Mo.position"
 			startVertexId="318" startDirection="0.0 1.0 0.0" startLength="2.5"/>
 		
         <Node >

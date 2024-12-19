@@ -25,7 +25,7 @@
         <RequiredPlugin name="Sofa.Component.Topology.Container.Dynamic"/> <!-- Needed to use components [TriangleSetGeometryAlgorithms, TriangleSetTopologyContainer, TriangleSetTopologyModifier] -->
         <RequiredPlugin name="Sofa.Component.Visual"/> <!-- Needed to use components [VisualStyle] -->
         <RequiredPlugin name="Sofa.GL.Component.Rendering3D"/> <!-- Needed to use components [OglModel] -->
-        <RequiredPlugin name="tearing"/>
+        <RequiredPlugin name="Tearing"/>
     </Node>
 
 
@@ -55,7 +55,7 @@
 		<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>
 		<ConstantForceField name="CFF" indices="@PulledSide.indices" forces="0 -100 0" showArrowSize=".01" />
 		
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" 
+		<TearingScenarioEngine name="TearingEngine" input_position="@Mo.position" 
 			startVertexId="1" startDirection="0.707 0.707 0.0" startLength="3.5"/>
 		
 		<TriangularFEMForceField name="FEM" youngModulus="60" poissonRatio="0.3" method="large" computePrincipalStress="true"/>

@@ -61,7 +61,7 @@ const char* getModuleName()
 
 const char* getModuleVersion()
 {
-    return sofa_tostring(TEARING_VERSION);
+    return sofa_tostring(PLUGIN_VERSION);
 }
 
 const char* getModuleLicense()
