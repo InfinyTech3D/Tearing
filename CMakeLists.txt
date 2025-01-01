@@ -26,6 +26,9 @@ set(HEADER_FILES
 
     ${TEARING_SRC_DIR}/TearingScenarioEngine.h
     ${TEARING_SRC_DIR}/TearingScenarioEngine.inl
+    
+    ${TEARING_SRC_DIR}/Controllers/TriangleCuttingController.h
+    ${TEARING_SRC_DIR}/Controllers/TriangleCuttingController.inl
 )
 
 set(SOURCE_FILES
@@ -34,6 +37,8 @@ set(SOURCE_FILES
     ${TEARING_SRC_DIR}/BaseTearingEngine.cpp
     ${TEARING_SRC_DIR}/TearingEngine.cpp
     ${TEARING_SRC_DIR}/TearingScenarioEngine.cpp
+    
+    ${TEARING_SRC_DIR}/Controllers/TriangleCuttingController.cpp
 )
 
 set(README_FILES
