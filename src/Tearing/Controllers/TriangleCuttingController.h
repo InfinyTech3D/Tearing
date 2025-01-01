@@ -56,7 +56,15 @@ public:
 
     void draw(const core::visual::VisualParams* vparams) override;
 
+protected:
     void doTest();
+
+    void test_subdivider_1Node();
+
+
+    void processCut();
+    void clearBuffers();
+
 public:
     Data <int> d_methodToTest;
     Data < unsigned int > d_triAID;
@@ -80,6 +88,8 @@ protected:
     /// Pointer to the topology geometry algorithm
     TriangleSetGeometryAlgorithms<DataTypes>* m_geometryAlgorithms = nullptr;
 
+    type::vector< TriangleSubdivider*> m_subviders;
+    type::vector< PointToAdd*> m_pointsToAdd;
 };
 
 
