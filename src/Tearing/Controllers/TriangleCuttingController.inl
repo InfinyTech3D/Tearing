@@ -81,13 +81,84 @@ void TriangleCuttingController<DataTypes>::doTest()
     const Topology::TriangleID triId = d_triAID.getValue();
     const Topology::Triangle theTri = m_topoContainer->getTriangle(triId);
 
+    std::cout << "triId: " << triId << std::endl;
+    std::cout << "theTri: " << theTri << std::endl;
+    
+
     sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
+    Coord pA = x[theTri[0]];
+    Coord pB = x[theTri[1]];
+    Coord pC = x[theTri[2]];
+
+    Coord bary = (pA + pB + pC) / 3;
+
+    //TriangleSubdivider_1Node* subdivider = new TriangleSubdivider_1Node(triId);
+    //subdivider->m_baryCoords = Vec3(0.3333, 0.3333, 0.3333);
+
+    type::vector < type::vector<SReal> > _baryCoefs;
+    type::vector < type::vector< Topology::PointID > >_ancestors;
+
+    type::vector<SReal> _coefs;
+    type::vector<Topology::PointID> _ances;
+    for (unsigned int i = 0; i < 3; ++i)
+    {
+        _ances.push_back(theTri[i]);
+        _coefs.push_back(0.3333);
+    }
+        
+
+    auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
+    std::cout << "nbrPoints: " << nbrPoints << std::endl;
+    Topology::PointID uniqID = getUniqueId(theTri[0], theTri[1]);
+    PointToAdd* PTA = new PointToAdd(uniqID, nbrPoints, _ances, _coefs);
+    nbrPoints++;
+    _ancestors.push_back(_ances);
+    _baryCoefs.push_back(_coefs);
+
+    type::vector< TriangleSubdivider*> subviders;
+
+    auto tSplit = new TriangleToSplit(triId, theTri);
+    tSplit->m_points.push_back(PTA);
+    TriangleSubdivider_1Node* subdivider = new TriangleSubdivider_1Node(tSplit);
+    subviders.push_back(subdivider);
+
+    subdivider->subdivide(pA, pB, pC);
+
+    // 1. Add all new points and duplicate point from snapped points
+    m_topoModifier->addPoints(1, _ancestors, _baryCoefs);
+
+    // 4. Add all new Tetrahedra from splitted one and remove old. With the corresponding ancestors and coefs
+    type::vector<Topology::Triangle> trianglesToAdd;
+    type::vector<Topology::TriangleID> trianglesToRemove;
+    _ancestors.clear();
+    _baryCoefs.clear();
+    for (auto triSub : subviders)
+    {
+        const type::vector<TriangleToAdd*>& TTAS = triSub->m_trianglesToAdd;
+        for (auto TTA : TTAS)
+        {
+            trianglesToAdd.push_back(TTA->m_triangle);
+            _ancestors.push_back(TTA->m_ancestors);
+            _baryCoefs.push_back(TTA->m_coefs);
+        }
+        trianglesToRemove.push_back(triSub->m_triangleToSplit->m_triangleId);
+    }
+
+    m_topoModifier->addTriangles(trianglesToAdd, _ancestors, _baryCoefs);
+
+    // 6. Propagate change to the topology and remove all tetrahedra registered for removal to the container
+    m_topoModifier->removeTriangles(trianglesToRemove, true, true);
 
 
-    sofa::type::vector<Topology::TriangleID> triangleToRemove;
-    triangleToRemove.push_back(d_triAID.getValue());
-    m_topoModifier->removeTriangles(triangleToRemove, true, true);
+    // 7. clear all buffers for new cut
+    //clearBuffers()
+    for (unsigned int i = 0; i < subviders.size(); ++i)
+    {
+        delete subviders[i];
+    }
+    subviders.clear();
 }
+
 
 template <class DataTypes>
 void TriangleCuttingController<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
