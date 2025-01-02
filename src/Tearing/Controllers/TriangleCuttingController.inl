@@ -117,10 +117,7 @@ void TriangleCuttingController<DataTypes>::test_subdivider_1Node()
 
     // Get points coordinates
     sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
-    const Coord pA = x[theTri[0]];
-    const Coord pB = x[theTri[1]];
-    const Coord pC = x[theTri[2]];
-    const Coord bary = (pA + pB + pC) / 3;
+    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
 
     // create new points to add
     type::vector<SReal> _coefs;
@@ -141,7 +138,7 @@ void TriangleCuttingController<DataTypes>::test_subdivider_1Node()
     TriangleSubdivider_1Node* subdivider = new TriangleSubdivider_1Node(tSplit);
     m_subviders.push_back(subdivider);
 
-    subdivider->subdivide(pA, pB, pC);
+    subdivider->subdivide(points);
 
     processSubdividers();
 }
@@ -171,11 +168,6 @@ void TriangleCuttingController<DataTypes>::test_subdivider_1Edge()
     const PointID pAId = (edgeId + 1) % 3;
     const PointID pBId = (edgeId + 2) % 3;
 
-    const Coord pA = x[theTri[pAId]];
-    const Coord pB = x[theTri[pBId]];
-    const Coord pC = x[theTri[edgeId]];
-    const Coord bary = (pA + pB) / 2;
-    
     // create new points to add
     type::vector<SReal> _coefs;
     type::vector<Topology::PointID> _ancestors;
@@ -193,7 +185,8 @@ void TriangleCuttingController<DataTypes>::test_subdivider_1Edge()
     TriangleSubdivider_1Edge* subdivider = new TriangleSubdivider_1Edge(tSplit);
     m_subviders.push_back(subdivider);
 
-    subdivider->subdivide(pA, pB, pC);
+    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[pAId]], x[theTri[pBId]], x[theTri[edgeId]] };
+    subdivider->subdivide(points);
 
     processSubdividers();
 }
@@ -240,13 +233,10 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Edge()
     TriangleSubdivider_2Edge* subdivider = new TriangleSubdivider_2Edge(tSplit);
     m_subviders.push_back(subdivider);
 
-    const Coord pA = x[theTri[0]];
-    const Coord pB = x[theTri[1]];
-    const Coord pC = x[theTri[2]];
-    subdivider->subdivide(pA, pB, pC);
+    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
+    subdivider->subdivide(points);
 
     processSubdividers();
-
 }
 
 
@@ -287,10 +277,8 @@ void TriangleCuttingController<DataTypes>::test_subdivider_3Edge()
     // Get points coordinates
     sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
 
-    const Coord pA = x[theTri[0]];
-    const Coord pB = x[theTri[1]];
-    const Coord pC = x[theTri[2]];
-    subdivider->subdivide(pA, pB, pC);
+    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
+    subdivider->subdivide(points);
 
     processSubdividers();
 }
@@ -346,10 +334,8 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Node()
     // Get points coordinates
     sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
 
-    const Coord pA = x[theTri[0]];
-    const Coord pB = x[theTri[1]];
-    const Coord pC = x[theTri[2]];
-    subdivider->subdivide(pA, pB, pC);
+    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
+    subdivider->subdivide(points);
 
     processSubdividers();
 }
@@ -424,13 +410,11 @@ void TriangleCuttingController<DataTypes>::processCut()
     Vec3 ptB = Vec3(pB[0], pB[1], pB[2]);
     d_cutPointA.setValue(ptA);
     d_cutPointB.setValue(ptB);
-    PointID last_point = 0;
 
     sofa::type::vector< TriangleID > triangles_list;
     sofa::type::vector< EdgeID > edges_list;
     sofa::type::vector< Real > coords_list;
-    bool is_on_boundary;
-    m_geometryAlgorithms->computeIntersectedPointsList2(last_point, ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list, is_on_boundary);
+    m_geometryAlgorithms->computeIntersectedPointsList2(ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list);
 
     std::map < TriangleID, TriangleToSplit*> TTS_map;
     // create triangles to be splitted
@@ -451,16 +435,22 @@ void TriangleCuttingController<DataTypes>::processCut()
             _ancestors.push_back(theTris[i][j]);
             _coefs.push_back(0.3333);
         }
-
+        std::cout << "triIds[i]: " << triIds[i] << std::endl;
+        std::cout << "theTris[i]: " << theTris[i] << std::endl;
         Topology::PointID uniqID = getUniqueId(theTris[i][0], theTris[i][1]) + theTris[i][2];
         PointToAdd* PTA = new PointToAdd(uniqID, nbrPoints, _ancestors, _coefs);
+        PTA->m_ancestorType = sofa::geometry::ElementType::TRIANGLE;
         m_pointsToAdd.push_back(PTA);
         nbrPoints++;
         TriangleToSplit* tSplit = TTS_map[triIds[i]];
+        if (tSplit == nullptr) {
+            std::cout << "TTS_map not found" << std::endl;
+            return;
+        }
+
         tSplit->m_points.push_back(PTA);
     }
-
-
+    
     for (unsigned int i = 0; i < edges_list.size(); ++i)
     {
         type::vector<SReal> _coefs;
@@ -469,8 +459,8 @@ void TriangleCuttingController<DataTypes>::processCut()
         const Topology::Edge& edge = edges[edges_list[i]];
         _ancestors.push_back(edge[0]);
         _ancestors.push_back(edge[1]);
+        _coefs.push_back(coords_list[i]);  // use them as weights if W == 1 -> point is on vertex.
         _coefs.push_back(1.0 - coords_list[i]);
-        _coefs.push_back(coords_list[i]);
 
         Topology::PointID uniqID = getUniqueId(_ancestors[0], _ancestors[1]);
         PointToAdd* PTA = new PointToAdd(uniqID, nbrPoints, _ancestors, _coefs);
@@ -492,9 +482,7 @@ void TriangleCuttingController<DataTypes>::processCut()
         TriangleToSplit* tSplit = TTS_map[triId];
         TriangleSubdivider* subdivider = nullptr;
         const Topology::Triangle& theTri = triangles[triId];
-        const Coord pA = x[theTri[0]];
-        const Coord pB = x[theTri[1]];
-        const Coord pC = x[theTri[2]];
+        sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
 
         if (i == 0 || i == triangles_list.size() - 1)
         {
@@ -517,7 +505,7 @@ void TriangleCuttingController<DataTypes>::processCut()
         }
 
         m_subviders.push_back(subdivider);
-        subdivider->subdivide(pA, pB, pC);
+        subdivider->subdivide(points);
     }
 
 
