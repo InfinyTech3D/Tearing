@@ -95,15 +95,21 @@ void TriangleCuttingController<DataTypes>::doTest()
     // Get points coordinates
     sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
     sofa::Size nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
+    
+    // Get triangle to subdivide information
+    const SeqTriangles& triangles = m_topoContainer->getTriangles();
 
-
-    const auto& _triangleIds = d_triangleIds.getValue();
+    auto _triangleIds = d_triangleIds.getValue();
     if (!_triangleIds.empty())
     {
-        std::cout << "_triangleIds to start: " << _triangleIds << std::endl;
+        if (_triangleIds[0] == InvalidID) // hack to remesh all
+        {
+            _triangleIds.clear();
+            for (unsigned int triId = 0; triId < triangles.size(); ++triId)
+                _triangleIds.push_back(triId);
+        }
+        
         computeNeighboorhoodTable(_triangleIds);
-
-        std::cout << "Nbr m_subviders: " << m_subviders.size() << std::endl;
 
         for (TriangleSubdivider* subD : m_subviders)
         {
@@ -120,9 +126,6 @@ void TriangleCuttingController<DataTypes>::doTest()
 
 
     int method = d_methodToTest.getValue();
-
-    // Get triangle to subdivide information
-    const SeqTriangles& triangles = m_topoContainer->getTriangles();
 
     for (unsigned int triId = 0; triId < triangles.size(); ++triId)
     {
