@@ -23,7 +23,7 @@
  ****************************************************************************/#pragma once
 #pragma once
 
-#include <InfinyToolkit/config.h>
+#include <Tearing/config.h>
 #include <sofa/component/statecontainer/MechanicalObject.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
@@ -31,7 +31,7 @@
 #include <sofa/component/topology/container/dynamic/TriangleSubdividers.h>
 #include <sofa/core/behavior/BaseController.h>
 
-namespace sofa::infinytoolkit
+namespace sofa::component
 {
 
 using sofa::type::Vec3;
@@ -41,7 +41,7 @@ using namespace sofa::component::topology::container::dynamic;
 * The TriangleCuttingController
 */
 template <class DataTypes>
-class SOFA_INFINYTOOLKIT_API TriangleCuttingController : public core::behavior::BaseController
+class TEARING_API TriangleCuttingController : public core::behavior::BaseController
 {
 public:
     SOFA_CLASS(SOFA_TEMPLATE(TriangleCuttingController, DataTypes), sofa::core::behavior::BaseController);
@@ -104,7 +104,7 @@ protected:
 
 
 #if  !defined(SOFA_COMPONENT_TRIANGLECUTTINGCONTROLLER_CPP)
-extern template class SOFA_INFINYTOOLKIT_API TriangleCuttingController<sofa::defaulttype::Vec3Types>;
+extern template class TEARING_API TriangleCuttingController<sofa::defaulttype::Vec3Types>;
 #endif
 
-} //namespace sofa::infinytoolkit
+} //namespace sofa::component

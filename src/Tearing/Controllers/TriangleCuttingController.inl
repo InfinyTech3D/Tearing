@@ -23,7 +23,7 @@
  ****************************************************************************/
 
 #define SOFA_COMPONENT_TRIANGLECUTTINGCONTROLLER_CPP
-#include <InfinyToolkit/MeshTools/TriangleCuttingController.h>
+#include <Tearing/Controllers/TriangleCuttingController.h>
 #include <sofa/core/visual/VisualParams.h>
 
 #include <sofa/simulation/Node.h>
@@ -32,7 +32,7 @@
 #include <sofa/core/objectmodel/KeyreleasedEvent.h>
 #include <sofa/simulation/AnimateEndEvent.h>
 
-namespace sofa::infinytoolkit
+namespace sofa::component
 {
 
 using sofa::core::topology::Topology;
@@ -662,4 +662,4 @@ void TriangleCuttingController<DataTypes>::draw(const core::visual::VisualParams
 
 }
 
-} //namespace sofa::infinytoolkit
+} //namespace sofa::component

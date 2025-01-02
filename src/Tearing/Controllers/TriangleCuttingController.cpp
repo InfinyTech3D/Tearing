@@ -23,10 +23,10 @@
  ****************************************************************************/
 
 #define SOFA_COMPONENT_TRIANGLECUTTINGCONTROLLER_CPP
-#include <InfinyToolkit/MeshTools/TriangleCuttingController.inl>
+#include <Tearing/Controllers/TriangleCuttingController.inl>
 #include <sofa/core/ObjectFactory.h>
 
-namespace sofa::infinytoolkit
+namespace sofa::component
 {
 
 using namespace sofa::defaulttype;
@@ -36,7 +36,7 @@ const int TriangleCuttingControllerClass = core::RegisterObject("TriangleCutting
     .add< TriangleCuttingController<sofa::defaulttype::Vec3Types> >()
 ;
 
-template class SOFA_INFINYTOOLKIT_API TriangleCuttingController<sofa::defaulttype::Vec3Types>;
+template class TEARING_API TriangleCuttingController<sofa::defaulttype::Vec3Types>;
 
 
-} //namespace sofa::infinytoolkit
+} //namespace sofa::component
