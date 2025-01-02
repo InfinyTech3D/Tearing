@@ -73,6 +73,8 @@ protected:
 
     void test_subdivider_2Node(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
 
+    void computeNeighboorhoodTable(const sofa::type::vector<TriangleID>& firstLayer);
+
     void processSubdividers();
 
     void processCut();
@@ -80,6 +82,7 @@ protected:
 
 public:
     Data <int> d_methodToTest;
+    Data < sofa::type::vector< TriangleID > > d_triangleIds;
     Data < unsigned int > d_triAID;
     Data < unsigned int > d_triBID;
 

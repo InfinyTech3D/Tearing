@@ -40,6 +40,7 @@ using sofa::core::topology::Topology;
 template <class DataTypes>
 TriangleCuttingController<DataTypes>::TriangleCuttingController()
     : d_methodToTest(initData(&d_methodToTest, -1, "methodToTest", "refinement method to test"))
+    , d_triangleIds(initData(&d_triangleIds, "triangleIds", "Triangles Ids to subdivide"))
     , d_triAID(initData(&d_triAID, (unsigned int)(0), "triAID", "id triangle1"))
     , d_triBID(initData(&d_triBID, (unsigned int)(0), "triBID", "id triangle2"))
     , d_performCut(initData(&d_performCut, false, "performCut", "to activate cut at the current timestep"))
@@ -91,14 +92,37 @@ void TriangleCuttingController<DataTypes>::clearBuffers()
 template <class DataTypes>
 void TriangleCuttingController<DataTypes>::doTest()
 {
+    // Get points coordinates
+    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
+    sofa::Size nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
+
+
+    const auto& _triangleIds = d_triangleIds.getValue();
+    if (!_triangleIds.empty())
+    {
+        std::cout << "_triangleIds to start: " << _triangleIds << std::endl;
+        computeNeighboorhoodTable(_triangleIds);
+
+        std::cout << "Nbr m_subviders: " << m_subviders.size() << std::endl;
+
+        for (TriangleSubdivider* subD : m_subviders)
+        {
+            const Topology::Triangle& theTri = m_topoContainer->getTriangle(subD->getTriangleIdToSplit());
+            sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
+
+            subD->subdivide(points);
+        }
+
+        processSubdividers();
+
+        return;
+    }
+
+
     int method = d_methodToTest.getValue();
 
     // Get triangle to subdivide information
     const SeqTriangles& triangles = m_topoContainer->getTriangles();
-
-    // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
-    sofa::Size nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
 
     for (unsigned int triId = 0; triId < triangles.size(); ++triId)
     {
@@ -109,22 +133,27 @@ void TriangleCuttingController<DataTypes>::doTest()
 
         if (method == 0)
         {
+            msg_info() << "Process test: 1Node";
             test_subdivider_1Node(triId, theTri, nbrPoints);
         }
         else if (method == 1)
         {
+            msg_info() << "Process test: 1Edge";
             test_subdivider_1Edge(triId, theTri, edgesInTri, nbrPoints);
         }
         else if (method == 2)
         {
+            msg_info() << "Process test: 2Edge";
             test_subdivider_2Edge(triId, theTri, nbrPoints);
         }
         else if (method == 3)
         {
+            msg_info() << "Process test: 3Edge";
             test_subdivider_3Edge(triId, theTri, nbrPoints);
         }
         else if (method == 4)
         {
+            msg_info() << "Process test: 2Node";
             test_subdivider_2Node(triId, theTri, nbrPoints);
         }
         else
@@ -132,7 +161,7 @@ void TriangleCuttingController<DataTypes>::doTest()
             return;
         }
 
-        m_subviders.back()->subdivide(points);        
+        m_subviders.back()->subdivide(points);
     }
 
     processSubdividers();
@@ -280,6 +309,71 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Node(const TriangleI
 
 
 template <class DataTypes>
+void TriangleCuttingController<DataTypes>::computeNeighboorhoodTable(const sofa::type::vector<TriangleID>& firstLayer)
+{
+    const SeqTriangles& triangles = m_topoContainer->getTriangles();
+    const auto& edges = m_topoContainer->getEdges();
+    const auto& triAEdges = m_topoContainer->getTrianglesAroundEdgeArray();
+    const auto& edgeInTris = m_topoContainer->getEdgesInTriangleArray();
+
+    // Get all edges to check from 1st layer without redundency
+    std::set<Topology::EdgeID> edgeIDToCheck;
+    for (const TriangleID triId : firstLayer)
+    {
+        const auto& edgesT = edgeInTris[triId];
+        for (const auto edgeID : edgesT)
+            edgeIDToCheck.insert(edgeID);
+    }
+
+    // create the points from the selected edges
+    sofa::Size nbrPoints = m_topoContainer->getNbPoints();
+    m_pointsToAdd.reserve(edgeIDToCheck.size());
+    type::vector<SReal> _coefs;
+    _coefs.resize(2, 0.5);
+    type::vector<Topology::PointID> _ancestors;
+    _ancestors.resize(2);
+    for (auto edgeId : edgeIDToCheck)
+    {
+        // create the points
+        const Topology::Edge& edge = edges[edgeId];
+        _ancestors[0] = edge[0];
+        _ancestors[1] = edge[1];
+        Topology::PointID uniqID = getUniqueId(_ancestors[0], _ancestors[1]);
+        PointToAdd* PTA = new PointToAdd(uniqID, nbrPoints, _ancestors, _coefs);
+        m_pointsToAdd.push_back(PTA);
+        nbrPoints++;
+
+        // look for the triangles
+        const auto& triAE = triAEdges[edgeId];
+        for (auto triID : triAE) // for each triangle around edge
+        {
+            bool found = false;
+            TriangleSubdivider* subdivider = nullptr;
+
+            // check if triangle already added in a subdivider
+            for (unsigned int i = 0; i < m_subviders.size(); i++)
+            {
+                if (m_subviders[i]->getTriangleIdToSplit() == triID)
+                {
+                    found = true;
+                    subdivider = m_subviders[i];
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                subdivider = new TriangleSubdivider(triID, triangles[triID]);
+                m_subviders.push_back(subdivider);
+            }
+
+            subdivider->addPoint(PTA);
+        }
+    }
+}
+
+
+template <class DataTypes>
 void TriangleCuttingController<DataTypes>::processSubdividers()
 {
     // 1. Add all new points and duplicate point from snapped points
@@ -320,9 +414,9 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
         }
         trianglesToRemove.push_back(triSub->getTriangleIdToSplit());
     }
-
+    std::cout << "Nbr trianglesToAdd: " << trianglesToAdd.size() << std::endl;
     m_topoModifier->addTriangles(trianglesToAdd, _ancestors, _baryCoefs);
-
+    std::cout << "Nbr trianglesToRemove: " << trianglesToRemove.size() << std::endl;
     // 4. Propagate change to the topology and remove all Triangles registered for removal to the container
     m_topoModifier->removeTriangles(trianglesToRemove, true, true);
 
@@ -523,7 +617,6 @@ void TriangleCuttingController<DataTypes>::handleEvent(sofa::core::objectmodel::
         dmsg_info() << "GET KEY " << ev->getKey();
         if (ev->getKey() == 'D')
         {
-            std::cout << "in D:" << std::endl;
             doTest();
         }
         else if (ev->getKey() == 'F')
