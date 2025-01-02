@@ -32,8 +32,6 @@ namespace sofa::infinytoolkit
 using namespace sofa::defaulttype;
 using namespace sofa::helper;
 
-SOFA_DECL_CLASS(TriangleCuttingController)
-
 const int TriangleCuttingControllerClass = core::RegisterObject("TriangleCuttingController test.")
     .add< TriangleCuttingController<sofa::defaulttype::Vec3Types> >()
 ;
