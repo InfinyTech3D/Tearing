@@ -63,6 +63,7 @@ protected:
 
     void test_subdivider_1Edge();
     void test_subdivider_2Edge();
+    void test_subdivider_3Edge();
 
 
     void processCut();
