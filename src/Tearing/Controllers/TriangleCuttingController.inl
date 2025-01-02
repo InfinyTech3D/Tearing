@@ -342,7 +342,7 @@ void TriangleCuttingController<DataTypes>::computeNeighboorhoodTable(const sofa:
         _ancestors[0] = edge[0];
         _ancestors[1] = edge[1];
         Topology::PointID uniqID = getUniqueId(_ancestors[0], _ancestors[1]);
-        PointToAdd* PTA = new PointToAdd(uniqID, nbrPoints, _ancestors, _coefs);
+        std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
         m_pointsToAdd.push_back(PTA);
         nbrPoints++;
 
