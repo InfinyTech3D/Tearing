@@ -65,6 +65,8 @@ protected:
     void test_subdivider_2Edge();
     void test_subdivider_3Edge();
 
+    void test_subdivider_2Node();
+
 
     void processCut();
     void clearBuffers();
