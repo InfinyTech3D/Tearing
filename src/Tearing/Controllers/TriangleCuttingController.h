@@ -50,6 +50,9 @@ public:
     using VecCoord = typename DataTypes::VecCoord;
     using Real = typename DataTypes::Real;
 
+    using Triangle = TriangleSetTopologyContainer::Triangle;
+    using SeqTriangles = TriangleSetTopologyContainer::SeqTriangles;
+
     TriangleCuttingController();
     ~TriangleCuttingController() override;
 
