@@ -47,6 +47,7 @@ public:
 
     using Coord = typename DataTypes::Coord;
     using VecCoord = typename DataTypes::VecCoord;
+    using Real = typename DataTypes::Real;
 
     TriangleCuttingController();
     ~TriangleCuttingController() override;
@@ -67,6 +68,7 @@ protected:
 
     void test_subdivider_2Node();
 
+    void processSubdividers();
 
     void processCut();
     void clearBuffers();
@@ -74,6 +76,7 @@ protected:
 public:
     Data <int> d_methodToTest;
     Data < unsigned int > d_triAID;
+    Data < unsigned int > d_triBID;
 
     /// Bool to perform a cut at the current timestep
     Data <bool> d_performCut;

@@ -41,6 +41,7 @@ template <class DataTypes>
 TriangleCuttingController<DataTypes>::TriangleCuttingController()
     : d_methodToTest(initData(&d_methodToTest, -1, "methodToTest", "refinement method to test"))
     , d_triAID(initData(&d_triAID, (unsigned int)(0), "triAID", "id triangle1"))
+    , d_triBID(initData(&d_triBID, (unsigned int)(0), "triBID", "id triangle2"))
     , d_performCut(initData(&d_performCut, false, "performCut", "to activate cut at the current timestep"))
     , d_cutPointA(initData(&d_cutPointA, Vec3(0.0, 0.0, 0.0), "cutPointA", "(default=[0, 0, 0])"))
     , d_cutPointB(initData(&d_cutPointB, Vec3(0.0, 0.0, 0.0), "cutPointB", "(default=[0, 0, 0])"))
@@ -142,7 +143,7 @@ void TriangleCuttingController<DataTypes>::test_subdivider_1Node()
 
     subdivider->subdivide(pA, pB, pC);
 
-    processCut();
+    processSubdividers();
 }
 
 
@@ -189,12 +190,12 @@ void TriangleCuttingController<DataTypes>::test_subdivider_1Edge()
 
     auto tSplit = new TriangleToSplit(triId, theTri);
     tSplit->m_points.push_back(PTA);
-    TriangleSubdivider_1Edge* subdivider = new TriangleSubdivider_1Edge(tSplit, edgeId);
+    TriangleSubdivider_1Edge* subdivider = new TriangleSubdivider_1Edge(tSplit);
     m_subviders.push_back(subdivider);
 
     subdivider->subdivide(pA, pB, pC);
 
-    processCut();
+    processSubdividers();
 }
 
 
@@ -236,7 +237,7 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Edge()
         nbrPoints++;
     }
 
-    TriangleSubdivider_2Edge* subdivider = new TriangleSubdivider_2Edge(tSplit, edgeIds[0], edgeIds[1]);
+    TriangleSubdivider_2Edge* subdivider = new TriangleSubdivider_2Edge(tSplit);
     m_subviders.push_back(subdivider);
 
     const Coord pA = x[theTri[0]];
@@ -244,7 +245,7 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Edge()
     const Coord pC = x[theTri[2]];
     subdivider->subdivide(pA, pB, pC);
 
-    processCut();
+    processSubdividers();
 
 }
 
@@ -291,7 +292,7 @@ void TriangleCuttingController<DataTypes>::test_subdivider_3Edge()
     const Coord pC = x[theTri[2]];
     subdivider->subdivide(pA, pB, pC);
 
-    processCut();
+    processSubdividers();
 }
 
 
@@ -350,12 +351,12 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Node()
     const Coord pC = x[theTri[2]];
     subdivider->subdivide(pA, pB, pC);
 
-    processCut();
+    processSubdividers();
 }
 
 
 template <class DataTypes>
-void TriangleCuttingController<DataTypes>::processCut()
+void TriangleCuttingController<DataTypes>::processSubdividers()
 {
     // 1. Add all new points and duplicate point from snapped points
     type::vector < type::vector<SReal> > _baryCoefs;
@@ -401,6 +402,134 @@ void TriangleCuttingController<DataTypes>::processCut()
 
 
 template <class DataTypes>
+void TriangleCuttingController<DataTypes>::processCut()
+{
+    std::cout << "TriangleCuttingController::processCut()" << std::endl;
+   
+    auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
+    const auto& triangles = m_topoContainer->getTriangles();
+    const auto& edges = m_topoContainer->getEdges();
+    const auto& triAEdges = m_topoContainer->getTrianglesAroundEdgeArray();
+
+    // Get triangle to subdivide information
+    type::fixed_array< Topology::TriangleID, 2> triIds = { d_triAID.getValue() , d_triBID.getValue() };
+    type::fixed_array< Topology::Triangle, 2> theTris = { triangles[triIds[0]], triangles[triIds[1]] };
+    
+    // Get points coordinates
+    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
+
+    const Coord pA = (x[theTris[0][0]] + x[theTris[0][1]] + x[theTris[0][2]]) / 3;
+    const Coord pB = (x[theTris[1][0]] + x[theTris[1][1]] + x[theTris[1][2]]) / 3;
+    Vec3 ptA = Vec3(pA[0], pA[1], pA[2]);
+    Vec3 ptB = Vec3(pB[0], pB[1], pB[2]);
+    d_cutPointA.setValue(ptA);
+    d_cutPointB.setValue(ptB);
+    PointID last_point = 0;
+
+    sofa::type::vector< TriangleID > triangles_list;
+    sofa::type::vector< EdgeID > edges_list;
+    sofa::type::vector< Real > coords_list;
+    bool is_on_boundary;
+    m_geometryAlgorithms->computeIntersectedPointsList2(last_point, ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list, is_on_boundary);
+
+    std::map < TriangleID, TriangleToSplit*> TTS_map;
+    // create triangles to be splitted
+    for (auto triId : triangles_list)
+    {
+        auto tSplit = new TriangleToSplit(triId, triangles[triId]);
+        TTS_map[triId] = tSplit;
+    }
+
+    // create points To add
+    for (unsigned int i = 0; i < 2; ++i)
+    {
+        type::vector<SReal> _coefs;
+        type::vector<Topology::PointID> _ancestors;
+
+        for (unsigned int j = 0; j < 3; ++j)
+        {
+            _ancestors.push_back(theTris[i][j]);
+            _coefs.push_back(0.3333);
+        }
+
+        Topology::PointID uniqID = getUniqueId(theTris[i][0], theTris[i][1]) + theTris[i][2];
+        PointToAdd* PTA = new PointToAdd(uniqID, nbrPoints, _ancestors, _coefs);
+        m_pointsToAdd.push_back(PTA);
+        nbrPoints++;
+        TriangleToSplit* tSplit = TTS_map[triIds[i]];
+        tSplit->m_points.push_back(PTA);
+    }
+
+
+    for (unsigned int i = 0; i < edges_list.size(); ++i)
+    {
+        type::vector<SReal> _coefs;
+        type::vector<Topology::PointID> _ancestors;
+
+        const Topology::Edge& edge = edges[edges_list[i]];
+        _ancestors.push_back(edge[0]);
+        _ancestors.push_back(edge[1]);
+        _coefs.push_back(1.0 - coords_list[i]);
+        _coefs.push_back(coords_list[i]);
+
+        Topology::PointID uniqID = getUniqueId(_ancestors[0], _ancestors[1]);
+        PointToAdd* PTA = new PointToAdd(uniqID, nbrPoints, _ancestors, _coefs);
+        m_pointsToAdd.push_back(PTA);
+        nbrPoints++;
+
+        const auto& triAEdge = triAEdges[edges_list[i]];
+        for (auto triId : triAEdge)
+        {
+            TriangleToSplit* tSplit = TTS_map[triId];
+            tSplit->m_points.push_back(PTA);
+        }
+    }
+
+
+    for (unsigned int i = 0; i < triangles_list.size(); ++i)
+    {
+        TriangleID triId = triangles_list[i];
+        TriangleToSplit* tSplit = TTS_map[triId];
+        TriangleSubdivider* subdivider = nullptr;
+        const Topology::Triangle& theTri = triangles[triId];
+        const Coord pA = x[theTri[0]];
+        const Coord pB = x[theTri[1]];
+        const Coord pC = x[theTri[2]];
+
+        if (i == 0 || i == triangles_list.size() - 1)
+        {
+            subdivider = new TriangleSubdivider_2Node(tSplit);            
+        }
+        else
+        {
+            if (tSplit->m_points.size() == 1)
+            {
+                subdivider = new TriangleSubdivider_1Edge(tSplit);
+            }
+            else if (tSplit->m_points.size() == 2)
+            {
+                subdivider = new TriangleSubdivider_2Edge(tSplit);
+            }
+            else if (tSplit->m_points.size() == 3)
+            {
+                subdivider = new TriangleSubdivider_3Edge(tSplit);
+            }
+        }
+
+        m_subviders.push_back(subdivider);
+        subdivider->subdivide(pA, pB, pC);
+    }
+
+
+    std::cout << "triangles_list: " << triangles_list << std::endl;
+    std::cout << "edges_list: " << edges_list << std::endl;
+    std::cout << "coords_list: " << coords_list << std::endl;
+
+    processSubdividers();
+}
+
+
+template <class DataTypes>
 void TriangleCuttingController<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
 {
     if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
@@ -411,9 +540,9 @@ void TriangleCuttingController<DataTypes>::handleEvent(sofa::core::objectmodel::
             std::cout << "in D:" << std::endl;
             doTest();
         }
-        else if (ev->getKey() == 'E')
+        else if (ev->getKey() == 'F')
         {
-            std::cout << "in E:" << std::endl;
+            processCut();
         }
     }
 
@@ -424,6 +553,12 @@ void TriangleCuttingController<DataTypes>::draw(const core::visual::VisualParams
 {
     if (m_topoContainer == nullptr)
         return;
+
+    if (!d_drawDebugCut.getValue())
+        return;
+
+    sofa::type::RGBAColor colorL = sofa::type::RGBAColor::red();
+    vparams->drawTool()->drawLine(d_cutPointA.getValue(), d_cutPointB.getValue(), colorL);
 }
 
 } //namespace sofa::infinytoolkit
