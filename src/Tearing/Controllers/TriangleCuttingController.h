@@ -51,7 +51,7 @@ public:
     using Real = typename DataTypes::Real;
 
     using Triangle = TriangleSetTopologyContainer::Triangle;
-    using SeqTriangles = TriangleSetTopologyContainer::SeqTriangles;
+    using SeqTriangles = TriangleSetTopologyContainer::SeqTriangles;    
 
     TriangleCuttingController();
     ~TriangleCuttingController() override;
@@ -64,13 +64,14 @@ public:
 protected:
     void doTest();
 
-    void test_subdivider_1Node();
+    void test_subdivider_1Node(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
+    
+    void test_subdivider_1Edge(const TriangleID triId, const Triangle& theTri, const sofa::type::fixed_array<EdgeID, 3>& edgesInTri, sofa::Size& nbrPoints);
+    void test_subdivider_2Edge(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
+    
+    void test_subdivider_3Edge(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
 
-    void test_subdivider_1Edge();
-    void test_subdivider_2Edge();
-    void test_subdivider_3Edge();
-
-    void test_subdivider_2Node();
+    void test_subdivider_2Node(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
 
     void processSubdividers();
 
