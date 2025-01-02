@@ -99,7 +99,7 @@ protected:
     TriangleSetGeometryAlgorithms<DataTypes>* m_geometryAlgorithms = nullptr;
 
     type::vector< TriangleSubdivider*> m_subviders;
-    type::vector< PointToAdd*> m_pointsToAdd;
+    type::vector< std::shared_ptr<PointToAdd> > m_pointsToAdd;
 };
 
 
