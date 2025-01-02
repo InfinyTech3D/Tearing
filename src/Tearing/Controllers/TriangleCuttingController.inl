@@ -247,16 +247,16 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Node(const TriangleI
 
     // create new points to add
     // Point inside triangle
-    type::vector<SReal> _coefs;
-    type::vector<Topology::PointID> _ancestors;
+    type::vector<SReal> _coefs1;
+    type::vector<Topology::PointID> _ancestors1;
     for (unsigned int i = 0; i < 3; ++i)
     {
-        _ancestors.push_back(theTri[i]);
-        _coefs.push_back(0.3333);
+        _ancestors1.push_back(theTri[i]);
+        _coefs1.push_back(0.3333);
     }
 
-    Topology::PointID uniqID = getUniqueId(theTri[0], theTri[1], theTri[2]);
-    std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
+    Topology::PointID uniqID1 = getUniqueId(theTri[0], theTri[1], theTri[2]);
+    std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID1, nbrPoints, _ancestors1, _coefs1);
     m_pointsToAdd.push_back(PTA);
     subdivider->addPoint(PTA);
     nbrPoints++;
@@ -270,8 +270,8 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Node(const TriangleI
     _ancestors2.push_back(theTri[pAId]); _coefs2.push_back(0.5);
     _ancestors2.push_back(theTri[pBId]); _coefs2.push_back(0.5);
 
-    Topology::PointID uniqID1 = getUniqueId(theTri[pAId], theTri[pBId]);
-    std::shared_ptr<PointToAdd> PTA1 = std::make_shared<PointToAdd>(uniqID1, nbrPoints, _ancestors, _coefs);
+    Topology::PointID uniqID2 = getUniqueId(theTri[pAId], theTri[pBId]);
+    std::shared_ptr<PointToAdd> PTA1 = std::make_shared<PointToAdd>(uniqID2, nbrPoints, _ancestors2, _coefs2);
     m_pointsToAdd.push_back(PTA1);
     subdivider->addPoint(PTA1);
     nbrPoints++;
