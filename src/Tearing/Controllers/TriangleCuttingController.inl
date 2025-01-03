@@ -455,7 +455,14 @@ void TriangleCuttingController<DataTypes>::processCut()
     sofa::type::vector< TriangleID > triangles_list;
     sofa::type::vector< EdgeID > edges_list;
     sofa::type::vector< Real > coords_list;
-    //m_geometryAlgorithms->computeIntersectedPointsList2(ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list);
+    
+    std::cout << "ptA: " << ptA << std::endl;
+    std::cout << "ptB: " << ptB << std::endl;
+    m_geometryAlgorithms->computeIntersectedPointsList2(ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list);
+
+    std::cout << "triangles_list: " << triangles_list << std::endl;
+    std::cout << "edges_list: " << edges_list << std::endl;
+    std::cout << "coords_list: " << coords_list << std::endl;
 
     std::map < TriangleID, std::vector<std::shared_ptr<PointToAdd>> > PTA_map;
     // create map to store point to be added
@@ -539,8 +546,14 @@ void TriangleCuttingController<DataTypes>::processCut()
     }
 
     
-    // split path here
+    std::cout << "m_pointsToAdd: " << m_pointsToAdd.size() << std::endl;
+    for (auto ptA : m_pointsToAdd)
+    {
+        std::cout << ptA->m_uniqueID << " | ancestors: " << ptA->m_ancestors << " | " << ptA->m_coefs << std::endl;
+    }
+
     
+
     // create the list of new triangles around the inside path
     std::map < Topology::PointID, type::vector<TriangleToAdd*> > TTA_map;
     std::map < Topology::PointID, Topology::PointID> cloneMap;
@@ -604,9 +617,9 @@ void TriangleCuttingController<DataTypes>::processCut()
         }
     }
 
-    std::cout << "triangles_list: " << triangles_list << std::endl;
-    std::cout << "edges_list: " << edges_list << std::endl;
-    std::cout << "coords_list: " << coords_list << std::endl;
+    // split path here
+    if (!d_performCut.getValue())
+        return;
 
     processSubdividers();
 }
@@ -639,47 +652,51 @@ void TriangleCuttingController<DataTypes>::draw(const core::visual::VisualParams
     if (!d_drawDebugCut.getValue())
         return;
 
+    const auto stateLifeCycle = vparams->drawTool()->makeStateLifeCycle();
+
     sofa::type::RGBAColor colorL = sofa::type::RGBAColor::red();
     vparams->drawTool()->drawLine(d_cutPointA.getValue(), d_cutPointB.getValue(), colorL);
 
-    std::vector<Vec3> spheresUp, spheresDown;// , float radius, const type::RGBAColor& color
+    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
+
+    std::vector<Vec3> points;
+    for (auto ptA : m_pointsToAdd)
+    {
+        sofa::type::Vec3 vecG = sofa::type::Vec3(0.0, 0.0, 0.0);
+        sofa::Size nbr = ptA->m_ancestors.size();
+        for (int i = 0; i < nbr; ++i)
+        {
+            vecG += x[ptA->m_ancestors[i]] * ptA->m_coefs[i];
+        }
+        points.push_back(vecG);
+    }
+    vparams->drawTool()->drawSpheres(points, 0.1, sofa::type::RGBAColor::red());
+
     std::vector<Vec3> pointsUp, pointsDown;
-    int cpt = 0;
     for (auto triSub : m_subviders)
     {
-        if (cpt == 20000)
-            break;
-       
         const type::vector<TriangleToAdd*>& TTAS = triSub->getTrianglesToAdd();
-        const type::vector<std::shared_ptr<PointToAdd>>& PTAS = triSub->getPointsToAdd();
         for (unsigned int i = 0; i < TTAS.size(); ++i)
         {
             TriangleToAdd* TTA = TTAS[i];
             sofa::type::fixed_array<sofa::type::Vec3, 3> triCoords = TTA->m_triCoords;
-            sofa::type::Vec3 vecG = (triCoords[0] + triCoords[1] + triCoords[2]) / 3;;
             if (TTA->isUp)
             {
                 pointsUp.push_back(triCoords[0]);
                 pointsUp.push_back(triCoords[1]);
                 pointsUp.push_back(triCoords[2]);
-                spheresUp.push_back(vecG);
             }
             else
             {
                 pointsDown.push_back(triCoords[0]);
                 pointsDown.push_back(triCoords[1]);
                 pointsDown.push_back(triCoords[2]);
-                spheresDown.push_back(vecG);
             }
         }
-
-        cpt++;
     }
 
     vparams->drawTool()->drawTriangles(pointsUp, sofa::type::RGBAColor::red());
     vparams->drawTool()->drawTriangles(pointsDown, sofa::type::RGBAColor::green());
-    vparams->drawTool()->drawSpheres(spheresUp, 0.01, sofa::type::RGBAColor::red());
-    vparams->drawTool()->drawSpheres(spheresDown, 0.01, sofa::type::RGBAColor::green());
 
 }
 
