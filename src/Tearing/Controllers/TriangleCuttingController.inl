@@ -388,7 +388,7 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
         _ancestors.push_back(ptA->m_ancestors);
         _baryCoefs.push_back(ptA->m_coefs);
 
-        if (ptA->m_idClone != sofa::InvalidID)
+        if (ptA->m_idClone != sofa::InvalidID && ptA->m_idLocalSnap == sofa::InvalidID)
         {
             _ancestors.push_back(ptA->m_ancestors);
             _baryCoefs.push_back(ptA->m_coefs);
@@ -396,6 +396,7 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
     }
 
     size_t nbrP = _ancestors.size();
+    std::cout << "processSubdividers: nbrP: " << nbrP << std::endl;
 
     // 2. resize the point buffer in the topology
     // warn for the creation of all the points registered to be created
@@ -509,8 +510,27 @@ void TriangleCuttingController<DataTypes>::processCut()
 
         Topology::PointID uniqID = getUniqueId(edge[0], edge[1]);
         std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs, snapThreshold);
-        nbrPoints = PTA->getNextPointIDFromDuplication();
-        m_pointsToAdd.push_back(PTA);
+        bool snapped = PTA->updatePointIDForDuplication();
+        if (snapped)
+        {
+            auto itM = cloneMap.find(PTA->m_idPoint);
+            if (itM == cloneMap.end())
+            {
+                std::cout << "snap2: " << PTA->m_idPoint << " -> " << PTA->m_idClone << std::endl;
+                cloneMap[PTA->m_idPoint] = PTA->m_idClone;
+                m_pointsToAdd.push_back(PTA);
+                nbrPoints++;
+            }
+            else {
+                std::cout << " pass snap:  " << nbrPoints << std::endl;
+                PTA = m_pointsToAdd.back();
+            }
+        }
+        else
+        {
+            m_pointsToAdd.push_back(PTA);
+            nbrPoints = nbrPoints +2;
+        }
 
         const auto& triAEdge = triAEdges[edges_list[i]];
         for (auto triId : triAEdge)
@@ -564,102 +584,103 @@ void TriangleCuttingController<DataTypes>::processCut()
     std::map < Topology::PointID, type::vector<TriangleToAdd*> > TTA_map;
     for (auto triSub : m_subviders)
     {
-        const type::vector<TriangleToAdd*>& TTAS = triSub->getTrianglesToAdd();
-        const type::vector<std::shared_ptr<PointToAdd>>& PTAS = triSub->getPointsToAdd();
+        triSub->cutTriangles(ptA, ptB, triNorm);
+        //const type::vector<TriangleToAdd*>& TTAS = triSub->getTrianglesToAdd();
+        //const type::vector<std::shared_ptr<PointToAdd>>& PTAS = triSub->getPointsToAdd();
 
-        for (unsigned int i = 0; i < TTAS.size(); ++i)
-        {
-            TriangleToAdd* TTA = TTAS[i];
+        //for (unsigned int i = 0; i < TTAS.size(); ++i)
+        //{
+        //    TriangleToAdd* TTA = TTAS[i];
 
-            const sofa::type::fixed_array<sofa::type::Vec3, 3>& triCoords = TTA->m_triCoords;
-            sofa::type::Vec3 m_gravityCenter = (triCoords[0] + triCoords[1] + triCoords[2]) / 3;
-            sofa::type::Vec3 triCutNorm = cutPath.cross(m_gravityCenter - ptA);
-            SReal dotValue = triCutNorm * triNorm;
+        //    const sofa::type::fixed_array<sofa::type::Vec3, 3>& triCoords = TTA->m_triCoords;
+        //    sofa::type::Vec3 m_gravityCenter = (triCoords[0] + triCoords[1] + triCoords[2]) / 3;
+        //    sofa::type::Vec3 triCutNorm = cutPath.cross(m_gravityCenter - ptA);
+        //    SReal dotValue = triCutNorm * triNorm;
 
-            if (dotValue < 0)
-            {
-                TTA->isUp = false; // need to update points
+        //    if (dotValue < 0)
+        //    {
+        //        TTA->isUp = false; // need to update points
 
-                for (unsigned int j = 0; j < PTAS.size(); ++j)
-                {
-                    if (PTAS[j]->m_ancestorType == sofa::geometry::ElementType::TRIANGLE)
-                        continue;
+        //        for (unsigned int j = 0; j < PTAS.size(); ++j)
+        //        {
+        //            if (PTAS[j]->m_ancestorType == sofa::geometry::ElementType::TRIANGLE)
+        //                continue;
 
-                    Topology::PointID idNewPoint = PTAS[j]->m_idPoint;
+        //            Topology::PointID idNewPoint = PTAS[j]->m_idPoint;
 
-                    for (unsigned int k = 0; k < 3; ++k)
-                    {
-                        if (TTA->m_triangle[k] == idNewPoint)
-                        {
-                            TTA->m_triangle[k] = PTAS[j]->m_idClone;
-                            break;
-                        }
-                    }
-                }
+        //            for (unsigned int k = 0; k < 3; ++k)
+        //            {
+        //                if (TTA->m_triangle[k] == idNewPoint)
+        //                {
+        //                    TTA->m_triangle[k] = PTAS[j]->m_idClone;
+        //                    break;
+        //                }
+        //            }
+        //        }
 
-                for (unsigned int k = 0; k < 3; ++k)
-                {
-                    auto itM = cloneMap.find(TTA->m_triangle[k]);
-                    if (itM != cloneMap.end())
-                    {
-                        TTA->m_triangle[k] = itM->second;
-                        break;
-                    }
-                }
-            }
-            else
-                TTA->isUp = true;
+        //        for (unsigned int k = 0; k < 3; ++k)
+        //        {
+        //            auto itM = cloneMap.find(TTA->m_triangle[k]);
+        //            if (itM != cloneMap.end())
+        //            {
+        //                TTA->m_triangle[k] = itM->second;
+        //                break;
+        //            }
+        //        }
+        //    }
+        //    else
+        //        TTA->isUp = true;
 
-            //std::cout << "triangle to Add: " << TTA->m_triangle << std::endl;
-        }
+        //    //std::cout << "triangle to Add: " << TTA->m_triangle << std::endl;
+        //}
     }
 
     // need to split snapped point in existing triangles
     m_addTriangles.clear();
     m_removedTriangles.clear();
-    //for (auto itM : cloneMap)
-    //{
-    //    std::cout << "need to update triangles arount v: " << itM.first << " -> " << itM.second << std::endl;
-    //    const auto& triAV = m_topoContainer->getTrianglesAroundVertex(itM.first);
-    //    for (TriangleID triId : triAV)
-    //    {
-    //        bool found = false;
-    //        for (auto triSub : m_subviders)
-    //        {
-    //            if (triSub->getTriangleIdToSplit() == triId) // already in subdivider
-    //            {
-    //                found = true;
-    //                break;
-    //            }
-    //        }
+    for (auto itM : cloneMap)
+    {
+        std::cout << "need to update triangles arount v: " << itM.first << " -> " << itM.second << std::endl;
+        const auto& triAV = m_topoContainer->getTrianglesAroundVertex(itM.first);
+        for (TriangleID triId : triAV)
+        {
+            bool found = false;
+            for (auto triSub : m_subviders)
+            {
+                if (triSub->getTriangleIdToSplit() == triId) // already in subdivider
+                {
+                    found = true;
+                    break;
+                }
+            }
 
-    //        if (found)
-    //            continue;
+            if (found)
+                continue;
 
-    //        Triangle tri = triangles[triId];            
-    //        sofa::type::Vec3 _gravityCenter = (x[tri[0]] + x[tri[1]] + x[tri[2]]) / 3;
+            Triangle tri = triangles[triId];            
+            sofa::type::Vec3 _gravityCenter = (x[tri[0]] + x[tri[1]] + x[tri[2]]) / 3;
 
-    //        sofa::type::Vec3 triCutNorm = cutPath.cross(_gravityCenter - ptA);
-    //        SReal dotValue = triCutNorm * triNorm;
+            sofa::type::Vec3 triCutNorm = cutPath.cross(_gravityCenter - ptA);
+            SReal dotValue = triCutNorm * triNorm;
 
-    //        if (dotValue < 0)
-    //        {
-    //            for (unsigned int k = 0; k < 3; ++k)
-    //            {
-    //                if (tri[k] == itM.first)
-    //                {
-    //                    tri[k] = itM.second;
-    //                    break;
-    //                }
-    //            }
+            if (dotValue < 0)
+            {
+                for (unsigned int k = 0; k < 3; ++k)
+                {
+                    if (tri[k] == itM.first)
+                    {
+                        tri[k] = itM.second;
+                        break;
+                    }
+                }
 
-    //            std::cout << "add Tri: " << tri << " to replace triId: " << triId << std::endl;
-    //            m_addTriangles.push_back(tri);
-    //            m_removedTriangles.push_back(triId);
-    //        }
-    //    }
-    //    
-    //}
+                std::cout << "add Tri: " << tri << " to replace triId: " << triId << std::endl;
+                m_addTriangles.push_back(tri);
+                m_removedTriangles.push_back(triId);
+            }
+        }
+        
+    }
 
 
     //for (auto it = TTA_map.begin(); it != TTA_map.end(); ++it)
