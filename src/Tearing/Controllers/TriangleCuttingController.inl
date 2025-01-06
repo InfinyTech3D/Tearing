@@ -499,12 +499,32 @@ void TriangleCuttingController<DataTypes>::processCut()
         std::vector<std::shared_ptr<PointToAdd> >& PTAs = PTA_map[triIds[i]];
         PTAs.push_back(PTA);
     }
+
+    std::set <Topology::PointID> psnap;
+    for (unsigned int i = 0; i < edges_list.size(); ++i)
+    {
+        const Topology::Edge& edge = edges[edges_list[i]];
+        if (coords_list[i] > snapThreshold)
+            psnap.insert(edge[0]);
+        else if (1.0 - coords_list[i] > snapThreshold)
+            psnap.insert(edge[1]);
+    }
+    std::cout << "psnap: " << psnap << std::endl;
     
+    for (unsigned int i = 0; i < edges_list.size(); ++i)
+    {
+        const Topology::Edge& edge = edges[edges_list[i]];
+        if (psnap.find(edge[0]) != psnap.end())
+            coords_list[i] = 1.0;
+        else if (psnap.find(edge[1]) != psnap.end())
+            coords_list[i] = 0.0;
+    }
+
     // create PointToAdd from edges
     for (unsigned int i = 0; i < edges_list.size(); ++i)
     {
         const Topology::Edge& edge = edges[edges_list[i]];
-
+        std::cout << "Edge: " << edges_list[i] << " | " << edge << " | " << coords_list[i] << std::endl;
         type::vector<SReal> _coefs = { coords_list[i], 1.0 - coords_list[i] };
         type::vector<Topology::PointID> _ancestors = { edge[0], edge[1] };
 
@@ -516,18 +536,20 @@ void TriangleCuttingController<DataTypes>::processCut()
             auto itM = cloneMap.find(PTA->m_idPoint);
             if (itM == cloneMap.end())
             {
+                std::cout << "Edge: " << edges_list[i] << " snap PTA: " << nbrPoints << std::endl;
                 std::cout << "snap2: " << PTA->m_idPoint << " -> " << PTA->m_idClone << std::endl;
                 cloneMap[PTA->m_idPoint] = PTA->m_idClone;
                 m_pointsToAdd.push_back(PTA);
                 nbrPoints++;
             }
             else {
-                std::cout << " pass snap:  " << nbrPoints << std::endl;
+                std::cout << "Edge: " << edges_list[i] << " pass snap:  " << PTA->m_idPoint << " -> " << PTA->m_idClone << std::endl;
                 PTA = m_pointsToAdd.back();
             }
         }
         else
         {
+            std::cout << "Edge: " << edges_list[i] << " Add PTA: " << nbrPoints << std::endl;
             m_pointsToAdd.push_back(PTA);
             nbrPoints = nbrPoints +2;
         }
