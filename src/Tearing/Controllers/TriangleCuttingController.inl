@@ -412,10 +412,12 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
         for (auto TTA : TTAS)
         {
             trianglesToAdd.push_back(TTA->m_triangle);
+            std::cout << "trianglesToAdd: " << TTA->m_triangle << std::endl;
             _ancestors.push_back(TTA->m_ancestors);
             _baryCoefs.push_back(TTA->m_coefs);
         }
         trianglesToRemove.push_back(triSub->getTriangleIdToSplit());
+        std::cout << "-- trianglesToRemove: " << triSub->getTriangleIdToSplit() << std::endl;
     }
 
     for (auto tri : m_addTriangles)
@@ -502,48 +504,12 @@ void TriangleCuttingController<DataTypes>::processCut()
     {
         const Topology::Edge& edge = edges[edges_list[i]];
 
-        // check snapping
-        if (coords_list[i] > snapThreshold)
-        {
-            auto itM = cloneMap.find(edge[0]);
-            if (itM == cloneMap.end())
-            {
-                cloneMap[edge[0]] = nbrPoints;
-                std::cout << "snap1: " << edge[0] << " -> " << nbrPoints << std::endl;
-                nbrPoints++;
-            }
-            continue;
-        }
-        else if (1.0 - coords_list[i] > snapThreshold)
-        {
-            auto itM = cloneMap.find(edge[1]);
-            if (itM == cloneMap.end())
-            {
-                std::cout << "snap2: " << edge[1] << " -> " << nbrPoints << std::endl;
-                cloneMap[edge[1]] = nbrPoints;
-
-                type::vector<SReal> _coefs = { 0.0, 1.0};
-                type::vector<Topology::PointID> _ancestors = { edge[0], edge[1] };
-
-                Topology::PointID uniqID = getUniqueId(edge[0], edge[1]);
-                std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
-
-                PTA->m_ancestorType = sofa::geometry::ElementType::EDGE;
-                m_pointsToAdd.push_back(PTA);
-                nbrPoints++;
-            }
-            continue;
-        }
-        
         type::vector<SReal> _coefs = { coords_list[i], 1.0 - coords_list[i] };
         type::vector<Topology::PointID> _ancestors = { edge[0], edge[1] };
 
         Topology::PointID uniqID = getUniqueId(edge[0], edge[1]);
-        std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
-
-        PTA->m_ancestorType = sofa::geometry::ElementType::EDGE;
-        PTA->m_idClone = nbrPoints + 1;
-        nbrPoints = nbrPoints + 2;
+        std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs, snapThreshold);
+        nbrPoints = PTA->getNextPointIDFromDuplication();
         m_pointsToAdd.push_back(PTA);
 
         const auto& triAEdge = triAEdges[edges_list[i]];
@@ -644,56 +610,56 @@ void TriangleCuttingController<DataTypes>::processCut()
             else
                 TTA->isUp = true;
 
-            std::cout << "triangle to Add: " << TTA->m_triangle << std::endl;
+            //std::cout << "triangle to Add: " << TTA->m_triangle << std::endl;
         }
     }
 
     // need to split snapped point in existing triangles
     m_addTriangles.clear();
     m_removedTriangles.clear();
-    for (auto itM : cloneMap)
-    {
-        std::cout << "need to update triangles arount v: " << itM.first << " -> " << itM.second << std::endl;
-        const auto& triAV = m_topoContainer->getTrianglesAroundVertex(itM.first);
-        for (TriangleID triId : triAV)
-        {
-            bool found = false;
-            for (auto triSub : m_subviders)
-            {
-                if (triSub->getTriangleIdToSplit() == triId) // already in subdivider
-                {
-                    found = true;
-                    break;
-                }
-            }
+    //for (auto itM : cloneMap)
+    //{
+    //    std::cout << "need to update triangles arount v: " << itM.first << " -> " << itM.second << std::endl;
+    //    const auto& triAV = m_topoContainer->getTrianglesAroundVertex(itM.first);
+    //    for (TriangleID triId : triAV)
+    //    {
+    //        bool found = false;
+    //        for (auto triSub : m_subviders)
+    //        {
+    //            if (triSub->getTriangleIdToSplit() == triId) // already in subdivider
+    //            {
+    //                found = true;
+    //                break;
+    //            }
+    //        }
 
-            if (found)
-                continue;
+    //        if (found)
+    //            continue;
 
-            Triangle tri = triangles[triId];            
-            sofa::type::Vec3 _gravityCenter = (x[tri[0]] + x[tri[1]] + x[tri[2]]) / 3;
+    //        Triangle tri = triangles[triId];            
+    //        sofa::type::Vec3 _gravityCenter = (x[tri[0]] + x[tri[1]] + x[tri[2]]) / 3;
 
-            sofa::type::Vec3 triCutNorm = cutPath.cross(_gravityCenter - ptA);
-            SReal dotValue = triCutNorm * triNorm;
+    //        sofa::type::Vec3 triCutNorm = cutPath.cross(_gravityCenter - ptA);
+    //        SReal dotValue = triCutNorm * triNorm;
 
-            if (dotValue < 0)
-            {
-                for (unsigned int k = 0; k < 3; ++k)
-                {
-                    if (tri[k] == itM.first)
-                    {
-                        tri[k] = itM.second;
-                        break;
-                    }
-                }
+    //        if (dotValue < 0)
+    //        {
+    //            for (unsigned int k = 0; k < 3; ++k)
+    //            {
+    //                if (tri[k] == itM.first)
+    //                {
+    //                    tri[k] = itM.second;
+    //                    break;
+    //                }
+    //            }
 
-                std::cout << "add Tri: " << tri << " to replace triId: " << triId << std::endl;
-                m_addTriangles.push_back(tri);
-                m_removedTriangles.push_back(triId);
-            }
-        }
-        
-    }
+    //            std::cout << "add Tri: " << tri << " to replace triId: " << triId << std::endl;
+    //            m_addTriangles.push_back(tri);
+    //            m_removedTriangles.push_back(triId);
+    //        }
+    //    }
+    //    
+    //}
 
 
     //for (auto it = TTA_map.begin(); it != TTA_map.end(); ++it)
