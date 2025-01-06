@@ -25,7 +25,7 @@
         <RequiredPlugin name="Tearing" />
     </Node>
 
-    <VisualStyle displayFlags="hideCollisionModels showVisual showBehaviorModels" />
+    <VisualStyle displayFlags="hideCollisionModels showVisual showBehaviorModels showWireframe" />
   
     <DefaultAnimationLoop />
     <DefaultVisualManagerLoop />
@@ -48,7 +48,7 @@
         <FixedProjectiveConstraint template="Vec3d" name="fixedConstraint1" indices="@box_roi1.indices"/>
         <TriangularFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.45" youngModulus="600" />
         <TriangleCollisionModel name="default7" selfCollision="true" />  
-        <TriangleCuttingController name="TriCtrl" triAID="55" triBID="85" drawDebugCut="0" performCut="1"/>
+        <TriangleCuttingController name="TriCtrl" triAID="55" triBID="85" drawDebugCut="1" performCut="1"/>
         <Node name="visu">
             <OglModel name="Visual" texcoords="@../loader.texcoords" texturename="textures/colorMap.png"/>
             <IdentityMapping input="@.." output="@." />
