@@ -444,7 +444,7 @@ template <class DataTypes>
 void TriangleCuttingController<DataTypes>::processCut()
 {
     std::cout << "TriangleCuttingController::processCut()" << std::endl;
-   
+
     auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
     const auto& triangles = m_topoContainer->getTriangles();
     const auto& edges = m_topoContainer->getEdges();
@@ -453,12 +453,19 @@ void TriangleCuttingController<DataTypes>::processCut()
     // Get triangle to subdivide information
     type::fixed_array< Topology::TriangleID, 2> triIds = { d_triAID.getValue() , d_triBID.getValue() };
     type::fixed_array< Topology::Triangle, 2> theTris = { triangles[triIds[0]], triangles[triIds[1]] };
+    type::fixed_array < type::vector<SReal>, 2> _coefsTris;
+    _coefsTris[0].push_back(0.1);
+    _coefsTris[0].push_back(0.45);
+    _coefsTris[0].push_back(0.45);
+    _coefsTris[1].push_back(0.3333);
+    _coefsTris[1].push_back(0.3333);
+    _coefsTris[1].push_back(0.3333);
     
     // Get points coordinates
     sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
 
-    const Coord pA = (x[theTris[0][0]] + x[theTris[0][1]] + x[theTris[0][2]]) / 3;
-    const Coord pB = (x[theTris[1][0]] + x[theTris[1][1]] + x[theTris[1][2]]) / 3;
+    const Coord pA = x[theTris[0][0]] * _coefsTris[0][0] + x[theTris[0][1]] * _coefsTris[0][1] + x[theTris[0][2]] * _coefsTris[0][2];
+    const Coord pB = x[theTris[1][0]] * _coefsTris[1][0] + x[theTris[1][1]] * _coefsTris[1][1] + x[theTris[1][2]] * _coefsTris[1][2];
     Vec3 ptA = Vec3(pA[0], pA[1], pA[2]);
     Vec3 ptB = Vec3(pB[0], pB[1], pB[2]);
     d_cutPointA.setValue(ptA);
@@ -482,9 +489,12 @@ void TriangleCuttingController<DataTypes>::processCut()
     SReal snapThreshold = 0.8;
     
     // create points To add from start/end triangles -> TODO see snap possibility later
+    // if coef > threshold snap to this point and update PTA and path. Do we need to duplicate point?
+    // else if coef < 0.1 -> need to snap with edge.  compute intersection in the other direction to find point on edge. Or just substract half coef
+
     for (unsigned int i = 0; i < 2; ++i)
     {
-        type::vector<SReal> _coefs = { 0.3333, 0.3333, 0.3333 };
+        type::vector<SReal> _coefs = _coefsTris[i];
         type::vector<Topology::PointID> _ancestors = { theTris[i][0] , theTris[i][1], theTris[i][2] };
         Topology::PointID uniqID = getUniqueId(theTris[i][0], theTris[i][1], theTris[i][2]);
 
