@@ -384,14 +384,20 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
     // 1. Add all new points and duplicate point from snapped points
     type::vector < type::vector<SReal> > _baryCoefs;
     type::vector < type::vector< Topology::PointID > >_ancestors;
+    auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
 
     for (auto ptA : m_pointsToAdd)
     {
-        _ancestors.push_back(ptA->m_ancestors);
-        _baryCoefs.push_back(ptA->m_coefs);
-
-        if (ptA->m_idClone != sofa::InvalidID && ptA->m_idLocalSnap == sofa::InvalidID)
+        if (ptA->m_idPoint >= nbrPoints)
         {
+            std::cout << ptA->m_idPoint << " | " << nbrPoints << std::endl;
+            _ancestors.push_back(ptA->m_ancestors);
+            _baryCoefs.push_back(ptA->m_coefs);
+        }
+
+        if (ptA->m_idClone != sofa::InvalidID /*&& ptA->m_idLocalSnap == sofa::InvalidID*/) // check here to solve snapping: ptA->m_idClone >= nbrPoints
+        {
+            std::cout << ptA->m_idClone << " clone | " << nbrPoints << std::endl;
             _ancestors.push_back(ptA->m_ancestors);
             _baryCoefs.push_back(ptA->m_coefs);
         }
@@ -411,6 +417,7 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
     _baryCoefs.clear();
     for (auto triSub : m_subviders)
     {
+        std::cout << "-- trianglesToRemove: " << triSub->getTriangleIdToSplit() << std::endl;
         const type::vector<TriangleToAdd*>& TTAS = triSub->getTrianglesToAdd();
         for (auto TTA : TTAS)
         {
@@ -420,7 +427,7 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
             _baryCoefs.push_back(TTA->m_coefs);
         }
         trianglesToRemove.push_back(triSub->getTriangleIdToSplit());
-        std::cout << "-- trianglesToRemove: " << triSub->getTriangleIdToSplit() << std::endl;
+        std::cout << "--------------" << std::endl;
     }
 
     for (auto tri : m_addTriangles)
@@ -508,30 +515,94 @@ void TriangleCuttingController<DataTypes>::processCut()
         {
             if (_coefsTris[i][j] > snapThresholdBorder) // snap to point at start
             {
-                snapV[i] = theTris[i][j];
-                if ( i==0)
-                    std::cout << "Snap at Start: " << snapV[i] << std::endl;
-                else
-                    std::cout << "Snap at End: " << snapV[i] << std::endl;
+                snapV[i] = j;
             }
 
             if (_coefsTris[i][j] < (1_sreal - snapThresholdBorder)) // otherwise snap to edge at start
             {
                 snapE[i] = j;// edgesInTri[triIds[0]][(i + 3) % 3];
-                if (i == 0)
-                    std::cout << "Snap Edge at Start: " << snapE[i] << " -> " << edgesInTri[triIds[i]][(j + 3) % 3] << std::endl;
-                else
-                    std::cout << "Snap Edge at End: " << snapE[i] << " -> " << edgesInTri[triIds[i]][(j + 3) % 3] << std::endl;
             }
         }
     }
 
+    std::cout << "nbrPoints0: " << nbrPoints << std::endl;
     for (unsigned int i = 0; i < 2; ++i)
     {
         if (snapV[i] != InvalidID)
         {
             // snap Vertex is prioritary
-            std::cout << "Snap needed here: " << snapV[i] << std::endl;
+            PointID snapId = snapV[i];
+            PointID vId = theTris[i][snapId];
+
+            std::cout << "Snap needed here: " << vId << std::endl;
+
+            
+            Topology::EdgeID edgeId = edgesInTri[triIds[i]][(snapId + 3) % 3];
+            
+            std::cout << "theTris: " << theTris[i] << std::endl;
+            std::cout << "_coefsTris: " << _coefsTris[i] << std::endl;
+            std::cout << "snapId: " << snapId << std::endl;
+            std::cout << "edgeId: " << edgeId << std::endl;
+
+            if (i == 0 && edgeId != edges_list[0]) // id on next intersected edge
+            {
+                const Topology::Edge& edge = edges[edges_list[0]];
+                if (edge[0] == vId)
+                    coords_list[0] = 1.0;
+                else
+                    coords_list[0] = 0.0;
+                
+                continue;
+            }
+            else if (i == 1 && edgeId != edges_list.back())
+            {
+                const Topology::Edge& edge = edges[edges_list.back()];
+                if (edge[0] == vId)
+                    coords_list.back() = 1.0;
+                else
+                    coords_list.back() = 0.0;
+
+                continue;
+            }
+
+            // point to snap is opposite to interesected edge. We just divid the full triangle
+            type::vector<SReal> _coefs = { 0.0, 0.0, 0.0 };
+            _coefs[snapId] = 1.0;
+            type::vector<Topology::PointID> _ancestors = { theTris[i][0] , theTris[i][1], theTris[i][2] };
+            Topology::PointID uniqID = getUniqueId(theTris[i][0], theTris[i][1], theTris[i][2]);
+
+            std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, vId, _ancestors, _coefs, snapThresholdBorder);
+            m_pointsToAdd.push_back(PTA);
+
+            // add to the map for later retrieving
+            std::vector<std::shared_ptr<PointToAdd> >& PTAs = PTA_map[triIds[i]];
+            PTAs.push_back(PTA);
+            
+
+            int nextTriId = -1;
+            if (i == 0) // start
+            {
+                nextTriId = m_geometryAlgorithms->getTriangleInDirection(vId, -cutPath);
+            }
+            else
+            {
+                nextTriId = m_geometryAlgorithms->getTriangleInDirection(vId, cutPath);
+            }
+            std::cout << "nextTriId: " << nextTriId << std::endl;
+            if (nextTriId != -1 ) // nothing to do, no subdivision as there are triangles all around
+            {
+                PTA->printValue();
+                continue;
+            }
+            else
+            {
+                PTA->m_idPoint = nbrPoints;
+                PTA->updatePointIDForDuplication();                
+                cloneMap[vId] = PTA->m_idClone;
+                nbrPoints++;
+                PTA->printValue();
+            }
+
             continue;
         }
         else if (snapE[i] != InvalidID)
@@ -579,6 +650,7 @@ void TriangleCuttingController<DataTypes>::processCut()
             std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
             m_pointsToAdd.push_back(PTA);
             PTA->printValue();
+
             // add to the map for later retrieving
             const auto& triAEdge = triAEdges[edgeId];
             if (triAEdge.size() == 1) // at border of the mesh, we duplicate it
@@ -618,6 +690,7 @@ void TriangleCuttingController<DataTypes>::processCut()
         Topology::PointID uniqID = getUniqueId(theTris[i][0], theTris[i][1], theTris[i][2]);
 
         std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
+        PTA->printValue();
         PTA->m_ancestorType = sofa::geometry::ElementType::TRIANGLE;
         m_pointsToAdd.push_back(PTA);
 
@@ -627,6 +700,8 @@ void TriangleCuttingController<DataTypes>::processCut()
         // add to the map for later retrieving
         std::vector<std::shared_ptr<PointToAdd> >& PTAs = PTA_map[triIds[i]];
         PTAs.push_back(PTA);
+
+        std::cout << "nbrPoints1: " << nbrPoints << std::endl;
     }
 
     // ProcessUpdate all coef due to the snapping
@@ -659,6 +734,7 @@ void TriangleCuttingController<DataTypes>::processCut()
         Topology::PointID uniqID = getUniqueId(edge[0], edge[1]);
         std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs, snapThreshold);
         bool snapped = PTA->updatePointIDForDuplication();
+        PTA->printValue();
         if (snapped)
         {
             auto itM = cloneMap.find(PTA->m_idPoint);
