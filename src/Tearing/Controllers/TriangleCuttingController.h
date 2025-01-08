@@ -85,6 +85,8 @@ public:
     Data < sofa::type::vector< TriangleID > > d_triangleIds;
     Data < unsigned int > d_triAID;
     Data < unsigned int > d_triBID;
+    Data < Vec3 > d_triACoefs;
+    Data < Vec3 > d_triBCoefs;
 
     /// Bool to perform a cut at the current timestep
     Data <bool> d_performCut;
