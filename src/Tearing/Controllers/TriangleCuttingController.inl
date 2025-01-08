@@ -598,6 +598,17 @@ void TriangleCuttingController<DataTypes>::processCut()
                 nbrPoints++;
             }
 
+            if (i == 0 && edges_list[0] == edgeId) // start snapped with already first interesected edge. Will remove the duplicated occurence.
+            {
+                edges_list.erase(edges_list.begin());
+                coords_list.erase(coords_list.begin());
+            }
+            else if (i == 1 && edges_list.back() == edgeId)
+            {
+                edges_list.pop_back();
+                coords_list.pop_back();
+            }
+
             continue;
         }
 
