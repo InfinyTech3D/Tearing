@@ -78,6 +78,7 @@ protected:
     void processSubdividers();
 
     void processCut();
+    void processCutNew();
     void clearBuffers();
 
 public:

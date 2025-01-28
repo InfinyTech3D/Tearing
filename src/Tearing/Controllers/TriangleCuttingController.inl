@@ -452,6 +452,39 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
 
 
 template <class DataTypes>
+void TriangleCuttingController<DataTypes>::processCutNew()
+{
+    std::cout << "TriangleCuttingController::processCutNew()" << std::endl;
+    
+    // Get triangle to subdivide information
+    const auto& triangles = m_topoContainer->getTriangles();
+    type::fixed_array< Topology::TriangleID, 2> triIds = { d_triAID.getValue() , d_triBID.getValue() };
+    type::fixed_array< Topology::Triangle, 2> theTris = { triangles[triIds[0]], triangles[triIds[1]] };
+    type::fixed_array < Vec3, 2> _coefsTris = { d_triACoefs.getValue(), d_triBCoefs.getValue() };
+
+    // Get points coordinates
+    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
+
+    const Coord pA = x[theTris[0][0]] * _coefsTris[0][0] + x[theTris[0][1]] * _coefsTris[0][1] + x[theTris[0][2]] * _coefsTris[0][2];
+    const Coord pB = x[theTris[1][0]] * _coefsTris[1][0] + x[theTris[1][1]] * _coefsTris[1][1] + x[theTris[1][2]] * _coefsTris[1][2];
+    Vec3 ptA = Vec3(pA[0], pA[1], pA[2]);
+    Vec3 ptB = Vec3(pB[0], pB[1], pB[2]);
+
+    d_cutPointA.setValue(ptA);
+    d_cutPointB.setValue(ptB);
+
+    SReal snapThreshold = 0.8;
+    SReal snapThresholdBorder = 0.8;
+
+    m_pointsToAdd = m_geometryAlgorithms->computeIncisionPathNew(ptA, ptB, triIds[0], triIds[1], snapThreshold, snapThresholdBorder);
+    std::cout << "m_pointsToAdd: " << m_pointsToAdd.size() << std::endl;
+
+    m_pointsToAdd[0]->printValue();
+    std::cout << "TriangleCuttingController::processCutNew() out" << std::endl;
+}
+
+
+template <class DataTypes>
 void TriangleCuttingController<DataTypes>::processCut()
 {
     std::cout << "TriangleCuttingController::processCut()" << std::endl;
@@ -489,7 +522,7 @@ void TriangleCuttingController<DataTypes>::processCut()
     
     std::cout << "ptA: " << ptA << std::endl;
     std::cout << "ptB: " << ptB << std::endl;
-    m_geometryAlgorithms->computeIntersectedPointsList2(ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list);
+    m_geometryAlgorithms->computeIncisionPath(ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list);
 
     std::cout << "triangles_list: " << triangles_list << std::endl;
     std::cout << "edges_list: " << edges_list << std::endl;
@@ -877,6 +910,10 @@ void TriangleCuttingController<DataTypes>::handleEvent(sofa::core::objectmodel::
         {
             processCut();
         }
+        else if (ev->getKey() == 'G')
+        {
+            processCutNew();
+        }
     }
 
 }
@@ -904,6 +941,7 @@ void TriangleCuttingController<DataTypes>::draw(const core::visual::VisualParams
         sofa::Size nbr = ptA->m_ancestors.size();
         for (int i = 0; i < nbr; ++i)
         {
+            
             vecG += x[ptA->m_ancestors[i]] * ptA->m_coefs[i];
         }
         points.push_back(vecG);
