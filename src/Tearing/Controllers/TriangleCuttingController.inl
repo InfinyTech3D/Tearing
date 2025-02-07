@@ -479,7 +479,9 @@ void TriangleCuttingController<DataTypes>::processCutNew()
     m_pointsToAdd = m_geometryAlgorithms->computeIncisionPathNew(ptA, ptB, triIds[0], triIds[1], snapThreshold, snapThresholdBorder);
     std::cout << "m_pointsToAdd: " << m_pointsToAdd.size() << std::endl;
 
-    m_pointsToAdd[0]->printValue();
+    if (d_performCut.getValue())
+        m_geometryAlgorithms->ComputeIncision(ptA, ptB, triIds[0], triIds[1], m_pointsToAdd);
+
     std::cout << "TriangleCuttingController::processCutNew() out" << std::endl;
 }
 
@@ -766,7 +768,7 @@ void TriangleCuttingController<DataTypes>::processCut()
 
         Topology::PointID uniqID = getUniqueId(edge[0], edge[1]);
         std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs, snapThreshold);
-        bool snapped = PTA->updatePointIDForDuplication();
+        bool snapped = true; PTA->updatePointIDForDuplication();
         PTA->printValue();
         if (snapped)
         {
