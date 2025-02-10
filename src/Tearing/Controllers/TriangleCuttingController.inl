@@ -476,11 +476,11 @@ void TriangleCuttingController<DataTypes>::processCutNew()
     SReal snapThreshold = 0.8;
     SReal snapThresholdBorder = 0.8;
 
-    m_pointsToAdd = m_geometryAlgorithms->computeIncisionPathNew(ptA, ptB, triIds[0], triIds[1], snapThreshold, snapThresholdBorder);
+    m_pointsToAdd = m_geometryAlgorithms->computeIncisionPath(ptA, ptB, triIds[0], triIds[1], snapThreshold, snapThresholdBorder);
     std::cout << "m_pointsToAdd: " << m_pointsToAdd.size() << std::endl;
 
     if (d_performCut.getValue())
-        m_geometryAlgorithms->ComputeIncision(ptA, ptB, triIds[0], triIds[1], m_pointsToAdd);
+        m_geometryAlgorithms->InciseAlongPath(ptA, ptB, triIds[0], triIds[1], m_pointsToAdd);
 
     std::cout << "TriangleCuttingController::processCutNew() out" << std::endl;
 }
@@ -524,7 +524,7 @@ void TriangleCuttingController<DataTypes>::processCut()
     
     std::cout << "ptA: " << ptA << std::endl;
     std::cout << "ptB: " << ptB << std::endl;
-    m_geometryAlgorithms->computeIncisionPath(ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list);
+    m_geometryAlgorithms->computeSegmentTriangulationIntersections(ptA, ptB, triIds[0], triIds[1], triangles_list, edges_list, coords_list);
 
     std::cout << "triangles_list: " << triangles_list << std::endl;
     std::cout << "edges_list: " << edges_list << std::endl;
