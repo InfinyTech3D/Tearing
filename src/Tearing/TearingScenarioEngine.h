@@ -75,6 +75,8 @@ protected:
 		
 	void computePerpendicular(Coord dir, Coord& normal);
 	void algoFracturePath() override;
+	void computeFracturePath() override {};
+
 	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc) override;
 
 	/// Value to store scenario fracture path
