@@ -73,9 +73,6 @@ protected:
     using BaseTearingEngine<DataTypes>::d_triangleIdsOverThreshold;
 	
 public:
-	void draw(const core::visual::VisualParams* vparams) override;
-	void handleEvent(sofa::core::objectmodel::Event* event) override;
-	
 	/// Fracture segment endpoints
 	std::vector<Coord> fractureSegmentEndpoints;
 
@@ -100,6 +97,8 @@ protected:
 	bool computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t);
 	
 	void algoFracturePath() override;
+
+	void computeFracturePath() override;
 	
 	/// <summary>
 	/// computes the the intersection of a segment with one endpoint A with DC segment

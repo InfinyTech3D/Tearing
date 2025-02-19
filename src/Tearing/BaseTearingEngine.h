@@ -118,7 +118,9 @@ protected:
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
-	virtual void algoFracturePath()=0;
+	virtual void algoFracturePath() = 0;
+
+	virtual void computeFracturePath() = 0;
 	
 	void computeFractureDirection(Coord principleStressDirection, Coord& fracture_direction);
 

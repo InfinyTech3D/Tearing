@@ -50,8 +50,8 @@ BaseTearingEngine<DataTypes>::BaseTearingEngine()
     , d_stepModulo(initData(&d_stepModulo, 20, "step", "step size"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
 
-    , d_showTearableCandidates(initData(&d_showTearableCandidates, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
-    , d_showFracturePath(initData(&d_showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
+    , d_showTearableCandidates(initData(&d_showTearableCandidates, false, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
+    , d_showFracturePath(initData(&d_showFracturePath, false, "showFracturePath", "Flag activating rendering of fracture path"))
     
     , d_triangleIdsOverThreshold(initData(&d_triangleIdsOverThreshold, "triangleIdsOverThreshold", "triangles with maxStress over threshold value"))
     , d_maxStress(initData(&d_maxStress, Real(0.0), "maxStress", "maxStress"))
@@ -639,24 +639,7 @@ void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* e
         return; // We only launch computation at end of a simulation step
     }
 
-
-    //// Compute the current fracture path
-    //if (!d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
-    //{
-    //    //Recording the endpoints of the fracture segment
-    //    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-    //    Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-    //    Coord Pa = x[m_maxStressVertexIndex];
-
-    //    Coord Pb, Pc;
-    //    fractureSegmentEndpoints.clear();
-    //    if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
-    //    {
-    //        fractureSegmentEndpoints.push_back(Pb);
-    //        fractureSegmentEndpoints.push_back(Pc);
-    //    }
-    //}
-
+    computeFracturePath();
 
     // Hack: we access one output value to force the engine to call doUpdate()
     if (d_maxStress.getValue() == Real(0.0))
@@ -739,6 +722,9 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
         }
         vparams->drawTool()->drawTriangles(verticesIgnore, colorIgnore);
     }
+
+
+
 
 
     if (d_showFracturePath.getValue())

@@ -164,6 +164,30 @@ void TearingEngine<DataTypes>::algoFracturePath()
         this->m_stepCounter = 0;
 }
 
+
+template <class DataTypes>
+void TearingEngine<DataTypes>::computeFracturePath()
+{
+    if (!this->d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
+    {
+        //Recording the endpoints of the fracture segment
+        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+
+        Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
+        Coord Pa = x[m_maxStressVertexIndex];
+
+        Coord Pb, Pc;
+        fractureSegmentEndpoints.clear();
+
+        if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
+        {
+            fractureSegmentEndpoints.push_back(Pb);
+            fractureSegmentEndpoints.push_back(Pc);
+        }
+    }
+}
+
+
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t,Coord& intersection)
 {
@@ -209,173 +233,6 @@ inline bool TearingEngine<DataTypes>::rayTriangleIntersection(Coord A, Coord C, 
     else {
         std::cout << "Intersection parameter is outside the valid range. No intersection." << std::endl;
         return false;
-    }
-}
-
-template <class DataTypes>
-void TearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
-{
-    if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
-    {
-        // Bypass to perform fracture by pressing Ctrl + C
-        if (ev->getKey() == 'C')
-        {
-            algoFracturePath();
-        }
-        return;
-    }
-    else if (!simulation::AnimateEndEvent::checkEventType(event))
-    {
-        return; // We only launch computation at end of a simulation step
-    }
-
-    // Hack: we access one output value to force the engine to call doUpdate()
-    if (this->d_maxStress.getValue() == Real(0.0))
-        return;
-
-    // Compute the current fracture path
-    if (!this->d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
-    {
-        //Recording the endpoints of the fracture segment
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-        
-        Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-        Coord Pa = x[m_maxStressVertexIndex];
-        
-        Coord Pb, Pc;
-        fractureSegmentEndpoints.clear();
-
-        if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
-        {
-            fractureSegmentEndpoints.push_back(Pb);
-            fractureSegmentEndpoints.push_back(Pc);
-        }
-    }
-   
-
-    // Perform fracture every this->d_stepModulo
-    int step = this->d_stepModulo.getValue();
-    if (step == 0) // interactive version
-    {
-        if (this->m_stepCounter > 200 && (this->m_tearingAlgo->getFractureNumber() < this->d_nbFractureMax.getValue()))
-            algoFracturePath();
-    }
-    else if (((this->m_stepCounter % step) == 0) && (this->m_tearingAlgo->getFractureNumber() < this->d_nbFractureMax.getValue()))
-    {
-        algoFracturePath();
-    }
-}
-
-template <class DataTypes>
-void TearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparams)
-{
-    const auto stateLifeCycle = vparams->drawTool()->makeStateLifeCycle();
-
-    if (vparams->displayFlags().getShowWireFrame())
-        vparams->drawTool()->setPolygonMode(0, true);
-
-    if (this->d_showTearableCandidates.getValue())
-    {
-        const VecTriangles& triangleList = this->m_topology->getTriangles();
-        helper::ReadAccessor< Data<vector<Index>> > candidate(d_triangleIdsOverThreshold);
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-
-        std::vector<Vec3> tearTriangles;
-        sofa::type::RGBAColor color(0.0f, 0.0f, 1.0f, 1.0f);  // (R, G, B, alpha)
-        std::vector<Vec3> maxStressTri;
-        sofa::type::RGBAColor color2(0.0f, 1.0f, 0.0f, 1.0f);
-
-        // draw candidates in blue and selected triangle in green
-        if (candidate.size() > 0)
-        {
-            for (unsigned int i = 0; i < candidate.size(); i++)
-            {
-                const Triangle& tri = triangleList[candidate[i]];
-                Coord Pa = x[tri[0]];
-                Coord Pb = x[tri[1]];
-                Coord Pc = x[tri[2]];
-                if (candidate[i] == m_maxStressTriangleIndex)
-                {
-                    maxStressTri.push_back(Pa);
-                    maxStressTri.push_back(Pb);
-                    maxStressTri.push_back(Pc);
-                }
-                else
-                {
-                    tearTriangles.push_back(Pa);
-                    tearTriangles.push_back(Pb);
-                    tearTriangles.push_back(Pc);
-                }
-            }
-
-            vparams->drawTool()->drawTriangles(tearTriangles, color);
-            vparams->drawTool()->drawTriangles(maxStressTri, color2);
-        }
-
-        // draw triangles ignored in red
-        const VecIDs& triIds = this->d_trianglesToIgnore.getValue();
-        std::vector<Vec3> verticesIgnore;
-        sofa::type::RGBAColor colorIgnore(1.0f, 0.0f, 0.0f, 1.0f);
-
-        for (auto triId : triIds)
-        {
-            Coord Pa = x[triangleList[triId][0]];
-            Coord Pb = x[triangleList[triId][1]];
-            Coord Pc = x[triangleList[triId][2]];
-            verticesIgnore.push_back(Pa);
-            verticesIgnore.push_back(Pb);
-            verticesIgnore.push_back(Pc);
-        }
-        vparams->drawTool()->drawTriangles(verticesIgnore, colorIgnore);
-    }
-
-
-    if (this->d_showFracturePath.getValue())
-    {
-        if (m_maxStressTriangleIndex != InvalidID)
-        {
-            helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-            Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-            Coord Pa = x[m_maxStressVertexIndex];
-            Coord fractureDirection;
-            this->computeFractureDirection(principalStressDirection, fractureDirection);
-
-
-            vector<Coord> points;
-            Real norm_fractureDirection = fractureDirection.norm();
-            Coord Pb = Pa + this->d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            Coord Pc = Pa - this->d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            points.push_back(Pb);
-            points.push_back(Pa);
-            points.push_back(Pa);
-            points.push_back(Pc);
-            // Blue == computed fracture path using this->d_fractureMaxLength
-            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
-
-            //--------------------------------------------------------------------------------------------------
-            //Red == computed fracture path on the edge of neighboring triangles          
-            if (fractureSegmentEndpoints.size() != 0)
-            {
-                vparams->drawTool()->drawPoints(fractureSegmentEndpoints, 10, sofa::type::RGBAColor(1, 0.2, 0, 1));
-                vparams->drawTool()->drawLines(fractureSegmentEndpoints, 1, sofa::type::RGBAColor(1, 0.5, 0, 1));
-            }
-
-            //---------------------------------------------------------------------------------------------------
-            // Green == principal stress direction
-            vector<Coord> pointsDir;
-            pointsDir.push_back(Pa);
-
-            pointsDir.push_back(Pa + 100.0 * (principalStressDirection));
-            vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
-            vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
-
-            points.clear();
-
-            const vector<Coord>& path = this->m_tearingAlgo->getFracturePath();
-            if (!path.empty())
-                vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
-        }
     }
 }
 
