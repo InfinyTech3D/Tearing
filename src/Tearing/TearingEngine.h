@@ -71,10 +71,9 @@ protected:
 
     using BaseTearingEngine<DataTypes>::d_input_positions;
     using BaseTearingEngine<DataTypes>::d_triangleIdsOverThreshold;
+	using BaseTearingEngine<DataTypes>::fractureSegmentEndpoints;
 	
 public:
-	/// Fracture segment endpoints
-	std::vector<Coord> fractureSegmentEndpoints;
 
 protected:
 
