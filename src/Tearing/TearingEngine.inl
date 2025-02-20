@@ -168,7 +168,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeFracturePath()
 {
-    if (!this->d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
+    if (this->d_fractureMaxLength.getValue() != 0.0 && m_maxStressTriangleIndex != InvalidID)
     {
         //Recording the endpoints of the fracture segment
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
@@ -184,6 +184,8 @@ void TearingEngine<DataTypes>::computeFracturePath()
             fractureSegmentEndpoints.push_back(Pb);
             fractureSegmentEndpoints.push_back(Pc);
         }
+
+        this->m_stepCounter++;
     }
 }
 
