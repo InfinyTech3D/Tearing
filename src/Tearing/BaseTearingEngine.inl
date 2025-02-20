@@ -162,7 +162,7 @@ void BaseTearingEngine<DataTypes>::doUpdate()
     if (sofa::core::objectmodel::BaseObject::d_componentState.getValue() != sofa::core::objectmodel::ComponentState::Valid)
         return;
 
-    m_stepCounter++;   
+    
    
     if (d_ignoreTriangles.getValue())
     {
@@ -215,7 +215,6 @@ void BaseTearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     candidate.clear();
     maxStress = 0;
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-    
     m_maxStressTriangleIndex = InvalidID;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
@@ -639,6 +638,9 @@ void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* e
         return; // We only launch computation at end of a simulation step
     }
 
+    if (m_tearingAlgo->getFractureNumber() > d_nbFractureMax.getValue())
+        return;
+
     computeFracturePath();
 
     // Hack: we access one output value to force the engine to call doUpdate()
@@ -647,14 +649,9 @@ void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* e
 
     // Perform fracture every d_stepModulo
     int step = d_stepModulo.getValue();
-    if (step == 0) // interactive version
+    if (m_stepCounter > step)
     {
-        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue())){
-            algoFracturePath();
-        }
-    }
-    else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
-    {
+        m_stepCounter = 0;
         algoFracturePath();
     }
 }
