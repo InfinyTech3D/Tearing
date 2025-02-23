@@ -50,8 +50,8 @@ BaseTearingEngine<DataTypes>::BaseTearingEngine()
     , d_stepModulo(initData(&d_stepModulo, 20, "step", "step size"))
     , d_nbFractureMax(initData(&d_nbFractureMax, 15, "nbFractureMax", "number of fracture max done by the algorithm"))
 
-    , d_showTearableCandidates(initData(&d_showTearableCandidates, true, "showTearableTriangle", "Flag activating rendering of fracturable triangle"))
-    , d_showFracturePath(initData(&d_showFracturePath, true, "showFracturePath", "Flag activating rendering of fracture path"))
+    , d_showTearableCandidates(initData(&d_showTearableCandidates, false, "showTearableCandidates", "Flag activating rendering of fracturable triangle"))
+    , d_showFracturePath(initData(&d_showFracturePath, false, "showFracturePath", "Flag activating rendering of fracture path"))
     
     , d_triangleIdsOverThreshold(initData(&d_triangleIdsOverThreshold, "triangleIdsOverThreshold", "triangles with maxStress over threshold value"))
     , d_maxStress(initData(&d_maxStress, Real(0.0), "maxStress", "maxStress"))
@@ -639,24 +639,7 @@ void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* e
         return; // We only launch computation at end of a simulation step
     }
 
-
-    //// Compute the current fracture path
-    //if (!d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
-    //{
-    //    //Recording the endpoints of the fracture segment
-    //    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-    //    Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-    //    Coord Pa = x[m_maxStressVertexIndex];
-
-    //    Coord Pb, Pc;
-    //    fractureSegmentEndpoints.clear();
-    //    if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
-    //    {
-    //        fractureSegmentEndpoints.push_back(Pb);
-    //        fractureSegmentEndpoints.push_back(Pc);
-    //    }
-    //}
-
+    computeFracturePath();
 
     // Hack: we access one output value to force the engine to call doUpdate()
     if (d_maxStress.getValue() == Real(0.0))
@@ -682,8 +665,8 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
 {     
     const auto stateLifeCycle = vparams->drawTool()->makeStateLifeCycle();
 
-    if (vparams->displayFlags().getShowWireFrame())
-        vparams->drawTool()->setPolygonMode(0, true);
+    //if (vparams->displayFlags().getShowWireFrame())
+    vparams->drawTool()->setPolygonMode(0, true);
 
     if (d_showTearableCandidates.getValue())
     {
@@ -741,28 +724,32 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
     }
 
 
+
+
+
     if (d_showFracturePath.getValue())
     {
-        if (m_maxStressTriangleIndex != InvalidID)
+        if (m_maxStressTriangleIndex != InvalidID && fractureSegmentEndpoints.size() == 2)
         {
             helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
             Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
             Coord Pa = x[m_maxStressVertexIndex];
-            Coord fractureDirection;
-            computeFractureDirection(principalStressDirection, fractureDirection);
-            
+            //Coord fractureDirection;
+            //computeFractureDirection(principalStressDirection, fractureDirection);
+            Coord Pb = fractureSegmentEndpoints[0];
+            Coord Pc = fractureSegmentEndpoints[1];
             
             vector<Coord> points;
-            Real norm_fractureDirection = fractureDirection.norm();
-            Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            //Real norm_fractureDirection = fractureDirection.norm();
+            //Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
+            //Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
             points.push_back(Pa);
             points.push_back(Pa);
             points.push_back(Pc);
             // Blue == computed fracture path using d_fractureMaxLength
-            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 0.2, 1, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0, 0.5, 1, 1));
+            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(1, 0.2, 1, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(1, 0.5, 1, 1));
 
             //---------------------------------------------------------------------------------------------------
             // Green == principal stress direction
