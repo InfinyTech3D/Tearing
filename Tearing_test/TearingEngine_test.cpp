@@ -48,7 +48,7 @@ public:
 
     virtual bool testTearing() = 0;
 
-    void SetUp() override
+    void doSetUp() override
     {
         // Load the scene from the xml file
         std::string filePath = std::string(SOFA_TEARING_TEST_SCENES_DIR) + "/" + m_fileName;
@@ -67,7 +67,7 @@ public:
     }
 
     /// Unload the scene
-    void TearDown() override
+    void doTearDown() override
     {
         if (m_instance.root != nullptr)
             sofa::simulation::node::unload(m_instance.root);

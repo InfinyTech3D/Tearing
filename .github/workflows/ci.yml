@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-12, windows-2022]
+        os: [ubuntu-22.04, macos-14, windows-2022]
         sofa_branch: [master]
 
     steps:
@@ -92,6 +92,13 @@ jobs:
             echo "SOFA_PLUGIN_PATH=$WORKSPACE_ARTIFACT_PATH/lib" | tee -a $GITHUB_ENV
           fi
 
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            echo "DYLD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$SOFA_ROOT/plugins/SofaPython3/lib:$DYLD_LIBRARY_PATH" | tee -a $GITHUB_ENV
+          fi
+
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            echo "LD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$SOFA_ROOT/plugins/SofaPython3/lib:$LD_LIBRARY_PATH" | tee -a $GITHUB_ENV
+          fi
 
   deploy:
     name: Deploy artifacts
