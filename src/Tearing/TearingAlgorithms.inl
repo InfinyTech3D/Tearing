@@ -52,6 +52,12 @@ TearingAlgorithms<DataTypes>::~TearingAlgorithms()
 
 
 template <class DataTypes>
+void TearingAlgorithms<DataTypes>::computeFracturePath(const Coord& Pa, Index triId, const Coord Pb, const Coord Pc)
+{
+
+}
+
+template <class DataTypes>
 void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coord Pb, Coord Pc, 
     const Index indexTriangleMaxStress, const Coord principalStressDirection, const VecCoord& input_position)
 {
