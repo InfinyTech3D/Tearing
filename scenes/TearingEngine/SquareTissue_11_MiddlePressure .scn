@@ -51,15 +51,15 @@
 
 		<BoxROI template="Vec3d" name="PullMiddle" box="4.9 4.95 0.1  5.1 5.1 0.1" drawBoxes="1"/>
 		<!--<BoxROI template="Vec3d" name="PulledSide" box="-0.1 0.1 0.1  10.1 -0.1 -0.1" drawBoxes="1"/>-->
-		<ConstantForceField name="CFF" indices="772" forces="0 -300 0" showArrowSize=".01" />        
+		<ConstantForceField name="CFF" indices="772" forces="0 -500 0" showArrowSize=".01" />        
 		
 		<TriangularFEMForceField name="FEM" youngModulus="300" poissonRatio="0.3" method="large" computePrincipalStress="true"/>
         <TriangularBendingSprings name="FEM-Bend" stiffness="300" damping="1.0" />
         <PlaneForceField normal="0 1 0" d="-30" stiffness="100000" showPlane="1" showPlaneSize="20"/>
         
         <TriangleCollisionModel />
-		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="0.1" 
-            step="20" nbFractureMax="40" showFracturePath="1"/>
+		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="15.0" 
+            step="20" nbFractureMax="40" showFracturePath="1" showTearableCandidates="1" fractureMaxLength="0.5"/>
 		
         <Node >
             <OglModel name="Visual" color="gray" />

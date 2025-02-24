@@ -54,6 +54,8 @@ public:
 	virtual ~TearingAlgorithms();
 	
 
+	void computeFracturePath(const Coord& Pa, TriangleID triId, Const Coord Pb, Const Coord Pc);
+
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
