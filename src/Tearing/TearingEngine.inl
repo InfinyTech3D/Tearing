@@ -96,7 +96,7 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc)
 {
-    
+    std::cout << "computeEndPointsNeighboringTriangles" << std::endl;
     bool t_b_ok = false; 
     bool t_c_ok = false;
     //compute fracture direction perpendicular to the principal stress direction
@@ -151,13 +151,17 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Coord Pb;
     Coord Pc;
 
-    if (this->d_fractureMaxLength.getValue())
-        this->computeEndPoints(Pa, principalStressDirection, Pb, Pc);
-    else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
-        return;
+    std::cout << "length: " << this->d_fractureMaxLength.getValue() << std::endl;
+    //if (this->d_fractureMaxLength.getValue() != 0.0) {
+    //    this->computeEndPoints(Pa, principalStressDirection, Pb, Pc);
+    //}
+    //else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
+    //{
+    //    return;
+    //}
 
 
-    this->m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
+    //this->m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
     m_maxStressTriangleIndex = InvalidID;
 
     if (this->d_stepModulo.getValue() == 0) // reset to 0
@@ -168,7 +172,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeFracturePath()
 {
-    if (this->d_fractureMaxLength.getValue() != 0.0 && m_maxStressTriangleIndex != InvalidID)
+    if (m_maxStressTriangleIndex != InvalidID)
     {
         //Recording the endpoints of the fracture segment
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
@@ -179,11 +183,16 @@ void TearingEngine<DataTypes>::computeFracturePath()
         Coord Pb, Pc;
         fractureSegmentEndpoints.clear();
 
-        if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
-        {
-            fractureSegmentEndpoints.push_back(Pb);
-            fractureSegmentEndpoints.push_back(Pc);
+        if (this->d_fractureMaxLength.getValue() == 0.0) {
+            computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc);
         }
+        else 
+        {
+            this->computeEndPoints(Pa, principalStressDirection, Pb, Pc);
+        }
+
+        fractureSegmentEndpoints.push_back(Pb);
+        fractureSegmentEndpoints.push_back(Pc);
 
         this->m_stepCounter++;
     }
