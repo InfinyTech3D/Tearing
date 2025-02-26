@@ -54,7 +54,41 @@ TearingAlgorithms<DataTypes>::~TearingAlgorithms()
 template <class DataTypes>
 void TearingAlgorithms<DataTypes>::computeFracturePath(const Coord& pA, Index triId, const Coord pB, const Coord pC)
 {
+    SReal snapThreshold = 0.8;
+    SReal snapThresholdBorder = 0.8;
 
+    sofa::type::vector< TriangleID > triangles_list;
+    sofa::type::vector< EdgeID > edges_list;
+    sofa::type::vector< Real > coords_list;
+    type::vector< std::shared_ptr<PointToAdd> > _pointsToAdd;
+
+    type::Vec3 ptA = type::Vec3(pA[0], pA[1], pA[2]);
+    type::Vec3 ptB = type::Vec3(pB[0], pB[1], pB[2]);
+    type::Vec3 ptC = type::Vec3(pC[0], pC[1], pC[2]);
+
+    bool validPath = m_triangleGeo->computeSegmentTriangulationIntersections(ptA, ptB, triId, sofa::InvalidID, triangles_list, edges_list, coords_list);
+
+    sofa::type::vector< TriangleID > triangles_list2;
+    sofa::type::vector< EdgeID > edges_list2;
+    sofa::type::vector< Real > coords_list2;
+    bool validPath2 = m_triangleGeo->computeSegmentTriangulationIntersections(ptA, ptC, triId, sofa::InvalidID, triangles_list2, edges_list2, coords_list2);
+
+    std::cout << "--- computeFracturePath --- " << std::endl;
+    std::cout << "triangles_list: " << triangles_list << std::endl;
+    std::cout << "edges_list: " << edges_list << " | " << coords_list << std::endl;
+    std::cout << "triangles_list2: " << triangles_list2 << std::endl;
+    std::cout << "edges_list2: " << edges_list2 << " | " << coords_list2 << std::endl;
+
+
+    TriangleID triIdB = triangles_list.back();
+    TriangleID triIdC = triangles_list2.back();
+
+    _pointsToAdd = m_triangleGeo->computeIncisionPath(ptB, ptC, triIdB, triIdC);
+
+    for (auto pta : _pointsToAdd)
+    {
+        pta->printValue();
+    }
 }
 
 
