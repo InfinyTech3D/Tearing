@@ -103,6 +103,7 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord
     Coord fractureDirection;
     this->computeFractureDirection(direction, fractureDirection);
    
+    this->m_tearingAlgo->computeEndPointsNeighboringTriangles(m_maxStressVertexIndex, Pa, fractureDirection);
 
     Real norm_fractureDirection = fractureDirection.norm();
     Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
@@ -195,6 +196,8 @@ void TearingEngine<DataTypes>::computeFracturePath()
         fractureSegmentEndpoints.push_back(Pc);
 
         this->m_stepCounter++;
+
+        this->m_tearingAlgo->computeFracturePath(Pa, m_maxStressTriangleIndex, Pb, Pc);
     }
 }
 
