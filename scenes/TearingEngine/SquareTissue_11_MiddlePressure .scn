@@ -39,9 +39,9 @@
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
         <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
 		
-		<TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
+		<TriangleSetTopologyContainer  name="Container" src="@meshLoader"  />
 		<TriangleSetTopologyModifier   name="Modifier" />
-		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
+		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" showEdgeIndices="1" showTriangleIndices="1" showIndicesScale="0.001"/>
 		
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="0.15" />
@@ -59,7 +59,7 @@
         
         <TriangleCollisionModel />
 		<TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="15.0" 
-            step="20" nbFractureMax="40" showFracturePath="1" showTearableCandidates="1" fractureMaxLength="0.5"/>
+            step="20" nbFractureMax="40" showFracturePath="1" showTearableCandidates="1" fractureMaxLength="1.0"/>
 		
         <Node >
             <OglModel name="Visual" color="gray" />
