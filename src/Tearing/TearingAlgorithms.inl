@@ -128,6 +128,43 @@ void TearingAlgorithms<DataTypes>::computeFracturePath(const Coord& pA, Index tr
     }
 }
 
+
+
+template <class DataTypes>
+void TearingAlgorithms<DataTypes>::computeFracturePath(FracturePath& my_fracturePath)
+{
+    SReal snapThreshold = 0.8;
+    SReal snapThresholdBorder = 0.8;
+
+    sofa::type::vector< TriangleID > triangles_list;
+    sofa::type::vector< EdgeID > edges_list;
+    sofa::type::vector< Real > coords_list;
+    bool validPath = m_triangleGeo->computeSegmentTriangulationIntersections(my_fracturePath.ptA, my_fracturePath.ptB, my_fracturePath.triIdA, sofa::InvalidID, triangles_list, edges_list, coords_list);
+
+    sofa::type::vector< TriangleID > triangles_list2;
+    sofa::type::vector< EdgeID > edges_list2;
+    sofa::type::vector< Real > coords_list2;
+    bool validPath2 = m_triangleGeo->computeSegmentTriangulationIntersections(my_fracturePath.ptA, my_fracturePath.ptC, my_fracturePath.triIdA, sofa::InvalidID, triangles_list2, edges_list2, coords_list2);
+
+    std::cout << "--- computeFracturePath --- " << std::endl;
+    std::cout << "triangles_list: " << triangles_list << std::endl;
+    std::cout << "edges_list: " << edges_list << " | " << coords_list << std::endl;
+    std::cout << "triangles_list2: " << triangles_list2 << std::endl;
+    std::cout << "edges_list2: " << edges_list2 << " | " << coords_list2 << std::endl;
+
+    my_fracturePath.triIdB = triangles_list.back();
+    my_fracturePath.triIdC = triangles_list2.back();
+
+    my_fracturePath.pointsToAdd = m_triangleGeo->computeIncisionPath(my_fracturePath.ptB, my_fracturePath.ptC, my_fracturePath.triIdB, my_fracturePath.triIdC);
+    my_fracturePath.pathOk = true;
+    for (auto pta : my_fracturePath.pointsToAdd)
+    {
+        pta->printValue();
+    }
+}
+
+
+
 template <class DataTypes>
 void TearingAlgorithms<DataTypes>::algoFracturePath(Coord Pa, Index indexA, Coord Pb, Coord Pc, 
     const Index indexTriangleMaxStress, const Coord principalStressDirection, const VecCoord& input_position)
