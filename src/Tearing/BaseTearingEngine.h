@@ -200,9 +200,6 @@ protected:
 	vector<TriangleTearingInformation> m_triangleInfoTearing; ///< vector of TriangleInfo from FEM
 	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
 
-	/// Fracture segment endpoints
-	std::vector<Coord> fractureSegmentEndpoints; // 3 points: pC, pA, pB
-
 	/// Vector of pointToAdd due to new fracture
 	FracturePath m_fracturePath;
 };

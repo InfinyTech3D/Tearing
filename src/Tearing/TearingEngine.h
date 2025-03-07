@@ -71,7 +71,6 @@ protected:
 
     using BaseTearingEngine<DataTypes>::d_input_positions;
     using BaseTearingEngine<DataTypes>::d_triangleIdsOverThreshold;
-	using BaseTearingEngine<DataTypes>::fractureSegmentEndpoints;
 
 	using BaseTearingEngine<DataTypes>::m_fracturePath;
 	

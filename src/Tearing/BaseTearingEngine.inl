@@ -739,31 +739,18 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
     }
 
 
-
-
-
     if (d_showFracturePath.getValue())
     {
         if (m_maxStressTriangleIndex != InvalidID && m_fracturePath.pathOk)
         {
-            
-            
-            
             helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-
-
 
             Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
             Coord Pa = x[m_maxStressVertexIndex];
-            //Coord fractureDirection;
-            //computeFractureDirection(principalStressDirection, fractureDirection);
-            Coord Pb = fractureSegmentEndpoints[0];
-            Coord Pc = fractureSegmentEndpoints[1];
+            Coord Pb = m_fracturePath.ptB;
+            Coord Pc = m_fracturePath.ptC;
             
             vector<Coord> points;
-            //Real norm_fractureDirection = fractureDirection.norm();
-            //Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            //Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
             points.push_back(Pa);
             points.push_back(Pa);
@@ -781,13 +768,6 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
             vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
             vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
             
-            points.clear();
-
-            const vector<Coord>& path = m_tearingAlgo->getFracturePath();
-            if (!path.empty())
-               vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
-
-
             std::vector<Vec3> pointsPath;
             for (auto ptA : m_fracturePath.pointsToAdd)
             {
