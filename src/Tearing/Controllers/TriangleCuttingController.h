@@ -20,7 +20,7 @@
  *                                                                           *
  * Authors: see Authors.txt                                                  *
  * Further information: https://infinytech3d.com                             *
- ****************************************************************************/#pragma once
+ ****************************************************************************/
 #pragma once
 
 #include <Tearing/config.h>
