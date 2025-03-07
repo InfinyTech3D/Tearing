@@ -22,10 +22,10 @@
         <RequiredPlugin name="Sofa.Component.Visual"/> <!-- Needed to use components [VisualStyle] -->  
         <RequiredPlugin name="Sofa.Component.SolidMechanics.Spring"/> <!-- Needed to use components [TriangularBendingSprings] -->
         <RequiredPlugin name="Sofa.GL.Component.Rendering3D"/> <!-- Needed to use components [OglModel] -->  
-        <RequiredPlugin name="InfinyToolkit" />
+        <RequiredPlugin name="Tearing" />
     </Node>
 
-    <VisualStyle displayFlags="hideCollisionModels showVisual showWireFrame showBehaviorModels" />
+    <VisualStyle displayFlags="hideCollisionModels showVisual showWireframe showBehaviorModels" />
   
     <DefaultAnimationLoop />
     <DefaultVisualManagerLoop />
@@ -48,7 +48,7 @@
         <FixedProjectiveConstraint template="Vec3d" name="fixedConstraint1" indices="@box_roi1.indices"/>
         <TriangularFEMForceField template="Vec3d" name="FEM" method="large" poissonRatio="0.45" youngModulus="600" />
         <TriangleCollisionModel name="default7" selfCollision="true" />       
-        <TriangleCuttingController name="TriCtrl" methodToTest="0"/>
+        <TriangleCuttingController name="TriCtrl" methodToTest="2"/>
     </Node>
 
 </Node>
