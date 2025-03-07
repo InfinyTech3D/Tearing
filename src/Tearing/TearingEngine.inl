@@ -171,7 +171,6 @@ void TearingEngine<DataTypes>::computeFracturePath()
         Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
         Coord Pa = x[m_maxStressVertexIndex];      
         Coord Pb, Pc;
-        fractureSegmentEndpoints.clear();
 
         if (this->d_fractureMaxLength.getValue() == 0.0) {
             computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc);
@@ -187,11 +186,6 @@ void TearingEngine<DataTypes>::computeFracturePath()
         this->m_fracturePath.triIdA = m_maxStressTriangleIndex;
 
         this->m_tearingAlgo->computeFracturePath(this->m_fracturePath);
-
-
-        fractureSegmentEndpoints.push_back(Pb);
-        fractureSegmentEndpoints.push_back(Pc);
-
         this->m_stepCounter++;
 
         //this->m_tearingAlgo->computeFracturePath(Pa, m_maxStressTriangleIndex, Pb, Pc);

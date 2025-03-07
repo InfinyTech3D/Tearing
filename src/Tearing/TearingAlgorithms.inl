@@ -62,6 +62,15 @@ void TearingAlgorithms<DataTypes>::computeFracturePath(const Coord& Pa, Index tr
 template <class DataTypes>
 void TearingAlgorithms<DataTypes>::computeFracturePath(FracturePath& my_fracturePath)
 {
+    std::cout << "--- computeFracturePath --- " << std::endl;
+    std::cout << "my_fracturePath.ptA: " << my_fracturePath.ptA << " | " << my_fracturePath.triIdA << std::endl;
+    if (!validPath || !validPath2) {
+        my_fracturePath.pathOk = false;
+        return;
+    }
+
+    std::cout << "-- computeIncisionPath -- " << std::endl;
+    std::cout << "--- computeFracturePath END --- " << std::endl;
 }
 
 
