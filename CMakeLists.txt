@@ -7,7 +7,9 @@ include(cmake/environment.cmake)
 find_package(Sofa.Component.Topology.Container.Dynamic REQUIRED)
 find_package(Sofa.Component.SolidMechanics.FEM.Elastic REQUIRED)
 find_package(Sofa.Component.MechanicalLoad REQUIRED)
-find_package(Sofa.Component.Constraint REQUIRED)
+find_package(Sofa.Component.Constraint.Projective REQUIRED)
+find_package(Sofa.Component.StateContainer REQUIRED)
+
 
 set(TEARING_SRC_DIR src/Tearing)
 
@@ -26,6 +28,9 @@ set(HEADER_FILES
 
     ${TEARING_SRC_DIR}/TearingScenarioEngine.h
     ${TEARING_SRC_DIR}/TearingScenarioEngine.inl
+    
+    ${TEARING_SRC_DIR}/Controllers/TriangleCuttingController.h
+    ${TEARING_SRC_DIR}/Controllers/TriangleCuttingController.inl
 )
 
 set(SOURCE_FILES
@@ -34,6 +39,8 @@ set(SOURCE_FILES
     ${TEARING_SRC_DIR}/BaseTearingEngine.cpp
     ${TEARING_SRC_DIR}/TearingEngine.cpp
     ${TEARING_SRC_DIR}/TearingScenarioEngine.cpp
+    
+    ${TEARING_SRC_DIR}/Controllers/TriangleCuttingController.cpp
 )
 
 set(README_FILES
@@ -63,9 +70,12 @@ add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES} ${README_FILE
 target_compile_definitions(${PROJECT_NAME} PRIVATE "-DSOFA_BUILD_TEARING_PLUGIN")
 
 # Link the plugin library to its dependencies (other libraries).
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Core)
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.StateContainer)
 target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.Topology.Container.Dynamic)
-target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Core Sofa.Component.SolidMechanics.FEM.Elastic)
-target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.MechanicalLoad Sofa.Component.Constraint)
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.SolidMechanics.FEM.Elastic)
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.MechanicalLoad)
+target_link_libraries(${PROJECT_NAME} PUBLIC Sofa.Component.Constraint.Projective)
      
 target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
 target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>")

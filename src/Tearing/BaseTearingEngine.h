@@ -118,7 +118,9 @@ protected:
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
-	virtual void algoFracturePath()=0;
+	virtual void algoFracturePath() = 0;
+
+	virtual void computeFracturePath() = 0;
 	
 	void computeFractureDirection(Coord principleStressDirection, Coord& fracture_direction);
 
@@ -191,6 +193,10 @@ protected:
 
 	vector<TriangleTearingInformation> m_triangleInfoTearing; ///< vector of TriangleInfo from FEM
 	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
+
+	/// Fracture segment endpoints
+	std::vector<Coord> fractureSegmentEndpoints;
+
 
 };
 		
