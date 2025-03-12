@@ -107,6 +107,9 @@ protected:
 
     type::vector< TriangleSubdivider*> m_subviders;
     type::vector< std::shared_ptr<PointToAdd> > m_pointsToAdd;
+
+    type::vector<Triangle> m_addTriangles;
+    type::vector<TriangleID> m_removedTriangles;
 };
 
 
