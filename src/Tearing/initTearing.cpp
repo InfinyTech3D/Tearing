@@ -24,10 +24,28 @@
 #include <Tearing/initTearing.h>
 
 #include <sofa/core/ObjectFactory.h>
+#include <sofa/helper/system/PluginManager.h>
+
 using sofa::core::ObjectFactory;
 
 namespace sofa::component
 {
+extern void registerTriangleCuttingController(sofa::core::ObjectFactory* factory);
+}
+
+namespace sofa::component::engine
+{
+extern void registerTearingEngine(sofa::core::ObjectFactory* factory);
+extern void registerTearingScenarioEngine(sofa::core::ObjectFactory* factory);
+extern void registerVolumeTearingEngine(sofa::core::ObjectFactory* factory);
+}
+
+
+
+namespace sofa::component
+{
+
+using namespace sofa::component::engine;
 
 extern "C" {
     TEARING_API void initExternalModule();
@@ -43,6 +61,9 @@ void initTearing()
     static bool first = true;
     if (first)
     {
+        // make sure that this plugin is registered into the PluginManager
+        sofa::helper::system::PluginManager::getInstance().registerPlugin(sofa_tostring(SOFA_TARGET));
+
         first = false;
     }
 }
@@ -71,7 +92,7 @@ const char* getModuleLicense()
 
 const char* getModuleDescription()
 {
-    return "tearing plugin";
+    return "SOFA tearing plugin";
 }
 
 const char* getModuleComponentList()
@@ -79,6 +100,14 @@ const char* getModuleComponentList()
     /// string containing the names of the classes provided by the plugin
     static std::string classes = ObjectFactory::getInstance()->listClassesFromTarget(sofa_tostring(SOFA_TARGET));
     return classes.c_str();
+}
+
+void registerObjects(sofa::core::ObjectFactory* factory)
+{
+    registerTriangleCuttingController(factory);
+    registerTearingEngine(factory);
+    registerTearingScenarioEngine(factory);
+    registerVolumeTearingEngine(factory);
 }
 
 

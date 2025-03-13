@@ -32,9 +32,11 @@ namespace sofa::component
 using namespace sofa::defaulttype;
 using namespace sofa::helper;
 
-const int TriangleCuttingControllerClass = core::RegisterObject("TriangleCuttingController test.")
-    .add< TriangleCuttingController<sofa::defaulttype::Vec3Types> >()
-;
+void registerTriangleCuttingController(sofa::core::ObjectFactory* factory)
+{
+    factory->registerObjects(sofa::core::ObjectRegistrationData("TriangleCuttingController test.")
+        .add< TriangleCuttingController<sofa::defaulttype::Vec3Types> >());
+}
 
 template class TEARING_API TriangleCuttingController<sofa::defaulttype::Vec3Types>;
 
