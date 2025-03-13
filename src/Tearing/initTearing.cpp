@@ -54,6 +54,7 @@ extern "C" {
     TEARING_API const char* getModuleLicense();
     TEARING_API const char* getModuleDescription();
     TEARING_API const char* getModuleComponentList();
+    TEARING_API void registerObjects(sofa::core::ObjectFactory* factory);
 }
 
 void initTearing()
