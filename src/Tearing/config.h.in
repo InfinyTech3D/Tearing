@@ -24,7 +24,9 @@
 #pragma once
 
 #include <sofa/config.h>
-#define PLUGIN_VERSION @PROJECT_VERSION@
+#define TEARING_VERSION @PROJECT_VERSION@
+
+#cmakedefine TEARING_USES_MESHREFINEMENT
 
 #ifdef SOFA_BUILD_TEARING
 #  define SOFA_TARGET @PROJECT_NAME@
