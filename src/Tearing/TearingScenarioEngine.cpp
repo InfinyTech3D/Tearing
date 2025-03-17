@@ -30,7 +30,11 @@ namespace sofa::component::engine
 {
 using namespace sofa::defaulttype;
 
-int TearingScenarioEngineClass = core::RegisterObject("Tearing engine based on scenario.").add< TearingScenarioEngine<Vec3Types> >();
+void registerTearingScenarioEngine(sofa::core::ObjectFactory* factory)
+{
+    factory->registerObjects(sofa::core::ObjectRegistrationData("Tearing engine based on scenario.")
+        .add< TearingScenarioEngine<Vec3Types> >());
+}
 
 template class TEARING_API TearingScenarioEngine<Vec3Types>;
 
