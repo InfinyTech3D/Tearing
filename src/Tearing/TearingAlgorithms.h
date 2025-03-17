@@ -28,11 +28,28 @@
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetGeometryAlgorithms.h>
+#include <sofa/component/topology/container/dynamic/TriangleSubdividers.h>
+
 
 namespace sofa::component
 {
 using sofa::component::topology::container::dynamic::TriangleSetTopologyModifier;
 using sofa::component::topology::container::dynamic::TriangleSetGeometryAlgorithms;
+using namespace sofa::component::topology::container::dynamic;
+
+struct FracturePath
+{
+	TriangleID triIdA = InvalidID;
+	TriangleID triIdB = InvalidID;
+	TriangleID triIdC = InvalidID;
+	sofa::type::Vec3 ptA, ptB, ptC;
+
+	// full point to add vector
+	type::vector< std::shared_ptr<PointToAdd> > pointsToAdd;
+
+	bool pathOk = false;
+};
+
 
 template <class DataTypes>
 class TearingAlgorithms
@@ -46,6 +63,7 @@ public:
 	using Edge = sofa::core::topology::BaseMeshTopology::Edge;
 	using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
 	using VecIds = sofa::type::vector<Index>;
+	
 
 	TearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
 		TriangleSetTopologyModifier* _modifier,
@@ -53,6 +71,12 @@ public:
 
 	virtual ~TearingAlgorithms();
 	
+
+	void computeEndPointsNeighboringTriangles(const Index ptAId, const Coord& ptA, const Coord& direction);
+
+	void computeFracturePath(const Coord& pA, Index triId, const Coord pB, const Coord pC);
+
+	void computeFracturePath(FracturePath& my_fracturePath);
 
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
@@ -158,6 +182,10 @@ private:
 
 	/// path created by algoFracturePath
 	sofa::type::vector<Coord> m_fracturePath;
+
+
+
+
 };
 
 	

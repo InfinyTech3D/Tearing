@@ -162,7 +162,7 @@ void BaseTearingEngine<DataTypes>::doUpdate()
     if (sofa::core::objectmodel::BaseObject::d_componentState.getValue() != sofa::core::objectmodel::ComponentState::Valid)
         return;
 
-    m_stepCounter++;   
+    
    
     if (d_ignoreTriangles.getValue())
     {
@@ -215,7 +215,6 @@ void BaseTearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     candidate.clear();
     maxStress = 0;
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-    
     m_maxStressTriangleIndex = InvalidID;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
@@ -330,7 +329,7 @@ void BaseTearingEngine<DataTypes>::updateTriangleInformation()
 
 
 template<class DataTypes>
-inline void BaseTearingEngine<DataTypes>::computeFractureDirection(Coord principleStressDirection,Coord & fracture_direction)
+inline void BaseTearingEngine<DataTypes>::computeFractureDirection(const Coord principleStressDirection,Coord & fracture_direction)
 {
     if (m_maxStressTriangleIndex == InvalidID) {
         fracture_direction = { 0.0, 0.0, 0.0 };
@@ -623,6 +622,22 @@ inline void BaseTearingEngine<DataTypes>::calculate_inverse_distance_weights(std
 
 
 template <class DataTypes>
+void BaseTearingEngine<DataTypes>::clearFracturePath()
+{
+    m_fracturePath.ptA = Vec3();
+    m_fracturePath.ptB = Vec3();
+    m_fracturePath.ptC = Vec3();
+
+    m_fracturePath.triIdA = InvalidID;
+    m_fracturePath.triIdB = InvalidID;
+    m_fracturePath.triIdC = InvalidID;
+
+    m_fracturePath.pointsToAdd.clear();
+    m_fracturePath.pathOk = false;
+}
+
+
+template <class DataTypes>
 void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
 {
     if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
@@ -639,22 +654,22 @@ void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* e
         return; // We only launch computation at end of a simulation step
     }
 
-    computeFracturePath();
+    if (m_tearingAlgo->getFractureNumber() > d_nbFractureMax.getValue()) // reach the end of the engine behavior
+        return;
 
     // Hack: we access one output value to force the engine to call doUpdate()
     if (d_maxStress.getValue() == Real(0.0))
         return;
 
+    // main method to compute the possible fracture if a triangle has reached threshold
+    computeFracturePath();
+
+
     // Perform fracture every d_stepModulo
     int step = d_stepModulo.getValue();
-    if (step == 0) // interactive version
+    if (m_stepCounter > step)
     {
-        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue())){
-            algoFracturePath();
-        }
-    }
-    else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
-    {
+        m_stepCounter = 0;
         algoFracturePath();
     }
 }
@@ -724,25 +739,18 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
     }
 
 
-
-
-
     if (d_showFracturePath.getValue())
     {
-        if (m_maxStressTriangleIndex != InvalidID && fractureSegmentEndpoints.size() == 2)
+        if (m_maxStressTriangleIndex != InvalidID && m_fracturePath.pathOk)
         {
             helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+
             Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
             Coord Pa = x[m_maxStressVertexIndex];
-            //Coord fractureDirection;
-            //computeFractureDirection(principalStressDirection, fractureDirection);
-            Coord Pb = fractureSegmentEndpoints[0];
-            Coord Pc = fractureSegmentEndpoints[1];
+            Coord Pb = m_fracturePath.ptB;
+            Coord Pc = m_fracturePath.ptC;
             
             vector<Coord> points;
-            //Real norm_fractureDirection = fractureDirection.norm();
-            //Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            //Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
             points.push_back(Pa);
             points.push_back(Pa);
@@ -760,11 +768,20 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
             vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
             vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
             
-            points.clear();
+            std::vector<Vec3> pointsPath;
+            for (auto ptA : m_fracturePath.pointsToAdd)
+            {
+                sofa::type::Vec3 vecG = sofa::type::Vec3(0.0, 0.0, 0.0);
+                sofa::Size nbr = ptA->m_ancestors.size();
+                for (int i = 0; i < nbr; ++i)
+                {
 
-            const vector<Coord>& path = m_tearingAlgo->getFracturePath();
-            if (!path.empty())
-               vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
+                    vecG += x[ptA->m_ancestors[i]] * ptA->m_coefs[i];
+                }
+                pointsPath.push_back(vecG);
+            }
+            vparams->drawTool()->drawSpheres(pointsPath, 0.01, sofa::type::RGBAColor::red());
+
         }
     }
 }
