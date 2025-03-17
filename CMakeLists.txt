@@ -50,6 +50,7 @@ set(README_FILES
 find_package(MeshRefinement QUIET)
 if (MeshRefinement_FOUND)
     message("MeshRefinement plugin found - Adding it to ${PROJECT_NAME}")
+    set(TEARING_USES_MESHREFINEMENT ON)
 
     list(APPEND HEADER_FILES 
         ${TEARING_SRC_DIR}/VolumeTearingAlgorithms.h

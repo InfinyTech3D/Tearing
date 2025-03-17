@@ -37,10 +37,12 @@ namespace sofa::component::engine
 {
 extern void registerTearingEngine(sofa::core::ObjectFactory* factory);
 extern void registerTearingScenarioEngine(sofa::core::ObjectFactory* factory);
+
+#ifdef TEARING_USES_MESHREFINEMENT
 extern void registerVolumeTearingEngine(sofa::core::ObjectFactory* factory);
+#endif
+
 }
-
-
 
 namespace sofa::component
 {
@@ -83,7 +85,7 @@ const char* getModuleName()
 
 const char* getModuleVersion()
 {
-    return sofa_tostring(PLUGIN_VERSION);
+    return sofa_tostring(TEARING_VERSION);
 }
 
 const char* getModuleLicense()
@@ -108,7 +110,9 @@ void registerObjects(sofa::core::ObjectFactory* factory)
     registerTriangleCuttingController(factory);
     registerTearingEngine(factory);
     registerTearingScenarioEngine(factory);
+#ifdef TEARING_USES_MESHREFINEMENT
     registerVolumeTearingEngine(factory);
+#endif
 }
 
 
