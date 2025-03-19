@@ -329,19 +329,20 @@ void BaseTearingEngine<DataTypes>::updateTriangleInformation()
 
 
 template<class DataTypes>
-inline void BaseTearingEngine<DataTypes>::computeFractureDirection(const Coord principleStressDirection,Coord & fracture_direction)
+typename DataTypes::Coord BaseTearingEngine<DataTypes>::computeFractureDirection(const Coord& principleStressDirection)
 {
+    Coord fracture_direction = { 0.0, 0.0, 0.0 };
+
     if (m_maxStressTriangleIndex == InvalidID) {
-        fracture_direction = { 0.0, 0.0, 0.0 };
-        return;
+        return fracture_direction;
     }
 
     const Triangle& VertexIndicies = m_topology->getTriangle(m_maxStressTriangleIndex);
-    constexpr size_t numVertices = 3;
 
-    Index B_id = -1, C_id = -1;
+    Index B_id = sofa::InvalidID;
+    Index C_id = sofa::InvalidID;
 
-    for (unsigned int vertex_id = 0; vertex_id < numVertices; vertex_id++)
+    for (sofa::Index vertex_id = 0; vertex_id < 3; vertex_id++)
     {
         if (VertexIndicies[vertex_id] == m_maxStressVertexIndex)
         {
@@ -356,26 +357,21 @@ inline void BaseTearingEngine<DataTypes>::computeFractureDirection(const Coord p
     Coord B = x[B_id];
     Coord C = x[C_id];
 
-    Coord AB = B - A;
-    Coord AC = C - A;
-
-    Coord triangleNormal = sofa::type::cross(AB,AC);
+    Coord triangleNormal = sofa::type::cross(B - A, C - A);
     fracture_direction = sofa::type::cross(triangleNormal, principleStressDirection);
+
+    return fracture_direction;
 }
 
 
 template <class DataTypes>
-void BaseTearingEngine<DataTypes>::computeEndPoints(
-    Coord Pa,
-    Coord direction,
-    Coord& Pb, Coord& Pc)
+void BaseTearingEngine<DataTypes>::computeEndPoints(const Coord& Pa, const Coord& fractureDirection, Coord& Pb, Coord& Pc)
 {
-    Coord fractureDirection;
-    computeFractureDirection(direction, fractureDirection);
     Real norm_fractureDirection = fractureDirection.norm();
     Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 }
+
 
 template <class DataTypes>
 void BaseTearingEngine<DataTypes>::computeTriangleToSkip()

@@ -77,7 +77,7 @@ protected:
 	void algoFracturePath() override;
 	void computeFracturePath() override {};
 
-	void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc) override;
+	void computeEndPoints(const Coord& Pa, const Coord& fractureDirection, Coord& Pb, Coord& Pc) override;
 
 	/// Value to store scenario fracture path
 	Coord m_Pa, m_Pb, m_Pc;
