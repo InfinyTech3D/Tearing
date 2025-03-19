@@ -160,14 +160,16 @@ void TearingEngine<DataTypes>::algoFracturePath()
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeFracturePath()
 {
-    if (m_maxStressTriangleIndex != InvalidID)
+    // frist clear ereything
+    this->clearFracturePath();
+
+    if (m_maxStressTriangleIndex != InvalidID) // we have triangle to start and also a vertex id
     {
         //Recording the endpoints of the fracture segment
         helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
         Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-        Coord Pa = x[m_maxStressVertexIndex];
-
+        Coord Pa = x[m_maxStressVertexIndex];      
         Coord Pb, Pc;
         fractureSegmentEndpoints.clear();
 
@@ -178,6 +180,14 @@ void TearingEngine<DataTypes>::computeFracturePath()
         {
             this->computeEndPoints(Pa, principalStressDirection, Pb, Pc);
         }
+
+        this->m_fracturePath.ptA = type::Vec3(Pa[0], Pa[1], Pa[2]);
+        this->m_fracturePath.ptB = type::Vec3(Pb[0], Pb[1], Pb[2]);
+        this->m_fracturePath.ptC = type::Vec3(Pc[0], Pc[1], Pc[2]);
+        this->m_fracturePath.triIdA = m_maxStressTriangleIndex;
+
+        this->m_tearingAlgo->computeFracturePath(this->m_fracturePath);
+
 
         fractureSegmentEndpoints.push_back(Pb);
         fractureSegmentEndpoints.push_back(Pc);

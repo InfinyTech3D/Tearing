@@ -35,6 +35,20 @@ namespace sofa::component
 using sofa::component::topology::container::dynamic::TriangleSetTopologyModifier;
 using sofa::component::topology::container::dynamic::TriangleSetGeometryAlgorithms;
 
+struct FracturePath
+{
+	TriangleID triIdA = InvalidID;
+	TriangleID triIdB = InvalidID;
+	TriangleID triIdC = InvalidID;
+	sofa::type::Vec3 ptA, ptB, ptC;
+
+	// full point to add vector
+	type::vector< std::shared_ptr<PointToAdd> > pointsToAdd;
+
+	bool pathOk = false;
+};
+
+
 template <class DataTypes>
 class TearingAlgorithms
 {
@@ -55,6 +69,8 @@ public:
 
 	virtual ~TearingAlgorithms();
 	
+	void computeFracturePath(FracturePath& my_fracturePath);
+
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
