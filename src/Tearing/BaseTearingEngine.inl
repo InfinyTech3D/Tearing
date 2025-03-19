@@ -741,7 +741,7 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
 
     if (d_showFracturePath.getValue())
     {
-        if (m_maxStressTriangleIndex != InvalidID && m_fracturePath.pathOk)
+        if (m_maxStressTriangleIndex != InvalidID)
         {
             helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
 
@@ -768,20 +768,22 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
             vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
             vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
             
-            std::vector<Vec3> pointsPath;
-            for (auto ptA : m_fracturePath.pointsToAdd)
+            if (m_fracturePath.pathOk)
             {
-                sofa::type::Vec3 vecG = sofa::type::Vec3(0.0, 0.0, 0.0);
-                sofa::Size nbr = ptA->m_ancestors.size();
-                for (int i = 0; i < nbr; ++i)
+                std::vector<Vec3> pointsPath;
+                for (auto ptA : m_fracturePath.pointsToAdd)
                 {
+                    sofa::type::Vec3 vecG = sofa::type::Vec3(0.0, 0.0, 0.0);
+                    sofa::Size nbr = ptA->m_ancestors.size();
+                    for (int i = 0; i < nbr; ++i)
+                    {
 
-                    vecG += x[ptA->m_ancestors[i]] * ptA->m_coefs[i];
+                        vecG += x[ptA->m_ancestors[i]] * ptA->m_coefs[i];
+                    }
+                    pointsPath.push_back(vecG);
                 }
-                pointsPath.push_back(vecG);
+                vparams->drawTool()->drawSpheres(pointsPath, 0.01, sofa::type::RGBAColor::red());
             }
-            vparams->drawTool()->drawSpheres(pointsPath, 0.01, sofa::type::RGBAColor::red());
-
         }
     }
 }
