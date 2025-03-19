@@ -50,6 +50,67 @@ TearingAlgorithms<DataTypes>::~TearingAlgorithms()
 
 }
 
+
+template<class DataTypes>
+inline TriangleID TearingAlgorithms<DataTypes>::computeIntersectionNeighborTriangle(const Index ptAId, const Coord& ptA, const Coord& normalizedFractureDirection, Coord& ptB)
+{
+    // Get triangle in the fracture direction
+    TriangleID theTriId = m_triangleGeo->getTriangleInDirection(ptAId, normalizedFractureDirection);
+    
+    // If not, could be on the border. Return invalidID
+    if (theTriId > this->m_topology->getNbTriangles() - 1)
+        return sofa::InvalidID;
+
+    // If it exists, get triangle and search for ptAId local index in the triangle
+    const Triangle& theTri = this->m_topology->getTriangle(theTriId);
+    PointID localAId = sofa::InvalidID;
+    for (PointID vertex_id = 0; vertex_id < 3; vertex_id++)
+    {
+        if (theTri[vertex_id] == ptAId)
+        {
+            localAId = vertex_id;
+            break;
+        }
+    }
+
+    // Get the opposite edge
+    EdgeID oppositeEdgeId = this->m_topology->getEdgesInTriangle(theTriId)[localAId];
+    Edge oppositeEdge = this->m_topology->getEdge(oppositeEdgeId);
+
+
+    //Building point B such that to be sure that AB intersects CD, based on "Losange"
+    const Coord pE0 = this->m_triangleGeo->getPointPosition(oppositeEdge[0]);
+    const Coord pE1 = this->m_triangleGeo->getPointPosition(oppositeEdge[1]);
+
+    const Real AC_length = (pE0 - ptA).norm();
+    const Real AD_length = (pE1 - ptA).norm();
+    const Real Length = AC_length + AD_length;
+
+    ptB = ptA + Length * normalizedFractureDirection;
+
+    // Compute intersection on the opposite edge
+    sofa::type::vector<EdgeID> intersectedEdges;
+    sofa::type::vector<Real> baryCoefs;
+    m_triangleGeo->computeSegmentTriangleIntersectionInPlane(ptA, ptB, theTriId, intersectedEdges, baryCoefs);
+
+    bool found = false;
+    for (unsigned int i=0; i< intersectedEdges.size(); ++i)
+    {
+        if (intersectedEdges[i] == oppositeEdgeId)
+        {
+            found = true;
+            ptB = pE0 * baryCoefs[i] + pE1 * (1 - baryCoefs[i]);
+            break;
+        }
+    }
+
+    if (!found)
+        return sofa::InvalidID;
+    else
+        return theTriId;
+}
+
+
 template <class DataTypes>
 void TearingAlgorithms<DataTypes>::computeEndPointsNeighboringTriangles(const Index ptAId, const Coord& ptA, const Coord& direction)
 {
