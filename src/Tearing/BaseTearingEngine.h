@@ -101,6 +101,9 @@ public:
 		Coord principalStressDirection;
 	};
 
+
+	
+
 	/// Link to be set to the topology container in the component graph
 	SingleLink<BaseTearingEngine<DataTypes>, sofa::core::topology::BaseMeshTopology, BaseLink::FLAG_STOREPATH | BaseLink::FLAG_STRONGLINK> l_topology;
 
@@ -122,7 +125,7 @@ protected:
 
 	virtual void computeFracturePath() = 0;
 	
-	void computeFractureDirection(Coord principleStressDirection, Coord& fracture_direction);
+	void computeFractureDirection(const Coord principleStressDirection, Coord& fracture_direction);
 
 	/// <summary>
 	/// compute extremities of fracture Pb and Pc from a start point Pa
@@ -169,6 +172,9 @@ protected:
 	/// </summary>
 	void calculate_inverse_distance_weights(std::vector<double>& result, const Index vertex, sofa::type::vector<TriangleID>& ValidTrianglesAround);
 
+
+	void clearFracturePath();
+
 	/// Access to the topology for a drived class
 	sofa::core::topology::BaseMeshTopology* getTopology() const {
 		return m_topology;
@@ -194,10 +200,8 @@ protected:
 	vector<TriangleTearingInformation> m_triangleInfoTearing; ///< vector of TriangleInfo from FEM
 	int m_stepCounter = 0; ///< counter of doUpdate called by the simulation. Used to put gap between consecutives fractures
 
-	/// Fracture segment endpoints
-	std::vector<Coord> fractureSegmentEndpoints;
-
-
+	/// Vector of pointToAdd due to new fracture
+	FracturePath m_fracturePath;
 };
 		
 }//namespace sofa::component::engine
