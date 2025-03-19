@@ -71,6 +71,8 @@ public:
 		TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo);
 
 	virtual ~TearingAlgorithms();
+	
+	void computeFracturePath(FracturePath& my_fracturePath);
 
 
 	/// <summary>
