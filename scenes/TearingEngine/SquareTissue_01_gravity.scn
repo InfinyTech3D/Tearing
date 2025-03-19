@@ -37,11 +37,12 @@
     <Node name="SquareGravity_FEM">
         <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <CGLinearSolver iterations="25" name="linear solver" tolerance="1.0e-9" threshold="1.0e-9" />
-        <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" createSubelements="true" />
+        <!--<MeshOBJLoader name="meshLoader" filename="mesh/square1.obj" scale="10" createSubelements="true" />-->
+         <MeshGmshLoader name="meshLoader" filename="mesh/square3.msh" scale="10" />
         
         <TriangleSetTopologyContainer  name="Container" src="@meshLoader" fileTopology="" tags=" " />
         <TriangleSetTopologyModifier   name="Modifier" />
-        <TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" />
+        <TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" showIndicesScale="0.002" showEdgeIndices="1" showTriangleIndices="1"/>
         
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="2.0" />
@@ -56,10 +57,10 @@
         <TriangleCollisionModel />
         
         <TearingEngine name="TearingEngine" input_position="@Mo.position" stressThreshold="6.0" 
-            step="30" nbFractureMax="40" showFracturePath="1" fractureMaxLength="1.0"/>
+            step="30" nbFractureMax="40" showFracturePath="1" fractureMaxLength="0.0"/>
 			
         <Node >
-            <OglModel name="Visual" color="red" />
+            <OglModel name="Visual" color="white" />
             <IdentityMapping input="@.." output="@Visual" />
         </Node>
     </Node>
