@@ -28,14 +28,12 @@
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetGeometryAlgorithms.h>
-#include <sofa/component/topology/container/dynamic/TriangleSubdividers.h>
 
 
 namespace sofa::component
 {
 using sofa::component::topology::container::dynamic::TriangleSetTopologyModifier;
 using sofa::component::topology::container::dynamic::TriangleSetGeometryAlgorithms;
-using namespace sofa::component::topology::container::dynamic;
 
 template <class DataTypes>
 class TearingAlgorithms
@@ -161,9 +159,6 @@ private:
 
 	/// path created by algoFracturePath
 	sofa::type::vector<Coord> m_fracturePath;
-
-	/// Vector of pointToAdd due to new fracture
-	type::vector< std::shared_ptr<PointToAdd> > m_pointsToAdd;
 
 };
 
