@@ -756,8 +756,8 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
             points.push_back(Pa);
             points.push_back(Pc);
             // Blue == computed fracture path using d_fractureMaxLength
-            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(1, 0.2, 1, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(1, 0.5, 1, 1));
+            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 1, 0, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0.2, 1, 0, 1));
 
             //---------------------------------------------------------------------------------------------------
             // Green == principal stress direction
@@ -765,8 +765,8 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
             pointsDir.push_back(Pa);
            
             pointsDir.push_back(Pa + 100.0*(principalStressDirection));
-            vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
-            vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
+            vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.4, 1));
+            vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.8, 1));
             
             if (m_fracturePath.pathOk)
             {
