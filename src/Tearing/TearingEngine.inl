@@ -41,57 +41,6 @@ using sofa::type::Vec3;
 // --------------------------------------------------------------------------------------
 // --- Computation methods
 // --------------------------------------------------------------------------------------
-template<class DataTypes>
-inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t)
-{
-    SOFA_UNUSED(Pa);
-
-    if (m_maxStressVertexIndex == InvalidID)
-        return false;    
-
-    // Get Geometry Algorithm
-    TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo = nullptr;
-    this->m_topology->getContext()->get(_triangleGeo);
-    if (!_triangleGeo)
-    {
-        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
-        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
-        return false;
-    }
-
-
-    Index triangle_id = _triangleGeo->getTriangleInDirection(m_maxStressVertexIndex, normalizedFractureDirection);
-    if (triangle_id > this->m_topology->getNbTriangles() - 1)
-        return false;
-
-
-    const Triangle& VertexIndicies = this->m_topology->getTriangle(triangle_id);
-
-    constexpr size_t numVertices = 3;
-    Index B_id = -1, C_id = -1;
-
-    for (unsigned int vertex_id = 0; vertex_id < numVertices; vertex_id++)
-    {
-        if (VertexIndicies[vertex_id] == m_maxStressVertexIndex)
-        {
-            B_id = VertexIndicies[(vertex_id + 1) % 3];
-            C_id = VertexIndicies[(vertex_id + 2) % 3];
-            break;
-        }
-
-    }
-
-    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-    Coord A = x[m_maxStressVertexIndex];
-    Coord B = x[B_id];
-    Coord C = x[C_id];
-
-    if (rayTriangleIntersection(A, B, C, normalizedFractureDirection, t, Pb))
-        return true;
-    else
-        return false;
-
-}
 
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(const Coord& Pa, const Coord& fractureDirection, Coord& Pb, Coord& Pc)
@@ -100,22 +49,18 @@ inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(const
     bool t_c_ok = false;
    
     Coord dir_b = fractureDirection / fractureDirection.norm();
-    
-    Real t_b;
-    if (computeIntersectionNeighborTriangle(dir_b,Pa, Pb, t_b))
-        t_b_ok = true;
+    TriangleID t_b = this->m_tearingAlgo->computeIntersectionNeighborTriangle(m_maxStressVertexIndex, Pa, dir_b, Pb);
 
-    
     Coord dir_c = -dir_b;
-    Real t_c;
-    if (computeIntersectionNeighborTriangle(dir_c,Pa,Pc, t_c))
-        t_c_ok = true;
+    TriangleID t_c = this->m_tearingAlgo->computeIntersectionNeighborTriangle(m_maxStressVertexIndex, Pa, dir_c, Pc);
 
-    if (!(t_b_ok && t_c_ok))
+
+    if (t_b == sofa::InvalidID || t_c == sofa::InvalidID)
     {
         msg_warning() << "Not able to build the fracture path through neighboring triangles.";
         return false;
     }
+
     return true;
 }
 
@@ -172,7 +117,9 @@ void TearingEngine<DataTypes>::computeFracturePath()
 
     if (this->d_fractureMaxLength.getValue() == 0.0) 
     {
-        this->computeEndPointsNeighboringTriangles(Pa, fractureDirection, Pb, Pc);
+        bool checkEndsPoints = this->computeEndPointsNeighboringTriangles(Pa, fractureDirection, Pb, Pc);
+        if (!checkEndsPoints)
+            return;
     }
     else
     {
