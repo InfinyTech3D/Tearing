@@ -96,7 +96,6 @@ inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord 
 template<class DataTypes>
 inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc)
 {
-    std::cout << "computeEndPointsNeighboringTriangles" << std::endl;
     bool t_b_ok = false; 
     bool t_c_ok = false;
     //compute fracture direction perpendicular to the principal stress direction
@@ -152,17 +151,7 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Coord Pb;
     Coord Pc;
 
-    std::cout << "length: " << this->d_fractureMaxLength.getValue() << std::endl;
-    //if (this->d_fractureMaxLength.getValue() != 0.0) {
-    //    this->computeEndPoints(Pa, principalStressDirection, Pb, Pc);
-    //}
-    //else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
-    //{
-    //    return;
-    //}
-
-
-    //this->m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
+    this->m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
     m_maxStressTriangleIndex = InvalidID;
 
     if (this->d_stepModulo.getValue() == 0) // reset to 0

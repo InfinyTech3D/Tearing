@@ -57,11 +57,6 @@ public:
 
 	virtual ~TearingAlgorithms();
 	
-
-	void computeEndPointsNeighboringTriangles(const Index ptAId, const Coord& ptA, const Coord& direction);
-
-	void computeFracturePath(const Coord& pA, Index triId, const Coord pB, const Coord pC);
-
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
