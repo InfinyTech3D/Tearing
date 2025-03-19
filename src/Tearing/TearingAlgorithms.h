@@ -81,8 +81,6 @@ public:
 	/// @return t - a parameter needed to calculate Pb
 	TriangleID computeIntersectionNeighborTriangle(const Index ptAId, const Coord& ptA, const Coord& normalizedFractureDirection, Coord& Pb);
 
-	void computeEndPointsNeighboringTriangles(const Index ptAId, const Coord& ptA, const Coord& direction);
-
 	void computeFracturePath(const Coord& pA, Index triId, const Coord pB, const Coord pC);
 
 	void computeFracturePath(FracturePath& my_fracturePath);

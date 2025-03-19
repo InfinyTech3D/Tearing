@@ -112,44 +112,6 @@ inline TriangleID TearingAlgorithms<DataTypes>::computeIntersectionNeighborTrian
 
 
 template <class DataTypes>
-void TearingAlgorithms<DataTypes>::computeEndPointsNeighboringTriangles(const Index ptAId, const Coord& ptA, const Coord& direction)
-{
-    //Index triId = m_triangleGeo->getTriangleInDirection(ptAId, direction);
-    //sofa::type::vector<EdgeID> intersectedEdges;
-    //sofa::type::vector<Real> baryCoefs;
-    //if (triId != -1)
-    //{
-    //    const Triangle tri = m_topology->getTriangle(triId);
-    //    type::Vec3 vA = type::Vec3(ptA[0], ptA[1], ptA[2]);
-    //    type::Vec3 vB = vA + direction * 1000;
-    //    const auto eInTri = m_topology->getEdgesInTriangle(triId);
-    //    Index vIntri = m_topology->getVertexIndexInTriangle(tri, ptAId);
-    //    Index nextEdgeId = eInTri[vIntri];
-    //    const Edge& theEdge = this->m_topology->getEdge(nextEdgeId);
-
-    //    getEdgeVertexCoordinates(const EdgeID i, Coord[2])
-
-    //    type::Vec2 baryCoords(type::NOINIT);
-    //    intersected = sofa::geometry::Edge::intersectionWithEdge(p0, p1, vA, vB, baryCoords);
-    //    
-    //    m_triangleGeo->computeEdgeSegmentIntersection(nextEdgeId, vA, vB)
-    //    //m_triangleGeo->computeSegmentTriangleIntersectionInPlane(vA, vB, triId, intersectedEdges, baryCoefs);
-    //    std::cout << "triId: " << triId << std::endl;
-    //    std::cout << "intersectedEdges: " << intersectedEdges << " | " << baryCoefs << std::endl;
-    //}
-
-    //Index triId2 = m_triangleGeo->getTriangleInDirection(ptAId, -direction);
-    //if (triId2 != -1)
-    //{
-    //    type::Vec3 vA = type::Vec3(ptA[0], ptA[1], ptA[2]);
-    //    type::Vec3 vB = vA - direction * 1000;
-    //    m_triangleGeo->computeSegmentTriangleIntersectionInPlane(vA, vB, triId2, intersectedEdges, baryCoefs);
-    //    std::cout << "triId2: " << triId2 << std::endl;
-    //    std::cout << "intersectedEdges: " << intersectedEdges << " | " << baryCoefs << std::endl;
-    //}
-}
-
-template <class DataTypes>
 void TearingAlgorithms<DataTypes>::computeFracturePath(const Coord& pA, Index triId, const Coord pB, const Coord pC)
 {
     SReal snapThreshold = 0.8;

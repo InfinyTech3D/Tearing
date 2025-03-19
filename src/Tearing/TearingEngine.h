@@ -99,7 +99,7 @@ protected:
 	/// @param direction - normalized fracture direction
 	/// @return t - a parameter needed to calculate Pb
 	/// @return intersection - coordinate of the intersection point
-    bool rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t, Coord& intersection);
+    //bool rayTriangleIntersection(Coord A, Coord C, Coord D, Coord direction, Real& t, Coord& intersection);
 
 	
 	/// Link to be set to the topology container in the component graph
