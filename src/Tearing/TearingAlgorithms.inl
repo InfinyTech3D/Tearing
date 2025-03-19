@@ -24,6 +24,7 @@
 #pragma once
 #include <Tearing/TearingAlgorithms.h>
 
+
 namespace sofa::component
 {
 

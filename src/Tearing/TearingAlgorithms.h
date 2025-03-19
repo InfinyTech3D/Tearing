@@ -29,6 +29,7 @@
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetGeometryAlgorithms.h>
 
+
 namespace sofa::component
 {
 using sofa::component::topology::container::dynamic::TriangleSetTopologyModifier;
@@ -46,6 +47,7 @@ public:
 	using Edge = sofa::core::topology::BaseMeshTopology::Edge;
 	using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
 	using VecIds = sofa::type::vector<Index>;
+	
 
 	TearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
 		TriangleSetTopologyModifier* _modifier,
@@ -53,7 +55,6 @@ public:
 
 	virtual ~TearingAlgorithms();
 	
-
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
 	/// </summary>
@@ -158,6 +159,7 @@ private:
 
 	/// path created by algoFracturePath
 	sofa::type::vector<Coord> m_fracturePath;
+
 };
 
 	
