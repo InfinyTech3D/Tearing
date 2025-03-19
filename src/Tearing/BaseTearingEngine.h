@@ -125,16 +125,16 @@ protected:
 
 	virtual void computeFracturePath() = 0;
 	
-	void computeFractureDirection(const Coord principleStressDirection, Coord& fracture_direction);
+	Coord computeFractureDirection(const Coord& principleStressDirection);
 
 	/// <summary>
 	/// compute extremities of fracture Pb and Pc from a start point Pa
 	/// </summary>
 	/// @param Pa - point with maxStress where fracture start
-	/// @param direction - direction of maximum principal stress
+	/// @param fractureDirection - direction of fracture
 	/// @return Pb - one of the extremities of fracture
 	/// @return Pc - one of the extremities of fracture
-	virtual void computeEndPoints(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	virtual void computeEndPoints(const Coord& Pa, const Coord& fractureDirection, Coord& Pb, Coord& Pc);
 
 	/// <summary>
 	/// compute ignored triangle at start of the tearing algo
