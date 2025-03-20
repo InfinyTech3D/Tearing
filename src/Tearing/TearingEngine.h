@@ -81,20 +81,11 @@ protected:
 	/// computes the extremities of fracture Pb and Pc on the edge of neighboring triangles
 	/// </summary>
 	/// @param Pa - the point where the fracture starts
-	/// @param direction - principle stress direction
+	/// @param fractureDirection - fracture direction
 	/// @return Pb - one of the extremities of fracture
 	/// @return Pc - one of the extremities of fracture
-	bool computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc);
+	bool computeEndPointsNeighboringTriangles(const Coord& Pa, const Coord& fractureDirection, Coord& Pb, Coord& Pc);
 
-	/// <summary>
-	/// computes the extremities of the (normalized) fracture PbPa on the edge of the triangle
-	/// </summary>
-	/// @param Pa - the point where the fracture starts
-	/// @param normalizedFractureDirection - normalized fracture direction
-	/// @return Pb - one of the extremities of fracture
-	/// @return t - a parameter needed to calculate Pb
-	bool computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t);
-	
 	void algoFracturePath() override;
 
 	void computeFracturePath() override;

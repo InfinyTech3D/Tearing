@@ -106,17 +106,14 @@ inline void TearingScenarioEngine<DataTypes>::computePerpendicular(Coord dir, Co
 }
 
 template <class DataTypes>
-void TearingScenarioEngine<DataTypes>::computeEndPoints(
-    Coord Pa,
-    Coord dir,
-    Coord& Pb, Coord& Pc)
+void TearingScenarioEngine<DataTypes>::computeEndPoints(const Coord& Pa, const Coord& fractureDirection, Coord& Pb, Coord& Pc)
 {
     const Real& alpha = d_startLength.getValue();
         
-    Real norm_dir = dir.norm();
+    Real norm_dir = fractureDirection.norm();
        
-    Pb = Pa + alpha/norm_dir * dir;
-    Pc = Pa - alpha /norm_dir * dir;
+    Pb = Pa + alpha/norm_dir * fractureDirection;
+    Pc = Pa - alpha /norm_dir * fractureDirection;
 }
 
 template <class DataTypes>
