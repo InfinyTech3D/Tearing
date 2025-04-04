@@ -78,6 +78,7 @@ protected:
     void processSubdividers();
 
     void processCut();
+    void processCutNew();
     void clearBuffers();
 
 public:
@@ -85,6 +86,8 @@ public:
     Data < sofa::type::vector< TriangleID > > d_triangleIds;
     Data < unsigned int > d_triAID;
     Data < unsigned int > d_triBID;
+    Data < Vec3 > d_triACoefs;
+    Data < Vec3 > d_triBCoefs;
 
     /// Bool to perform a cut at the current timestep
     Data <bool> d_performCut;
@@ -107,6 +110,9 @@ protected:
 
     type::vector< TriangleSubdivider*> m_subviders;
     type::vector< std::shared_ptr<PointToAdd> > m_pointsToAdd;
+
+    type::vector<Triangle> m_addTriangles;
+    type::vector<TriangleID> m_removedTriangles;
 };
 
 
