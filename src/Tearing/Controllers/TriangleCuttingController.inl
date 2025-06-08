@@ -93,7 +93,7 @@ template <class DataTypes>
 void TriangleCuttingController<DataTypes>::doTest()
 {
     // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
+    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::vec_id::read_access::position)->getValue();
     sofa::Size nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
     
     // Get triangle to subdivide information
@@ -443,7 +443,7 @@ void TriangleCuttingController<DataTypes>::processCut()
     type::fixed_array< Topology::Triangle, 2> theTris = { triangles[triIds[0]], triangles[triIds[1]] };
     
     // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
+    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::vec_id::read_access::position)->getValue();
 
     const Coord pA = (x[theTris[0][0]] + x[theTris[0][1]] + x[theTris[0][2]]) / 3;
     const Coord pB = (x[theTris[1][0]] + x[theTris[1][1]] + x[theTris[1][2]]) / 3;

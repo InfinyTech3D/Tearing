@@ -330,7 +330,7 @@ void VolumeTearingEngine<DataTypes>::updateTetrahedronInformation()
 {
     VecTetrahedra tetrahedraList;
     tetrahedraList = m_topology->getTetrahedra();
-    d_tetrahedronFEMInfo = m_tetraFEM->tetrahedronInfo.getValue();
+    d_tetrahedronFEMInfo = m_tetraFEM->d_tetrahedronInfo.getValue();
     helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
 
     if (tetraFEMInf.size() != tetrahedraList.size())
