@@ -41,7 +41,7 @@
 		
 		<TriangleSetTopologyContainer  name="Container" src="@meshLoader"  />
 		<TriangleSetTopologyModifier   name="Modifier" />
-		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" showEdgeIndices="1" showTriangleIndices="1" showIndicesScale="0.001"/>
+		<TriangleSetGeometryAlgorithms name="GeomAlgo"   template="Vec3d" showEdgeIndices="1" showTriangleIndices="1" showIndicesScale="0.001" showPointIndices="1"/>
 		
         <MechanicalObject name="Mo"/>
         <DiagonalMass massDensity="0.15" />
