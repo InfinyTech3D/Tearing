@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(Tearing VERSION 1.0)
+project(Tearing VERSION 1.0 LANGUAGES CXX)
 
 include(cmake/environment.cmake)
 
@@ -46,6 +46,11 @@ set(SOURCE_FILES
 set(README_FILES
     README.md
 )
+
+find_package(SofaCUDA QUIET)
+if (SofaCUDA_FOUND)
+    enable_language(CUDA)
+endif()
 
 find_package(MeshRefinement QUIET)
 if (MeshRefinement_FOUND)
