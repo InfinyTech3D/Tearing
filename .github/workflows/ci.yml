@@ -21,8 +21,9 @@ jobs:
           sofa_root: ${{ github.workspace }}/sofa
           sofa_version: ${{ matrix.sofa_branch }}
           sofa_scope: 'standard'
+
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: ${{ env.WORKSPACE_SRC_PATH }}        
       
@@ -91,7 +92,7 @@ jobs:
           else
             echo "SOFA_PLUGIN_PATH=$WORKSPACE_ARTIFACT_PATH/lib" | tee -a $GITHUB_ENV
           fi
-
+          
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             echo "DYLD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$SOFA_ROOT/plugins/SofaPython3/lib:$DYLD_LIBRARY_PATH" | tee -a $GITHUB_ENV
           fi
@@ -99,6 +100,18 @@ jobs:
           if [[ "$RUNNER_OS" == "Linux" ]]; then
             echo "LD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$SOFA_ROOT/plugins/SofaPython3/lib:$LD_LIBRARY_PATH" | tee -a $GITHUB_ENV
           fi
+
+      - name: Launch test 
+        id: tests
+        uses: sofa-framework/sofa-test-action@v1.0
+        with:
+          sofa_root: ${{ github.workspace }}/sofa
+          sofa_version: ${{ steps.sofa.outputs.sofa_version }}
+          src_dir: ${{ env.WORKSPACE_SRC_PATH }}
+          build_dir: ${{ env.WORKSPACE_BUILD_PATH }}
+          python_exe: ${{ steps.sofa.outputs.python_exe }}
+          output_dir: ${{ github.workspace }}/tests-results_dir
+          nb_parallel_threads: '4'
 
   deploy:
     name: Deploy artifacts
