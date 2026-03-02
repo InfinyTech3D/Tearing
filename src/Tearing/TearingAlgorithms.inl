@@ -1,28 +1,25 @@
 /*****************************************************************************
- *                 - Copyright (C) - 2020 - InfinyTech3D -                   *
+ *                - Copyright (C) 2020-Present InfinyTech3D -                *
  *                                                                           *
  * This file is part of the Tearing plugin for the SOFA framework.           *
  *                                                                           *
- * Commercial License Usage:                                                 *
- * Licensees holding valid commercial license from InfinyTech3D may use this *
- * file in accordance with the commercial license agreement provided with    *
- * the Software or, alternatively, in accordance with the terms contained in *
- * a written agreement between you and InfinyTech3D. For further information *
- * on the licensing terms and conditions, contact: contact@infinytech3d.com  *
+ * This file is dual-licensed:                                               *
  *                                                                           *
- * GNU General Public License Usage:                                         *
- * Alternatively, this file may be used under the terms of the GNU General   *
- * Public License version 3. The licenses are as published by the Free       *
- * Software Foundation and appearing in the file LICENSE.GPL3 included in    *
- * the packaging of this file. Please review the following information to    *
- * ensure the GNU General Public License requirements will be met:           *
- * https://www.gnu.org/licenses/gpl-3.0.html.                                *
+ * 1) Commercial License:                                                    *
+ *      This file may be used under the terms of a valid commercial license  *
+ *      agreement provided wih the software by InfinyTech3D.                 *
  *                                                                           *
- * Authors: see Authors.txt                                                  *
+ * 2) GNU General Public License (GPLv3) Usage                               *
+ *      Alternatively, this file may be used under the terms of the          *
+ *      GNU General Public License version 3 as published by the             *
+ *      Free Software Foundation: https://www.gnu.org/licenses/gpl-3.0.html  *
+ *                                                                           *
+ * Contact: contact@infinytech3d.com                                         *
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
 #pragma once
 #include <Tearing/TearingAlgorithms.h>
+
 
 namespace sofa::component
 {
@@ -48,6 +45,83 @@ TearingAlgorithms<DataTypes>::~TearingAlgorithms()
 {
 
 }
+
+
+template<class DataTypes>
+inline TriangleID TearingAlgorithms<DataTypes>::computeIntersectionNeighborTriangle(const Index ptAId, const Coord& ptA, const Coord& normalizedFractureDirection, Coord& ptB)
+{
+    // Get triangle in the fracture direction
+    TriangleID theTriId = m_triangleGeo->getTriangleInDirection(ptAId, normalizedFractureDirection);
+    
+    // If not, could be on the border. Return invalidID
+    if (theTriId > this->m_topology->getNbTriangles() - 1)
+        return sofa::InvalidID;
+
+    // If it exists, get triangle and search for ptAId local index in the triangle
+    const Triangle& theTri = this->m_topology->getTriangle(theTriId);
+    PointID localAId = sofa::InvalidID;
+    for (PointID vertex_id = 0; vertex_id < 3; vertex_id++)
+    {
+        if (theTri[vertex_id] == ptAId)
+        {
+            localAId = vertex_id;
+            break;
+        }
+    }
+
+    // Get the opposite edge
+    EdgeID oppositeEdgeId = this->m_topology->getEdgesInTriangle(theTriId)[localAId];
+    Edge oppositeEdge = this->m_topology->getEdge(oppositeEdgeId);
+
+
+    //Building point B such that to be sure that AB intersects CD, based on "Losange"
+    const Coord pE0 = this->m_triangleGeo->getPointPosition(oppositeEdge[0]);
+    const Coord pE1 = this->m_triangleGeo->getPointPosition(oppositeEdge[1]);
+
+    const Real AC_length = (pE0 - ptA).norm();
+    const Real AD_length = (pE1 - ptA).norm();
+    const Real Length = AC_length + AD_length;
+
+    ptB = ptA + Length * normalizedFractureDirection;
+
+    // Compute intersection on the opposite edge
+    sofa::type::vector<EdgeID> intersectedEdges;
+    sofa::type::vector<Real> baryCoefs;
+    m_triangleGeo->computeSegmentTriangleIntersectionInPlane(ptA, ptB, theTriId, intersectedEdges, baryCoefs);
+
+    bool found = false;
+    for (unsigned int i=0; i< intersectedEdges.size(); ++i)
+    {
+        if (intersectedEdges[i] == oppositeEdgeId)
+        {
+            found = true;
+            ptB = pE0 * baryCoefs[i] + pE1 * (1 - baryCoefs[i]);
+            break;
+        }
+    }
+
+    if (!found)
+        return sofa::InvalidID;
+    else
+        return theTriId;
+}
+
+
+
+template <class DataTypes>
+void TearingAlgorithms<DataTypes>::computeFracturePath(const Coord& pA, Index triId, const Coord pB, const Coord pC)
+{
+
+}
+
+
+
+template <class DataTypes>
+void TearingAlgorithms<DataTypes>::computeFracturePath(FracturePath& my_fracturePath)
+{
+
+}
+
 
 
 template <class DataTypes>

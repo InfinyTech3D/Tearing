@@ -1,27 +1,22 @@
 /*****************************************************************************
- *                 - Copyright (C) - 2020 - InfinyTech3D -                   *
+ *                - Copyright (C) 2020-Present InfinyTech3D -                *
  *                                                                           *
- * This file is part of the InfinyToolkit plugin for the SOFA framework      *
+ * This file is part of the Tearing plugin for the SOFA framework.           *
  *                                                                           *
- * Commercial License Usage:                                                 *
- * Licensees holding valid commercial license from InfinyTech3D may use this *
- * file in accordance with the commercial license agreement provided with    *
- * the Software or, alternatively, in accordance with the terms contained in *
- * a written agreement between you and InfinyTech3D. For further information *
- * on the licensing terms and conditions, contact: contact@infinytech3d.com  *
+ * This file is dual-licensed:                                               *
  *                                                                           *
- * GNU General Public License Usage:                                         *
- * Alternatively, this file may be used under the terms of the GNU General   *
- * Public License version 3. The licenses are as published by the Free       *
- * Software Foundation and appearing in the file LICENSE.GPL3 included in    *
- * the packaging of this file. Please review the following information to    *
- * ensure the GNU General Public License requirements will be met:           *
- * https://www.gnu.org/licenses/gpl-3.0.html.                                *
+ * 1) Commercial License:                                                    *
+ *      This file may be used under the terms of a valid commercial license  *
+ *      agreement provided wih the software by InfinyTech3D.                 *
  *                                                                           *
- * Authors: see Authors.txt                                                  *
+ * 2) GNU General Public License (GPLv3) Usage                               *
+ *      Alternatively, this file may be used under the terms of the          *
+ *      GNU General Public License version 3 as published by the             *
+ *      Free Software Foundation: https://www.gnu.org/licenses/gpl-3.0.html  *
+ *                                                                           *
+ * Contact: contact@infinytech3d.com                                         *
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
-
 #define SOFA_COMPONENT_TRIANGLECUTTINGCONTROLLER_CPP
 #include <Tearing/Controllers/TriangleCuttingController.h>
 #include <sofa/core/visual/VisualParams.h>
@@ -40,6 +35,7 @@ using sofa::core::topology::Topology;
 template <class DataTypes>
 TriangleCuttingController<DataTypes>::TriangleCuttingController()
     : d_methodToTest(initData(&d_methodToTest, -1, "methodToTest", "refinement method to test"))
+    , d_triangleIds(initData(&d_triangleIds, "triangleIds", "Triangles Ids to subdivide"))
     , d_triAID(initData(&d_triAID, (unsigned int)(0), "triAID", "id triangle1"))
     , d_triBID(initData(&d_triBID, (unsigned int)(0), "triBID", "id triangle2"))
     , d_performCut(initData(&d_performCut, false, "performCut", "to activate cut at the current timestep"))
@@ -91,74 +87,114 @@ void TriangleCuttingController<DataTypes>::clearBuffers()
 template <class DataTypes>
 void TriangleCuttingController<DataTypes>::doTest()
 {
-    //return test_subdivider_1Node();
-    //return test_subdivider_1Edge();
-    //return test_subdivider_2Edge();
-    //return test_subdivider_3Edge();
-    return test_subdivider_2Node();
+    // Get points coordinates
+    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::vec_id::read_access::position)->getValue();
+    sofa::Size nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
+    
+    // Get triangle to subdivide information
+    const SeqTriangles& triangles = m_topoContainer->getTriangles();
+
+    auto _triangleIds = d_triangleIds.getValue();
+    if (!_triangleIds.empty())
+    {
+        if (_triangleIds[0] == InvalidID) // hack to remesh all
+        {
+            _triangleIds.clear();
+            for (unsigned int triId = 0; triId < triangles.size(); ++triId)
+                _triangleIds.push_back(triId);
+        }
+        
+        computeNeighboorhoodTable(_triangleIds);
+
+        for (TriangleSubdivider* subD : m_subviders)
+        {
+            const Topology::Triangle& theTri = m_topoContainer->getTriangle(subD->getTriangleIdToSplit());
+            sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
+
+            subD->subdivide(points);
+        }
+
+        processSubdividers();
+
+        return;
+    }
+
+
+    int method = d_methodToTest.getValue();
+
+    for (unsigned int triId = 0; triId < triangles.size(); ++triId)
+    {
+        const Topology::Triangle& theTri = m_topoContainer->getTriangle(triId);
+        const sofa::type::fixed_array<EdgeID, 3> edgesInTri = m_topoContainer->getEdgesInTriangle(triId);
+        
+        sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
+
+        if (method == 0)
+        {
+            msg_info() << "Process test: 1Node";
+            test_subdivider_1Node(triId, theTri, nbrPoints);
+        }
+        else if (method == 1)
+        {
+            msg_info() << "Process test: 1Edge";
+            test_subdivider_1Edge(triId, theTri, edgesInTri, nbrPoints);
+        }
+        else if (method == 2)
+        {
+            msg_info() << "Process test: 2Edge";
+            test_subdivider_2Edge(triId, theTri, nbrPoints);
+        }
+        else if (method == 3)
+        {
+            msg_info() << "Process test: 3Edge";
+            test_subdivider_3Edge(triId, theTri, nbrPoints);
+        }
+        else if (method == 4)
+        {
+            msg_info() << "Process test: 2Node";
+            test_subdivider_2Node(triId, theTri, nbrPoints);
+        }
+        else
+        {
+            return;
+        }
+
+        m_subviders.back()->subdivide(points);
+    }
+
+    processSubdividers();
 }
 
 
+
 template <class DataTypes>
-void TriangleCuttingController<DataTypes>::test_subdivider_1Node()
+void TriangleCuttingController<DataTypes>::test_subdivider_1Node(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints)
 {
-    std::cout << "TriangleCuttingController::test_subdivider_1Node()" << std::endl;
-
-    // Get triangle to subdivide information
-    const Topology::TriangleID triId = d_triAID.getValue();
-    const Topology::Triangle theTri = m_topoContainer->getTriangle(triId);
-
-    std::cout << "triId: " << triId << std::endl;
-    std::cout << "theTri: " << theTri << std::endl;
-
-    // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
-    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
-
     // create new points to add
     type::vector<SReal> _coefs;
     type::vector<Topology::PointID> _ancestors;
+    
     for (unsigned int i = 0; i < 3; ++i)
     {
         _ancestors.push_back(theTri[i]);
         _coefs.push_back(0.3333);
     }
 
-    auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
-    Topology::PointID uniqID = getUniqueId(theTri[0], theTri[1]);
+    Topology::PointID uniqID = getUniqueId(theTri[0], theTri[1], theTri[2]);
     std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
     m_pointsToAdd.push_back(PTA);
 
     TriangleSubdivider* subdivider = new TriangleSubdivider(triId, theTri);
     subdivider->addPoint(PTA);
-    subdivider->subdivide(points);
 
     m_subviders.push_back(subdivider);
-
-    processSubdividers();
+    nbrPoints++;
 }
 
 
 template <class DataTypes>
-void TriangleCuttingController<DataTypes>::test_subdivider_1Edge()
+void TriangleCuttingController<DataTypes>::test_subdivider_1Edge(const TriangleID triId, const Triangle& theTri, const sofa::type::fixed_array<EdgeID, 3>& edgesInTri, sofa::Size& nbrPoints)
 {
-    std::cout << "TriangleCuttingController::test_subdivider_1Edge()" << std::endl;
-
-    // Get triangle to subdivide information
-    const Topology::TriangleID triId = d_triAID.getValue();
-    const Topology::Triangle theTri = m_topoContainer->getTriangle(triId);
-    const sofa::type::fixed_array<EdgeID, 3> edgesInTri = m_topoContainer->getEdgesInTriangle(triId);
-
-    std::cout << "triId: " << triId << std::endl;
-    std::cout << "theTri: " << theTri << std::endl;
-    std::cout << "edgesInTri: " << edgesInTri << " | " 
-        << m_topoContainer->getEdge(edgesInTri[0]) << "; "
-        << m_topoContainer->getEdge(edgesInTri[1]) << "; "
-        << m_topoContainer->getEdge(edgesInTri[2]) << std::endl;
-
-    // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
-
     const EdgeID edgeId = 1;
     const PointID pAId = (edgeId + 1) % 3;
     const PointID pBId = (edgeId + 2) % 3;
@@ -169,7 +205,6 @@ void TriangleCuttingController<DataTypes>::test_subdivider_1Edge()
     _ancestors.push_back(theTri[pAId]); _coefs.push_back(0.5);
     _ancestors.push_back(theTri[pBId]); _coefs.push_back(0.5);
 
-    auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
     Topology::PointID uniqID = getUniqueId(theTri[pAId], theTri[pBId]);
     std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
     m_pointsToAdd.push_back(PTA);
@@ -177,39 +212,19 @@ void TriangleCuttingController<DataTypes>::test_subdivider_1Edge()
     TriangleSubdivider* subdivider = new TriangleSubdivider(triId, theTri);
     subdivider->addPoint(PTA);
     m_subviders.push_back(subdivider);
-
-    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[pAId]], x[theTri[pBId]], x[theTri[edgeId]] };
-    subdivider->subdivide(points);
-
-    processSubdividers();
+    nbrPoints++;
 }
 
 
 template <class DataTypes>
-void TriangleCuttingController<DataTypes>::test_subdivider_2Edge()
+void TriangleCuttingController<DataTypes>::test_subdivider_2Edge(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints)
 {
-    std::cout << "TriangleCuttingController::test_subdivider_2Edge()" << std::endl;
-
-    // Get triangle to subdivide information
-    const Topology::TriangleID triId = d_triAID.getValue();
-    const Topology::Triangle theTri = m_topoContainer->getTriangle(triId);
-
-    std::cout << "triId: " << triId << std::endl;
-    std::cout << "theTri: " << theTri << std::endl;
-
     type::fixed_array< EdgeID, 2> edgeIds = { 0, 1 };
-    auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
-    // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
-
     TriangleSubdivider* subdivider = new TriangleSubdivider(triId, theTri);
     for (unsigned int i = 0; i < 2; i++)
     {
         const Topology::Edge localEdge = Topology::Edge((edgeIds[i] + 1) % 3, (edgeIds[i] + 2) % 3);
         const Topology::Edge theEdge = Topology::Edge(theTri[localEdge[0]], theTri[localEdge[1]]);
-        const Coord pA = x[theEdge[0]];
-        const Coord pB = x[theEdge[1]];
-        const Coord bary = (pA + pB) / 2;
 
         type::vector<SReal> _coefs;
         type::vector<Topology::PointID> _ancestors;
@@ -224,33 +239,18 @@ void TriangleCuttingController<DataTypes>::test_subdivider_2Edge()
     }
 
     m_subviders.push_back(subdivider);
-
-    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
-    subdivider->subdivide(points);
-
-    processSubdividers();
 }
 
 
 template <class DataTypes>
-void TriangleCuttingController<DataTypes>::test_subdivider_3Edge()
+void TriangleCuttingController<DataTypes>::test_subdivider_3Edge(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints)
 {
-    std::cout << "TriangleCuttingController::test_subdivider_3Edge()" << std::endl;
-
-    // Get triangle to subdivide information
-    const Topology::TriangleID triId = d_triAID.getValue();
-    const Topology::Triangle theTri = m_topoContainer->getTriangle(triId);
-
-    std::cout << "triId: " << triId << std::endl;
-    std::cout << "theTri: " << theTri << std::endl;
-
-    auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
     TriangleSubdivider* subdivider = new TriangleSubdivider(triId, theTri);
     for (unsigned int i = 0; i < 3; i++)
     {
         type::vector<SReal> _coefs;
         type::vector<Topology::PointID> _ancestors;
-        
+
         _ancestors.push_back(theTri[i]);
         _coefs.push_back(0.5);
         _ancestors.push_back(theTri[(i + 1) % 3]);
@@ -264,69 +264,110 @@ void TriangleCuttingController<DataTypes>::test_subdivider_3Edge()
     }
 
     m_subviders.push_back(subdivider);
-
-    // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
-
-    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
-    subdivider->subdivide(points);
-
-    processSubdividers();
 }
 
 
 template <class DataTypes>
-void TriangleCuttingController<DataTypes>::test_subdivider_2Node()
+void TriangleCuttingController<DataTypes>::test_subdivider_2Node(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints)
 {
-    std::cout << "TriangleCuttingController::test_subdivider_3Edge()" << std::endl;
-
-    // Get triangle to subdivide information
-    const Topology::TriangleID triId = d_triAID.getValue();
-    const Topology::Triangle theTri = m_topoContainer->getTriangle(triId);
-
-    std::cout << "triId: " << triId << std::endl;
-    std::cout << "theTri: " << theTri << std::endl;
-
-    auto nbrPoints = Topology::PointID(this->m_topoContainer->getNbPoints());
     TriangleSubdivider* subdivider = new TriangleSubdivider(triId, theTri);
 
-        // create new points to add
-    type::vector<SReal> _coefs;
-    type::vector<Topology::PointID> _ancestors;
+    // create new points to add
+    // Point inside triangle
+    type::vector<SReal> _coefs1;
+    type::vector<Topology::PointID> _ancestors1;
     for (unsigned int i = 0; i < 3; ++i)
     {
-        _ancestors.push_back(theTri[i]);
-        _coefs.push_back(0.3333);
+        _ancestors1.push_back(theTri[i]);
+        _coefs1.push_back(0.3333);
     }
 
-    Topology::PointID uniqID = getUniqueId(theTri[0], theTri[1]) + theTri[2];
-    std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
+    Topology::PointID uniqID1 = getUniqueId(theTri[0], theTri[1], theTri[2]);
+    std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID1, nbrPoints, _ancestors1, _coefs1);
     m_pointsToAdd.push_back(PTA);
     subdivider->addPoint(PTA);
     nbrPoints++;
 
-    const EdgeID edgeId = 1;
+    // Point on the edge
+    const EdgeID edgeId = 0;
     const PointID pAId = (edgeId + 1) % 3;
     const PointID pBId = (edgeId + 2) % 3;
-    _coefs.clear();
-    _ancestors.clear();
-    _ancestors.push_back(theTri[pAId]); _coefs.push_back(0.5);
-    _ancestors.push_back(theTri[pBId]); _coefs.push_back(0.5);
+    type::vector<SReal> _coefs2;
+    type::vector<Topology::PointID> _ancestors2;
+    _ancestors2.push_back(theTri[pAId]); _coefs2.push_back(0.5);
+    _ancestors2.push_back(theTri[pBId]); _coefs2.push_back(0.5);
 
-    Topology::PointID uniqID1 = getUniqueId(theTri[pAId], theTri[pBId]);
-    std::shared_ptr<PointToAdd> PTA1 = std::make_shared<PointToAdd>(uniqID1, nbrPoints, _ancestors, _coefs);
+    Topology::PointID uniqID2 = getUniqueId(theTri[pAId], theTri[pBId]);
+    std::shared_ptr<PointToAdd> PTA1 = std::make_shared<PointToAdd>(uniqID2, nbrPoints, _ancestors2, _coefs2);
     m_pointsToAdd.push_back(PTA1);
     subdivider->addPoint(PTA1);
-
+    nbrPoints++;
     m_subviders.push_back(subdivider);
+}
 
-    // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
 
-    sofa::type::fixed_array<sofa::type::Vec3, 3> points = { x[theTri[0]], x[theTri[1]], x[theTri[2]] };
-    subdivider->subdivide(points);
+template <class DataTypes>
+void TriangleCuttingController<DataTypes>::computeNeighboorhoodTable(const sofa::type::vector<TriangleID>& firstLayer)
+{
+    const SeqTriangles& triangles = m_topoContainer->getTriangles();
+    const auto& edges = m_topoContainer->getEdges();
+    const auto& triAEdges = m_topoContainer->getTrianglesAroundEdgeArray();
+    const auto& edgeInTris = m_topoContainer->getEdgesInTriangleArray();
 
-    processSubdividers();
+    // Get all edges to check from 1st layer without redundency
+    std::set<Topology::EdgeID> edgeIDToCheck;
+    for (const TriangleID triId : firstLayer)
+    {
+        const auto& edgesT = edgeInTris[triId];
+        for (const auto edgeID : edgesT)
+            edgeIDToCheck.insert(edgeID);
+    }
+
+    // create the points from the selected edges
+    sofa::Size nbrPoints = m_topoContainer->getNbPoints();
+    m_pointsToAdd.reserve(edgeIDToCheck.size());
+    type::vector<SReal> _coefs;
+    _coefs.resize(2, 0.5);
+    type::vector<Topology::PointID> _ancestors;
+    _ancestors.resize(2);
+    for (auto edgeId : edgeIDToCheck)
+    {
+        // create the points
+        const Topology::Edge& edge = edges[edgeId];
+        _ancestors[0] = edge[0];
+        _ancestors[1] = edge[1];
+        Topology::PointID uniqID = getUniqueId(_ancestors[0], _ancestors[1]);
+        std::shared_ptr<PointToAdd> PTA = std::make_shared<PointToAdd>(uniqID, nbrPoints, _ancestors, _coefs);
+        m_pointsToAdd.push_back(PTA);
+        nbrPoints++;
+
+        // look for the triangles
+        const auto& triAE = triAEdges[edgeId];
+        for (auto triID : triAE) // for each triangle around edge
+        {
+            bool found = false;
+            TriangleSubdivider* subdivider = nullptr;
+
+            // check if triangle already added in a subdivider
+            for (unsigned int i = 0; i < m_subviders.size(); i++)
+            {
+                if (m_subviders[i]->getTriangleIdToSplit() == triID)
+                {
+                    found = true;
+                    subdivider = m_subviders[i];
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                subdivider = new TriangleSubdivider(triID, triangles[triID]);
+                m_subviders.push_back(subdivider);
+            }
+
+            subdivider->addPoint(PTA);
+        }
+    }
 }
 
 
@@ -371,9 +412,9 @@ void TriangleCuttingController<DataTypes>::processSubdividers()
         }
         trianglesToRemove.push_back(triSub->getTriangleIdToSplit());
     }
-
+    std::cout << "Nbr trianglesToAdd: " << trianglesToAdd.size() << std::endl;
     m_topoModifier->addTriangles(trianglesToAdd, _ancestors, _baryCoefs);
-
+    std::cout << "Nbr trianglesToRemove: " << trianglesToRemove.size() << std::endl;
     // 4. Propagate change to the topology and remove all Triangles registered for removal to the container
     m_topoModifier->removeTriangles(trianglesToRemove, true, true);
 
@@ -397,7 +438,7 @@ void TriangleCuttingController<DataTypes>::processCut()
     type::fixed_array< Topology::Triangle, 2> theTris = { triangles[triIds[0]], triangles[triIds[1]] };
     
     // Get points coordinates
-    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::ConstVecCoordId::position())->getValue();
+    sofa::helper::ReadAccessor<VecCoord> x = m_state->read(sofa::core::vec_id::read_access::position)->getValue();
 
     const Coord pA = (x[theTris[0][0]] + x[theTris[0][1]] + x[theTris[0][2]]) / 3;
     const Coord pB = (x[theTris[1][0]] + x[theTris[1][1]] + x[theTris[1][2]]) / 3;
@@ -574,7 +615,6 @@ void TriangleCuttingController<DataTypes>::handleEvent(sofa::core::objectmodel::
         dmsg_info() << "GET KEY " << ev->getKey();
         if (ev->getKey() == 'D')
         {
-            std::cout << "in D:" << std::endl;
             doTest();
         }
         else if (ev->getKey() == 'F')

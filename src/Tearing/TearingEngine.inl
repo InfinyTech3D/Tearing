@@ -1,24 +1,20 @@
 /*****************************************************************************
- *                 - Copyright (C) - 2020 - InfinyTech3D -                   *
+ *                - Copyright (C) 2020-Present InfinyTech3D -                *
  *                                                                           *
  * This file is part of the Tearing plugin for the SOFA framework.           *
  *                                                                           *
- * Commercial License Usage:                                                 *
- * Licensees holding valid commercial license from InfinyTech3D may use this *
- * file in accordance with the commercial license agreement provided with    *
- * the Software or, alternatively, in accordance with the terms contained in *
- * a written agreement between you and InfinyTech3D. For further information *
- * on the licensing terms and conditions, contact: contact@infinytech3d.com  *
+ * This file is dual-licensed:                                               *
  *                                                                           *
- * GNU General Public License Usage:                                         *
- * Alternatively, this file may be used under the terms of the GNU General   *
- * Public License version 3. The licenses are as published by the Free       *
- * Software Foundation and appearing in the file LICENSE.GPL3 included in    *
- * the packaging of this file. Please review the following information to    *
- * ensure the GNU General Public License requirements will be met:           *
- * https://www.gnu.org/licenses/gpl-3.0.html.                                *
+ * 1) Commercial License:                                                    *
+ *      This file may be used under the terms of a valid commercial license  *
+ *      agreement provided wih the software by InfinyTech3D.                 *
  *                                                                           *
- * Authors: see Authors.txt                                                  *
+ * 2) GNU General Public License (GPLv3) Usage                               *
+ *      Alternatively, this file may be used under the terms of the          *
+ *      GNU General Public License version 3 as published by the             *
+ *      Free Software Foundation: https://www.gnu.org/licenses/gpl-3.0.html  *
+ *                                                                           *
+ * Contact: contact@infinytech3d.com                                         *
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
 #pragma once
@@ -41,87 +37,26 @@ using sofa::type::Vec3;
 // --------------------------------------------------------------------------------------
 // --- Computation methods
 // --------------------------------------------------------------------------------------
-template<class DataTypes>
-inline bool TearingEngine<DataTypes>::computeIntersectionNeighborTriangle(Coord normalizedFractureDirection, Coord Pa, Coord& Pb, Real& t)
-{
-    SOFA_UNUSED(Pa);
-
-    if (m_maxStressVertexIndex == InvalidID)
-        return false;    
-
-    // Get Geometry Algorithm
-    TriangleSetGeometryAlgorithms<DataTypes>* _triangleGeo = nullptr;
-    this->m_topology->getContext()->get(_triangleGeo);
-    if (!_triangleGeo)
-    {
-        msg_error() << "Missing component: Unable to get TriangleSetGeometryAlgorithms from the current context.";
-        sofa::core::objectmodel::BaseObject::d_componentState.setValue(sofa::core::objectmodel::ComponentState::Invalid);
-        return false;
-    }
-
-
-    Index triangle_id = _triangleGeo->getTriangleInDirection(m_maxStressVertexIndex, normalizedFractureDirection);
-    if (triangle_id > this->m_topology->getNbTriangles() - 1)
-        return false;
-
-
-    const Triangle& VertexIndicies = this->m_topology->getTriangle(triangle_id);
-
-    constexpr size_t numVertices = 3;
-    Index B_id = -1, C_id = -1;
-
-    for (unsigned int vertex_id = 0; vertex_id < numVertices; vertex_id++)
-    {
-        if (VertexIndicies[vertex_id] == m_maxStressVertexIndex)
-        {
-            B_id = VertexIndicies[(vertex_id + 1) % 3];
-            C_id = VertexIndicies[(vertex_id + 2) % 3];
-            break;
-        }
-
-    }
-
-    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-    Coord A = x[m_maxStressVertexIndex];
-    Coord B = x[B_id];
-    Coord C = x[C_id];
-
-    if (rayTriangleIntersection(A, B, C, normalizedFractureDirection, t, Pb))
-        return true;
-    else
-        return false;
-
-}
 
 template<class DataTypes>
-inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(Coord Pa, Coord direction, Coord& Pb, Coord& Pc)
+inline bool TearingEngine<DataTypes>::computeEndPointsNeighboringTriangles(const Coord& Pa, const Coord& fractureDirection, Coord& Pb, Coord& Pc)
 {
-    
     bool t_b_ok = false; 
     bool t_c_ok = false;
-    //compute fracture direction perpendicular to the principal stress direction
-    Coord fractureDirection;
-    this->computeFractureDirection(direction, fractureDirection);
    
+    Coord dir_b = fractureDirection / fractureDirection.norm();
+    TriangleID t_b = this->m_tearingAlgo->computeIntersectionNeighborTriangle(m_maxStressVertexIndex, Pa, dir_b, Pb);
 
-    Real norm_fractureDirection = fractureDirection.norm();
-    Coord dir_b = 1.0 / norm_fractureDirection * fractureDirection;
-
-    Real t_b;
-    if (computeIntersectionNeighborTriangle(dir_b,Pa, Pb, t_b))
-        t_b_ok = true;
-
-    
     Coord dir_c = -dir_b;
-    Real t_c;
-    if (computeIntersectionNeighborTriangle(dir_c,Pa,Pc, t_c))
-        t_c_ok = true;
+    TriangleID t_c = this->m_tearingAlgo->computeIntersectionNeighborTriangle(m_maxStressVertexIndex, Pa, dir_c, Pc);
 
-    if (!(t_b_ok && t_c_ok))
+
+    if (t_b == sofa::InvalidID || t_c == sofa::InvalidID)
     {
         msg_warning() << "Not able to build the fracture path through neighboring triangles.";
         return false;
     }
+
     return true;
 }
 
@@ -151,12 +86,6 @@ void TearingEngine<DataTypes>::algoFracturePath()
     Coord Pb;
     Coord Pc;
 
-    if (this->d_fractureMaxLength.getValue())
-        this->computeEndPoints(Pa, principalStressDirection, Pb, Pc);
-    else if (!(computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc)))
-        return;
-
-
     this->m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
     m_maxStressTriangleIndex = InvalidID;
 
@@ -168,23 +97,39 @@ void TearingEngine<DataTypes>::algoFracturePath()
 template <class DataTypes>
 void TearingEngine<DataTypes>::computeFracturePath()
 {
-    if (!this->d_fractureMaxLength.getValue() && m_maxStressTriangleIndex != InvalidID)
+    // frist clear ereything
+    this->clearFracturePath();
+
+    if (m_maxStressTriangleIndex == InvalidID) // no candidate to start fracture
+        return;
+
+    //Recording the endpoints of the fracture segment
+    helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+
+    const Coord fractureDirection = this->computeFractureDirection(m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection);
+
+    const Coord Pa = x[m_maxStressVertexIndex];
+    Coord Pb, Pc;
+
+    if (this->d_fractureMaxLength.getValue() == 0.0) 
     {
-        //Recording the endpoints of the fracture segment
-        helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
-
-        Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-        Coord Pa = x[m_maxStressVertexIndex];
-
-        Coord Pb, Pc;
-        fractureSegmentEndpoints.clear();
-
-        if (computeEndPointsNeighboringTriangles(Pa, principalStressDirection, Pb, Pc))
-        {
-            fractureSegmentEndpoints.push_back(Pb);
-            fractureSegmentEndpoints.push_back(Pc);
-        }
+        bool checkEndsPoints = this->computeEndPointsNeighboringTriangles(Pa, fractureDirection, Pb, Pc);
+        if (!checkEndsPoints)
+            return;
     }
+    else
+    {
+        this->computeEndPoints(Pa, fractureDirection, Pb, Pc); // compute orthogonal fracture using d_fractureMaxLength
+    }
+    
+
+    this->m_fracturePath.ptA = type::Vec3(DataTypes::getCPos(Pa));
+    this->m_fracturePath.ptB = type::Vec3(DataTypes::getCPos(Pb));
+    this->m_fracturePath.ptC = type::Vec3(DataTypes::getCPos(Pc));
+    this->m_fracturePath.triIdA = m_maxStressTriangleIndex;
+
+    this->m_tearingAlgo->computeFracturePath(this->m_fracturePath);
+    this->m_stepCounter++;
 }
 
 

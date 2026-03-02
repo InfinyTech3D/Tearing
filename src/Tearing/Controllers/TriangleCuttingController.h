@@ -1,24 +1,20 @@
 /*****************************************************************************
- *                 - Copyright (C) - 2020 - InfinyTech3D -                   *
+ *                - Copyright (C) 2020-Present InfinyTech3D -                *
  *                                                                           *
- * This file is part of the InfinyToolkit plugin for the SOFA framework      *
+ * This file is part of the Tearing plugin for the SOFA framework.           *
  *                                                                           *
- * Commercial License Usage:                                                 *
- * Licensees holding valid commercial license from InfinyTech3D may use this *
- * file in accordance with the commercial license agreement provided with    *
- * the Software or, alternatively, in accordance with the terms contained in *
- * a written agreement between you and InfinyTech3D. For further information *
- * on the licensing terms and conditions, contact: contact@infinytech3d.com  *
+ * This file is dual-licensed:                                               *
  *                                                                           *
- * GNU General Public License Usage:                                         *
- * Alternatively, this file may be used under the terms of the GNU General   *
- * Public License version 3. The licenses are as published by the Free       *
- * Software Foundation and appearing in the file LICENSE.GPL3 included in    *
- * the packaging of this file. Please review the following information to    *
- * ensure the GNU General Public License requirements will be met:           *
- * https://www.gnu.org/licenses/gpl-3.0.html.                                *
+ * 1) Commercial License:                                                    *
+ *      This file may be used under the terms of a valid commercial license  *
+ *      agreement provided wih the software by InfinyTech3D.                 *
  *                                                                           *
- * Authors: see Authors.txt                                                  *
+ * 2) GNU General Public License (GPLv3) Usage                               *
+ *      Alternatively, this file may be used under the terms of the          *
+ *      GNU General Public License version 3 as published by the             *
+ *      Free Software Foundation: https://www.gnu.org/licenses/gpl-3.0.html  *
+ *                                                                           *
+ * Contact: contact@infinytech3d.com                                         *
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
 #pragma once
@@ -50,6 +46,9 @@ public:
     using VecCoord = typename DataTypes::VecCoord;
     using Real = typename DataTypes::Real;
 
+    using Triangle = TriangleSetTopologyContainer::Triangle;
+    using SeqTriangles = TriangleSetTopologyContainer::SeqTriangles;    
+
     TriangleCuttingController();
     ~TriangleCuttingController() override;
 
@@ -61,13 +60,16 @@ public:
 protected:
     void doTest();
 
-    void test_subdivider_1Node();
+    void test_subdivider_1Node(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
+    
+    void test_subdivider_1Edge(const TriangleID triId, const Triangle& theTri, const sofa::type::fixed_array<EdgeID, 3>& edgesInTri, sofa::Size& nbrPoints);
+    void test_subdivider_2Edge(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
+    
+    void test_subdivider_3Edge(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
 
-    void test_subdivider_1Edge();
-    void test_subdivider_2Edge();
-    void test_subdivider_3Edge();
+    void test_subdivider_2Node(const TriangleID triId, const Triangle& theTri, sofa::Size& nbrPoints);
 
-    void test_subdivider_2Node();
+    void computeNeighboorhoodTable(const sofa::type::vector<TriangleID>& firstLayer);
 
     void processSubdividers();
 
@@ -76,6 +78,7 @@ protected:
 
 public:
     Data <int> d_methodToTest;
+    Data < sofa::type::vector< TriangleID > > d_triangleIds;
     Data < unsigned int > d_triAID;
     Data < unsigned int > d_triBID;
 

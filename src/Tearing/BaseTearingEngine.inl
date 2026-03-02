@@ -1,24 +1,20 @@
 /*****************************************************************************
- *                 - Copyright (C) - 2020 - InfinyTech3D -                   *
+ *                - Copyright (C) 2020-Present InfinyTech3D -                *
  *                                                                           *
  * This file is part of the Tearing plugin for the SOFA framework.           *
  *                                                                           *
- * Commercial License Usage:                                                 *
- * Licensees holding valid commercial license from InfinyTech3D may use this *
- * file in accordance with the commercial license agreement provided with    *
- * the Software or, alternatively, in accordance with the terms contained in *
- * a written agreement between you and InfinyTech3D. For further information *
- * on the licensing terms and conditions, contact: contact@infinytech3d.com  *
+ * This file is dual-licensed:                                               *
  *                                                                           *
- * GNU General Public License Usage:                                         *
- * Alternatively, this file may be used under the terms of the GNU General   *
- * Public License version 3. The licenses are as published by the Free       *
- * Software Foundation and appearing in the file LICENSE.GPL3 included in    *
- * the packaging of this file. Please review the following information to    *
- * ensure the GNU General Public License requirements will be met:           *
- * https://www.gnu.org/licenses/gpl-3.0.html.                                *
+ * 1) Commercial License:                                                    *
+ *      This file may be used under the terms of a valid commercial license  *
+ *      agreement provided wih the software by InfinyTech3D.                 *
  *                                                                           *
- * Authors: see Authors.txt                                                  *
+ * 2) GNU General Public License (GPLv3) Usage                               *
+ *      Alternatively, this file may be used under the terms of the          *
+ *      GNU General Public License version 3 as published by the             *
+ *      Free Software Foundation: https://www.gnu.org/licenses/gpl-3.0.html  *
+ *                                                                           *
+ * Contact: contact@infinytech3d.com                                         *
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
 #pragma once
@@ -162,7 +158,7 @@ void BaseTearingEngine<DataTypes>::doUpdate()
     if (sofa::core::objectmodel::BaseObject::d_componentState.getValue() != sofa::core::objectmodel::ComponentState::Valid)
         return;
 
-    m_stepCounter++;   
+    
    
     if (d_ignoreTriangles.getValue())
     {
@@ -215,7 +211,6 @@ void BaseTearingEngine<DataTypes>::triangleOverThresholdPrincipalStress()
     candidate.clear();
     maxStress = 0;
     helper::WriteAccessor< Data<vector<Index>> >triangleToSkip(d_trianglesToIgnore);
-    
     m_maxStressTriangleIndex = InvalidID;
     for (unsigned int i = 0; i < triangleList.size(); i++)
     {
@@ -330,19 +325,20 @@ void BaseTearingEngine<DataTypes>::updateTriangleInformation()
 
 
 template<class DataTypes>
-inline void BaseTearingEngine<DataTypes>::computeFractureDirection(Coord principleStressDirection,Coord & fracture_direction)
+typename DataTypes::Coord BaseTearingEngine<DataTypes>::computeFractureDirection(const Coord& principleStressDirection)
 {
+    Coord fracture_direction = { 0.0, 0.0, 0.0 };
+
     if (m_maxStressTriangleIndex == InvalidID) {
-        fracture_direction = { 0.0, 0.0, 0.0 };
-        return;
+        return fracture_direction;
     }
 
     const Triangle& VertexIndicies = m_topology->getTriangle(m_maxStressTriangleIndex);
-    constexpr size_t numVertices = 3;
 
-    Index B_id = -1, C_id = -1;
+    Index B_id = sofa::InvalidID;
+    Index C_id = sofa::InvalidID;
 
-    for (unsigned int vertex_id = 0; vertex_id < numVertices; vertex_id++)
+    for (sofa::Index vertex_id = 0; vertex_id < 3; vertex_id++)
     {
         if (VertexIndicies[vertex_id] == m_maxStressVertexIndex)
         {
@@ -357,26 +353,21 @@ inline void BaseTearingEngine<DataTypes>::computeFractureDirection(Coord princip
     Coord B = x[B_id];
     Coord C = x[C_id];
 
-    Coord AB = B - A;
-    Coord AC = C - A;
-
-    Coord triangleNormal = sofa::type::cross(AB,AC);
+    Coord triangleNormal = sofa::type::cross(B - A, C - A);
     fracture_direction = sofa::type::cross(triangleNormal, principleStressDirection);
+
+    return fracture_direction;
 }
 
 
 template <class DataTypes>
-void BaseTearingEngine<DataTypes>::computeEndPoints(
-    Coord Pa,
-    Coord direction,
-    Coord& Pb, Coord& Pc)
+void BaseTearingEngine<DataTypes>::computeEndPoints(const Coord& Pa, const Coord& fractureDirection, Coord& Pb, Coord& Pc)
 {
-    Coord fractureDirection;
-    computeFractureDirection(direction, fractureDirection);
     Real norm_fractureDirection = fractureDirection.norm();
     Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
     Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
 }
+
 
 template <class DataTypes>
 void BaseTearingEngine<DataTypes>::computeTriangleToSkip()
@@ -623,6 +614,22 @@ inline void BaseTearingEngine<DataTypes>::calculate_inverse_distance_weights(std
 
 
 template <class DataTypes>
+void BaseTearingEngine<DataTypes>::clearFracturePath()
+{
+    m_fracturePath.ptA = Vec3();
+    m_fracturePath.ptB = Vec3();
+    m_fracturePath.ptC = Vec3();
+
+    m_fracturePath.triIdA = InvalidID;
+    m_fracturePath.triIdB = InvalidID;
+    m_fracturePath.triIdC = InvalidID;
+
+    m_fracturePath.pointsToAdd.clear();
+    m_fracturePath.pathOk = false;
+}
+
+
+template <class DataTypes>
 void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* event)
 {
     if (sofa::core::objectmodel::KeypressedEvent* ev = dynamic_cast<sofa::core::objectmodel::KeypressedEvent*>(event))
@@ -639,22 +646,22 @@ void BaseTearingEngine<DataTypes>::handleEvent(sofa::core::objectmodel::Event* e
         return; // We only launch computation at end of a simulation step
     }
 
-    computeFracturePath();
+    if (m_tearingAlgo->getFractureNumber() > d_nbFractureMax.getValue()) // reach the end of the engine behavior
+        return;
 
     // Hack: we access one output value to force the engine to call doUpdate()
     if (d_maxStress.getValue() == Real(0.0))
         return;
 
+    // main method to compute the possible fracture if a triangle has reached threshold
+    computeFracturePath();
+
+
     // Perform fracture every d_stepModulo
     int step = d_stepModulo.getValue();
-    if (step == 0) // interactive version
+    if (m_stepCounter > step)
     {
-        if (m_stepCounter > 200 && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue())){
-            algoFracturePath();
-        }
-    }
-    else if (((m_stepCounter % step) == 0) && (m_tearingAlgo->getFractureNumber() < d_nbFractureMax.getValue()))
-    {
+        m_stepCounter = 0;
         algoFracturePath();
     }
 }
@@ -724,32 +731,25 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
     }
 
 
-
-
-
     if (d_showFracturePath.getValue())
     {
-        if (m_maxStressTriangleIndex != InvalidID && fractureSegmentEndpoints.size() == 2)
+        if (m_maxStressTriangleIndex != InvalidID)
         {
             helper::ReadAccessor< Data<VecCoord> > x(d_input_positions);
+
             Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
             Coord Pa = x[m_maxStressVertexIndex];
-            //Coord fractureDirection;
-            //computeFractureDirection(principalStressDirection, fractureDirection);
-            Coord Pb = fractureSegmentEndpoints[0];
-            Coord Pc = fractureSegmentEndpoints[1];
+            Coord Pb = m_fracturePath.ptB;
+            Coord Pc = m_fracturePath.ptC;
             
             vector<Coord> points;
-            //Real norm_fractureDirection = fractureDirection.norm();
-            //Coord Pb = Pa + d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
-            //Coord Pc = Pa - d_fractureMaxLength.getValue() / norm_fractureDirection * fractureDirection;
             points.push_back(Pb);
             points.push_back(Pa);
             points.push_back(Pa);
             points.push_back(Pc);
             // Blue == computed fracture path using d_fractureMaxLength
-            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(1, 0.2, 1, 1));
-            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(1, 0.5, 1, 1));
+            vparams->drawTool()->drawPoints(points, 10, sofa::type::RGBAColor(0, 1, 0, 1));
+            vparams->drawTool()->drawLines(points, 1, sofa::type::RGBAColor(0.2, 1, 0, 1));
 
             //---------------------------------------------------------------------------------------------------
             // Green == principal stress direction
@@ -757,14 +757,25 @@ void BaseTearingEngine<DataTypes>::draw(const core::visual::VisualParams* vparam
             pointsDir.push_back(Pa);
            
             pointsDir.push_back(Pa + 100.0*(principalStressDirection));
-            vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.2, 1));
-            vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.5, 1));
+            vparams->drawTool()->drawPoints(pointsDir, 10, sofa::type::RGBAColor(0, 1, 0.4, 1));
+            vparams->drawTool()->drawLines(pointsDir, 1, sofa::type::RGBAColor(0, 1, 0.8, 1));
             
-            points.clear();
+            if (m_fracturePath.pathOk)
+            {
+                std::vector<Vec3> pointsPath;
+                for (auto ptA : m_fracturePath.pointsToAdd)
+                {
+                    sofa::type::Vec3 vecG = sofa::type::Vec3(0.0, 0.0, 0.0);
+                    sofa::Size nbr = ptA->m_ancestors.size();
+                    for (int i = 0; i < nbr; ++i)
+                    {
 
-            const vector<Coord>& path = m_tearingAlgo->getFracturePath();
-            if (!path.empty())
-               vparams->drawTool()->drawPoints(path, 10, sofa::type::RGBAColor(0, 0.8, 0.2, 1));
+                        vecG += x[ptA->m_ancestors[i]] * ptA->m_coefs[i];
+                    }
+                    pointsPath.push_back(vecG);
+                }
+                vparams->drawTool()->drawSpheres(pointsPath, 0.01, sofa::type::RGBAColor::red());
+            }
         }
     }
 }

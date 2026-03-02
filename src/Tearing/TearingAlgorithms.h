@@ -1,24 +1,20 @@
 /*****************************************************************************
- *                 - Copyright (C) - 2020 - InfinyTech3D -                   *
+ *                - Copyright (C) 2020-Present InfinyTech3D -                *
  *                                                                           *
  * This file is part of the Tearing plugin for the SOFA framework.           *
  *                                                                           *
- * Commercial License Usage:                                                 *
- * Licensees holding valid commercial license from InfinyTech3D may use this *
- * file in accordance with the commercial license agreement provided with    *
- * the Software or, alternatively, in accordance with the terms contained in *
- * a written agreement between you and InfinyTech3D. For further information *
- * on the licensing terms and conditions, contact: contact@infinytech3d.com  *
+ * This file is dual-licensed:                                               *
  *                                                                           *
- * GNU General Public License Usage:                                         *
- * Alternatively, this file may be used under the terms of the GNU General   *
- * Public License version 3. The licenses are as published by the Free       *
- * Software Foundation and appearing in the file LICENSE.GPL3 included in    *
- * the packaging of this file. Please review the following information to    *
- * ensure the GNU General Public License requirements will be met:           *
- * https://www.gnu.org/licenses/gpl-3.0.html.                                *
+ * 1) Commercial License:                                                    *
+ *      This file may be used under the terms of a valid commercial license  *
+ *      agreement provided wih the software by InfinyTech3D.                 *
  *                                                                           *
- * Authors: see Authors.txt                                                  *
+ * 2) GNU General Public License (GPLv3) Usage                               *
+ *      Alternatively, this file may be used under the terms of the          *
+ *      GNU General Public License version 3 as published by the             *
+ *      Free Software Foundation: https://www.gnu.org/licenses/gpl-3.0.html  *
+ *                                                                           *
+ * Contact: contact@infinytech3d.com                                         *
  * Further information: https://infinytech3d.com                             *
  ****************************************************************************/
 #pragma once
@@ -28,11 +24,29 @@
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyContainer.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetTopologyModifier.h>
 #include <sofa/component/topology/container/dynamic/TriangleSetGeometryAlgorithms.h>
+#include <sofa/component/topology/container/dynamic/TriangleSubdividers.h>
+
+
 
 namespace sofa::component
 {
 using sofa::component::topology::container::dynamic::TriangleSetTopologyModifier;
 using sofa::component::topology::container::dynamic::TriangleSetGeometryAlgorithms;
+using namespace sofa::component::topology::container::dynamic;
+
+struct FracturePath
+{
+	TriangleID triIdA = InvalidID;
+	TriangleID triIdB = InvalidID;
+	TriangleID triIdC = InvalidID;
+	sofa::type::Vec3 ptA, ptB, ptC;
+
+	// full point to add vector
+	type::vector< std::shared_ptr<PointToAdd> > pointsToAdd;
+
+	bool pathOk = false;
+};
+
 
 template <class DataTypes>
 class TearingAlgorithms
@@ -46,6 +60,7 @@ public:
 	using Edge = sofa::core::topology::BaseMeshTopology::Edge;
 	using Triangle = sofa::core::topology::BaseMeshTopology::Triangle;
 	using VecIds = sofa::type::vector<Index>;
+	
 
 	TearingAlgorithms(sofa::core::topology::BaseMeshTopology* _topology,
 		TriangleSetTopologyModifier* _modifier,
@@ -53,6 +68,19 @@ public:
 
 	virtual ~TearingAlgorithms();
 	
+	void computeFracturePath(FracturePath& my_fracturePath);
+
+
+	/// <summary>
+	/// computes the extremities of the (normalized) fracture PbPa on the edge of the triangle
+	/// </summary>
+	/// @param Pa - the point where the fracture starts
+	/// @param normalizedFractureDirection - normalized fracture direction
+	/// @return Pb - one of the extremities of fracture
+	/// @return t - a parameter needed to calculate Pb
+	TriangleID computeIntersectionNeighborTriangle(const Index ptAId, const Coord& ptA, const Coord& normalizedFractureDirection, Coord& Pb);
+
+	void computeFracturePath(const Coord& pA, Index triId, const Coord pB, const Coord pC);
 
 	/// <summary>
 	/// compute fracture path intersection point and cut through them
@@ -158,6 +186,10 @@ private:
 
 	/// path created by algoFracturePath
 	sofa::type::vector<Coord> m_fracturePath;
+
+	/// Vector of pointToAdd due to new fracture
+	type::vector< std::shared_ptr<PointToAdd> > m_pointsToAdd;
+
 };
 
 	
