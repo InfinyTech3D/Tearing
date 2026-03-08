@@ -54,5 +54,4 @@
             <IdentityMapping input="@.." output="@." />
         </Node>
     </Node>
-
 </Node>
