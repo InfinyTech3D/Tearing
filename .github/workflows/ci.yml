@@ -2,10 +2,28 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
+      - master
+
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
 
 jobs:
   build-and-test:
     name: Run on ${{ matrix.os }} with SOFA ${{ matrix.sofa_branch }}
+    if: >
+      github.event_name == 'push' ||
+      (
+        github.event_name == 'pull_request' &&
+        (
+          contains(github.event.pull_request.labels.*.name, 'pr: run ci') &&
+          (
+            github.event.action != 'labeled' ||
+            github.event.label.name == 'pr: run ci'
+          )
+        )
+      )
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
