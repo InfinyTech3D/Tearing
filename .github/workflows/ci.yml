@@ -40,7 +40,7 @@ jobs:
 
   build-and-test:
     needs: prepare
-    name: Run on ${{ matrix.os }} with SOFA ${{ matrix.sofa_branch }} / MeshRefinement=${{ matrix.with_mesh_refinement }}
+    name: Run on ${{ matrix.os }} with SOFA ${{ matrix.sofa_branch }}
 
     if: >
       github.event_name == 'push' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') ||
