@@ -63,7 +63,7 @@ jobs:
       matrix:
         os: ${{ fromJSON(needs.prepare.outputs.os_list) }}
         
-        sofa_branch: [master]
+        sofa_branch: [v26.06]
 
     steps:
       #######################   Setup SOFA   #######################
