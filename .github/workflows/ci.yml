@@ -5,15 +5,45 @@ on:
     branches:
       - main
       - master
+    tags:
+      - 'v*' #release tags in format of e.g: 'v25.12.00' 
 
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
+  workflow_dispatch:
+    inputs:
+      full_build:
+        description: "Run full build (including macOS)"
+        required: false
+        default: false
+        type: boolean
+
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      os_list: ${{ steps.set.outputs.os_list }}
+    steps:
+      - id: set
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]] ||
+             [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" != refs/tags/v* ]] ||
+             [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.full_build }}" != "true" ]]; then
+            echo 'os_list=["ubuntu-22.04","windows-2022"]' >> $GITHUB_OUTPUT
+          else
+            echo 'os_list=["ubuntu-22.04","windows-2022","macos-14"]' >> $GITHUB_OUTPUT
+          fi
+
+      - name: Debug
+        run: echo '${{ steps.set.outputs.os_list }}'
+
   build-and-test:
+    needs: prepare
     name: Run on ${{ matrix.os }} with SOFA ${{ matrix.sofa_branch }}
+
     if: >
-      github.event_name == 'push' ||
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') ||
       (
         github.event_name == 'pull_request' &&
         (
@@ -24,14 +54,19 @@ jobs:
           )
         )
       )
+
     runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
+
       matrix:
-        os: [ubuntu-22.04, macos-14, windows-2022]
+        os: ${{ fromJSON(needs.prepare.outputs.os_list) }}
+        
         sofa_branch: [master]
 
     steps:
+      #######################   Setup SOFA   #######################
       - name: Setup SOFA and environment
         id: sofa
         uses: sofa-framework/sofa-setup-action@v5
@@ -39,22 +74,25 @@ jobs:
           sofa_root: ${{ github.workspace }}/sofa
           sofa_version: ${{ matrix.sofa_branch }}
           sofa_scope: 'standard'
-      - name: Checkout source code
-        uses: actions/checkout@v2
+
+      #################   Checkout current repository   ##############
+      - name: Checkout current source code
+        uses: actions/checkout@v4
         with:
-          path: ${{ env.WORKSPACE_SRC_PATH }}        
+          path: ${{ env.WORKSPACE_SRC_PATH }}      
       
+      ################   Build and install current plugin   ##############
       - name: Build and install
         shell: bash
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             cmd //c "${{ steps.sofa.outputs.vs_vsdevcmd }} \
-              && cd /d $WORKSPACE_BUILD_PATH \
-              && cmake \
-                  -GNinja \
+              && cd /d %GITHUB_WORKSPACE%/build \
+              && cmake -GNinja \
                   -DCMAKE_PREFIX_PATH="$SOFA_ROOT/lib/cmake" \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DCMAKE_INSTALL_PREFIX="$WORKSPACE_INSTALL_PATH" \
+                  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=%WORKSPACE_BUILD_PATH% \
                   ../src \
               && ninja install"
           else
@@ -67,12 +105,13 @@ jobs:
               -DCMAKE_PREFIX_PATH=$SOFA_ROOT/lib/cmake \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX="$WORKSPACE_INSTALL_PATH" \
+              -DCMAKE_LIBRARY_OUTPUT_DIRECTORY="$WORKSPACE_BUILD_PATH/lib" \
               ../src
             ninja install
-            echo ${CCACHE_BASEDIR}
             ccache -s
           fi
           
+      ###################   Artifact naming   ##############
       - name: Sanitize artifact name
         id: sanitize
         # This step removes special characters from the artifact name to ensure compatibility with upload-artifact
@@ -85,7 +124,9 @@ jobs:
           $artifact_name = $originalName -replace '[":;<>|*?\r\n\\/]', '' -replace ' ', '_'
           echo "artifact_name=$artifact_name" >> $env:GITHUB_OUTPUT
           
+      ###################   Create and upload artifact   ##############
       - name: Create artifact
+        id: create-artifact
         uses: actions/upload-artifact@v4.4.0
         with:
           name: ${{ steps.sanitize.outputs.artifact_name }}
@@ -97,33 +138,26 @@ jobs:
           name: ${{ steps.sanitize.outputs.artifact_name }}
           path: ${{ env.WORKSPACE_ARTIFACT_PATH }}
       
-      - name: Set env vars for tests
-        shell: bash
-        run: |
-          # Set env vars for tests
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            echo "$WORKSPACE_ARTIFACT_PATH/lib" >> $GITHUB_PATH
-            echo "$WORKSPACE_ARTIFACT_PATH/bin" >> $GITHUB_PATH
-            echo "$SOFA_ROOT/plugins/SofaPython3/bin" >> $GITHUB_PATH
-            echo "SOFA_PLUGIN_PATH=$WORKSPACE_ARTIFACT_PATH/bin" | tee -a $GITHUB_ENV
-          else
-            echo "SOFA_PLUGIN_PATH=$WORKSPACE_ARTIFACT_PATH/lib" | tee -a $GITHUB_ENV
-          fi
+      ###################   Tests   ##############
+      - name: Launch test
+        uses: sofa-framework/sofa-test-action@v1.0
+        with:
+          sofa_root: ${{ github.workspace }}/sofa
+          sofa_version: ${{ steps.sofa.outputs.sofa_version }}
+          src_dir: ${{ env.WORKSPACE_SRC_PATH }}
+          build_dir: ${{ env.WORKSPACE_BUILD_PATH }}
+          python_exe: ${{ steps.sofa.outputs.python_exe }}
+          output_dir: ${{ github.workspace }}/tests-results_dir
+          nb_parallel_threads: '4'
 
-          if [[ "$RUNNER_OS" == "macOS" ]]; then
-            echo "DYLD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$SOFA_ROOT/plugins/SofaPython3/lib:$DYLD_LIBRARY_PATH" | tee -a $GITHUB_ENV
-          fi
-
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            echo "LD_LIBRARY_PATH=$WORKSPACE_ARTIFACT_PATH/lib:$SOFA_ROOT/lib:$SOFA_ROOT/plugins/SofaPython3/lib:$LD_LIBRARY_PATH" | tee -a $GITHUB_ENV
-          fi
-
+  ###################   Create plugin artifacts   ##############
   deploy:
     name: Deploy artifacts
-    if: always() && startsWith(github.ref, 'refs/heads/main') # we are on a branch (not a PR)
+    if: always() && startsWith(github.ref, 'refs/tags/v')
     needs: [build-and-test]
     runs-on: ubuntu-latest
     continue-on-error: true
+
     steps:
       - name: Get artifacts
         uses: actions/download-artifact@v4.1.7
@@ -137,12 +171,14 @@ jobs:
           for artifact in *; do
             zip $artifact.zip -r $artifact/*
           done
+
       - name: Upload release
         uses: softprops/action-gh-release@v1
         with:
           name: ${{ github.ref_name }}
           tag_name: release-${{ github.ref_name }}
           fail_on_unmatched_files: false
+          target_commitish: ${{ github.sha }}
           files: |
             artifacts/Tearing_*_Linux.zip
             artifacts/Tearing_*_Windows.zip
