@@ -82,9 +82,26 @@ void TearingEngine<DataTypes>::algoFracturePath()
     int indexA = m_maxStressVertexIndex;
     Coord Pa = x[indexA];
     Coord principalStressDirection = m_triangleInfoTearing[m_maxStressTriangleIndex].principalStressDirection;
-    //Calculate fracture end points (Pb and Pc)
+
+    //Calculate fracture end points (Pb and Pc), same computation as computeFracturePath() - done
+    //here again rather than reused from m_fracturePath since this method can also be reached
+    //directly (Ctrl+C keypress bypass in BaseTearingEngine::handleEvent()) without
+    //computeFracturePath() having run first in the same call.
+    const Coord fractureDirection = this->computeFractureDirection(principalStressDirection);
     Coord Pb;
     Coord Pc;
+    if (this->d_fractureMaxLength.getValue() == 0.0)
+    {
+        if (!this->computeEndPointsNeighboringTriangles(Pa, fractureDirection, Pb, Pc))
+        {
+            m_maxStressTriangleIndex = InvalidID;
+            return;
+        }
+    }
+    else
+    {
+        this->computeEndPoints(Pa, fractureDirection, Pb, Pc);
+    }
 
     this->m_tearingAlgo->algoFracturePath(Pa, indexA, Pb, Pc, m_maxStressTriangleIndex, principalStressDirection, d_input_positions.getValue());
     m_maxStressTriangleIndex = InvalidID;
