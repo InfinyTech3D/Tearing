@@ -30,9 +30,9 @@
 #include <sofa/simulation/AnimateEndEvent.h>
 //#include <sofa/component/solidmechanics/fem/elastic/TetrahedronFEMForceField.h>
 #include <sofa/component/solidmechanics/fem/elastic/TetrahedralCorotationalFEMForceField.h>
-#include <MeshRefinement/TetrahedronCuttingManager.h>
+#include <MeshRefinement/MeshRefinementAPI.h>
 
-using sofa::meshrefinement::TetrahedronCuttingManager;
+using sofa::meshrefinement::MeshRefinementAPI;
 
 namespace sofa::helper
 {
@@ -145,7 +145,7 @@ namespace sofa::component::engine
         TetrahedronSetTopologyModifier* m_modifier;
 		TetrahedronSetGeometryAlgorithms<DataTypes>* m_tetraGeo;
 
-		sofa::meshrefinement::TetrahedronCuttingManager<defaulttype::Vec3Types>* m_tetraCuttingMgr;
+		sofa::meshrefinement::MeshRefinementAPI<defaulttype::Vec3Types>* m_tetraCuttingMgr;
 	private:
 		sofa::helper::ColorMap* p_drawColorMap;
 		VolumeTearingAlgorithms<DataTypes>* m_volumeTearingAlgo;
