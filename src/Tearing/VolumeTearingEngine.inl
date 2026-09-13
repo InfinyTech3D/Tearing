@@ -128,7 +128,7 @@ void VolumeTearingEngine<DataTypes>::init()
 
     TetrahedronSetTopologyContainer* m_topoCon = dynamic_cast <TetrahedronSetTopologyContainer*>(m_topology);
 
-    m_tetraCuttingMgr = new TetrahedronCuttingManager<defaulttype::Vec3Types>();
+    m_tetraCuttingMgr = new MeshRefinementAPI<defaulttype::Vec3Types>();
     if(m_topoCon==nullptr)
         msg_error() << "m_topoCon empty pointer";
     else
