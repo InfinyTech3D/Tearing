@@ -10,7 +10,7 @@
     <RequiredPlugin pluginName='SofaSimpleFem'/>
     <RequiredPlugin pluginName='SofaTopologyMapping'/> 
 	
-	<RequiredPlugin name='tearing'/>
+	<RequiredPlugin pluginName='tearing'/>
 	
     <CollisionPipeline name="PenalityContactForceField21" verbose="0" />
     <BruteForceDetection name="N2" />
