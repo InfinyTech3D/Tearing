@@ -498,7 +498,7 @@ void VolumeTearingEngine<DataTypes>::cutting()
         helper::ReadAccessor< Data<VecCoord> > x(input_position);
         helper::WriteAccessor< Data<VecTetrahedronFEMInformation> > tetraFEMInf(d_tetrahedronFEMInfo);
         core::topology::BaseMeshTopology::Tetrahedron t;
-        fixed_array<Vec3, 4> m_planPositions;
+        sofa::type::fixed_array<Vec3, 4> m_planPositions;
         Coord dir1;
         Real thickness = 0;
 
