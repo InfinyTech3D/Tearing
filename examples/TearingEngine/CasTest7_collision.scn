@@ -17,7 +17,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec un tro
         <RequiredPlugin pluginName="Sofa.Component.LinearSolver.Iterative"/> <!-- Needed to use components [CGLinearSolver] -->
         <RequiredPlugin pluginName="Sofa.Component.Mapping.Linear"/> <!-- Needed to use components [IdentityMapping] -->
         <RequiredPlugin pluginName="Sofa.Component.Mass"/> <!-- Needed to use components [DiagonalMass] -->
-        <RequiredPlugin pluginName="Sofa.Component.ODESolver.Backward"/> <!-- Needed to use components [EulerImplicitSolver] -->
+        <RequiredPlugin pluginName="Sofa.Component.IntegrationScheme.Backward"/> <!-- Needed to use components [EulerImplicitIntegrationScheme] -->
         <RequiredPlugin pluginName="Sofa.Component.SceneUtility"/> <!-- Needed to use components [InfoComponent] -->
         <RequiredPlugin pluginName="Sofa.Component.SolidMechanics.FEM.Elastic"/> <!-- Needed to use components [TriangularFEMForceFieldOptim] -->
         <RequiredPlugin pluginName="Sofa.Component.SolidMechanics.Spring"/> <!-- Needed to use components [FastTriangularBendingSprings] -->
@@ -44,7 +44,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec un tro
 	<RegularGridTopology name="grid" n="30 1 30" min="0 0 0" max="10 0 10" />
 
     <Node name="TriangularFEMForceField">
-        <EulerImplicitSolver name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
+        <EulerImplicitIntegrationScheme name="cg_odesolver" printLog="false"  rayleighStiffness="0.1" rayleighMass="0.1" />
         <SparseLDLSolver  name="Torus1_SparseLDLSolver" printLog="false" />
         
         <MechanicalObject name="tissue_dofs" src="@../grid"/>
@@ -87,7 +87,7 @@ On fixe un coté et nous tirons de façon uniforme du côté opposé avec un tro
     
     
     <Node name="collisionElement">
-       <EulerImplicitSolver name="ODE solver" rayleighStiffness="0.01" rayleighMass="0.1" />
+       <EulerImplicitIntegrationScheme name="ODE solver" rayleighStiffness="0.01" rayleighMass="0.1" />
         <SparseLDLSolver template="CompressedRowSparseMatrixMat3x3d"/>
         <MechanicalObject name="Particles" template="vec3" position="5 -5 5"/>
         <UniformMass name="Mass" totalMass="50.0" />
