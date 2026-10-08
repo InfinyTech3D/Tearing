@@ -32,8 +32,8 @@
     </Node>
     
     <Node name="Cube" gravity="0 0 0">
-        <EulerImplicitSolver name="cg_odesolver" printLog="0"  rayleighStiffness="0.1" rayleighMass="0.1" />
-        <CGLinearSolver template="GraphScattered" name="linear solver" iterations="25" tolerance="1e-09" threshold="1e-09" />
+        <EulerImplicitIntegrationScheme name="cg_odesolver" printLog="0"  rayleighStiffness="0.1" rayleighMass="0.1" />
+        <CGLinearSolver template="GraphScattered" name="linearSolver" iterations="25" tolerance="1e-09" threshold="1e-09" />
         <MechanicalObject name="Mo" template="Vec3d" position="@../Model/ref_positions.position" />
         
         <TetrahedronSetTopologyContainer name="Tetra_topo" src="@../Model/ref_tetra"/>
